@@ -46,7 +46,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T01 | Methodology doc + product spec | delegated (fork writer) | 2 non-trivial docs needing conversation context | [x] | see Progress |
 | T02 | Monorepo scaffold, Docker, Postgres, health check | delegated writer | 2+ non-trivial files | [x] | see evidence |
 | T03 | Book importer (units 1–6 → content JSON + DB seed) | delegated writer | preparation reading of HTML + multi-file | [x] | see evidence |
-| T04 | Answer checker domain (normalization, variants) TDD | delegated writer | multi-file + tests | [ ] | |
+| T04 | Answer checker domain (normalization, variants) TDD | delegated writer | multi-file + tests | [x] | see evidence |
 | T05 | DB schema + migrations (all features) | delegated writer | multi-file | [ ] | |
 | T06 | LLM port + Ollama adapter + settings (key, model, effort) | delegated writer | multi-file | [ ] | |
 | T07 | System prompts per AI function | delegated writer | multi-file | [ ] | |
@@ -70,7 +70,9 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T01 (`47ab8cf`): structural readback of headings; `wc -l` 117/400. RDD assess: `passive` (non_executable_only), review not due; reviewed boundary → `47ab8cf`.
 - T02: api 2/2 + web 1/1 tests (RED observed first), typecheck + lint clean, compose up → `/api/health` db ok, web 200; parent spot check `pnpm -r test` passed. Notes: api runs TS directly on Node 24 (no build), pnpm 11 `allowBuilds`, jsdom 29 pinned (Node 24.12), postgres:18 volume at /var/lib/postgresql. Migrations-on-start deferred to T05. Commit `0e032d0`. RDD assess: `medium` (executable_change), review_due false (`under_budget`) — pending in slice since boundary `47ab8cf`.
+- T03 (`fda28ef`): importer `packages/book-importer`, schemas in `packages/shared/src/content`. Units 1–6 → 24 exercises, 174 items (146 graded), 10 needsAi (3.3#3 wildcard, 4.2#2 one key part for 2 blanks, 6.1/6.2 open), 9 images. Tests 40/40 (RED first), typecheck/lint clean; parent spot check of unit-001 JSON (1.1#2 alternatives, 1.3 dialogue blanks). ~20 later units fail validation (deferred until added). Spec §9 updated to actual paths. RDD assess: review_due false (`under_budget`), slice still pending since `47ab8cf`.
+- T04: pure checker in `packages/shared/src/units` (normalize, contraction canonicalization driven by key first, wildcard, "almost" = apostrophe slip or OSA distance 1 on ≥5 chars excluding function words/-s/-d endings/vowel swaps; needsAi items checked deterministically first). Shared tests 126/126 (RED first); sweep over all key alternatives in units 1–6: 0 failures. Parent spot check: shared tests 126/126. Known limitation: bought/brought-type real-word drops count as almost.
 
 ## Next step
 
-T03 — book importer.
+T05 — DB schema + migrations + seed.
