@@ -1,0 +1,1219 @@
+{
+  "number": 2,
+  "title": "Simple Present",
+  "subtitle": "(I do)",
+  "block": {
+    "id": 1,
+    "title": "Present and Past",
+    "range": {
+      "from": 1,
+      "to": 6
+    }
+  },
+  "theory": [
+    {
+      "letter": "A",
+      "html": "<p class=\"section-intro\">Study this example situation:</p> <div class=\"example-box\"> <div class=\"example-box-visual\"> <img src=\"/content/images/unit_002_alex.png\" alt=\"Alex asleep in bed\"> </div> <div class=\"example-box-text\"> <p>Alex is a bus driver, but now he is in bed asleep.</p> <p>He is not driving a bus. (He is asleep.)</p> <p><em>but</em> He <strong class=\"grammar-target\">drives</strong> a bus. (He is a bus driver.)</p> <p><strong class=\"rule-highlight\">Drive(s) / work(s) / do(es)</strong>, etc., is the <em>simple present</em>:</p> </div> </div> <table class=\"grammar-table\"> <tbody> <tr> <td>I / we / you / they</td> <td>drive / work / do, etc.</td> </tr> <tr> <td>he / she / it</td> <td>drives / works / does, etc.</td> </tr> </tbody> </table>"
+    },
+    {
+      "letter": "B",
+      "html": "<p>We use the simple present to talk about things in general. We use it to say that something happens all the time or repeatedly, or that something is true in general:</p> <ul class=\"example-list\"> <li>Nurses <strong class=\"grammar-target\">take</strong> care of patients in hospitals.</li> <li>I usually <strong class=\"grammar-target\">leave</strong> for work at 8 a.m.</li> <li>The earth <strong class=\"grammar-target\">goes</strong> around the sun.</li> <li>The coffee shop <strong class=\"grammar-target\">opens</strong> at 7:30 in the morning.</li> </ul> <p><strong>Remember:</strong></p> <p>I <strong class=\"grammar-target\">work</strong> . . . <em>but</em> He <strong class=\"grammar-target\">works</strong> . . . They <strong class=\"grammar-target\">teach</strong> . . . <em>but</em> My sister <strong class=\"grammar-target\">teaches</strong> . . .</p> <p>For spelling (<em>-s</em> or <em>-es</em>), see Appendix 6.</p>"
+    },
+    {
+      "letter": "C",
+      "html": "<p>We use <strong class=\"rule-highlight\">do / does</strong> to make questions and negative sentences:</p> <table class=\"grammar-table\"> <tbody> <tr> <td>do</td> <td>I / we / you / they</td> <td rowspan=\"2\">work?<br>drive?<br>do?</td> </tr> <tr> <td>does</td> <td>he / she / it</td> </tr> </tbody> </table> <table class=\"grammar-table\"> <tbody> <tr> <td>I / we / you / they</td> <td>don't</td> <td rowspan=\"2\">work<br>drive<br>do</td> </tr> <tr> <td>he / she / it</td> <td>doesn't</td> </tr> </tbody> </table> <ul class=\"example-list\"> <li>I come from Japan. Where <strong class=\"grammar-target\">do</strong> you <strong class=\"grammar-target\">come</strong> from?</li> <li>I <strong class=\"grammar-target\">don't go</strong> to church very often.</li> <li>What <strong class=\"grammar-target\">does</strong> this word <strong class=\"grammar-target\">mean</strong>? <span class=\"grammar-contrast\">(not What means this word?)</span></li> <li>Rice <strong class=\"grammar-target\">doesn't grow</strong> in cold climates.</li> </ul> <p> In the following examples, <strong>do</strong> is also the main verb (<em>do you <strong>do</strong> / doesn't <strong>do</strong></em>, etc.): </p> <ul class=\"example-list\"> <li>\"What <strong class=\"grammar-target\">do</strong> you <strong class=\"grammar-target\">do</strong>?\" \"I work in a department store.\"</li> <li>He's always so lazy. He <strong class=\"grammar-target\">doesn't do</strong> anything to help.</li> </ul>"
+    },
+    {
+      "letter": "D",
+      "html": "<p>We use the simple present to say how often we do things:</p> <ul class=\"example-list\"> <li>I <strong class=\"grammar-target\">get</strong> up at 8:00 <strong class=\"rule-highlight\">every morning</strong>.</li> <li><strong class=\"rule-highlight\">How often do</strong> you <strong class=\"grammar-target\">go</strong> to the dentist?</li> <li>Julie <strong class=\"grammar-target\">doesn't drink</strong> tea <strong class=\"rule-highlight\">very often</strong>.</li> <li>Robert usually <strong class=\"grammar-target\">plays</strong> tennis <strong class=\"rule-highlight\">two or three times a week</strong> in the summer.</li> </ul>"
+    },
+    {
+      "letter": "E",
+      "html": "<p><strong class=\"rule-highlight\">I promise / I apologize</strong>, etc.</p> <p>Sometimes we do things by saying them. For example, when you promise to do something, you can say \"I promise . . .\"; when you suggest something, you can say, \"I suggest . . .\":</p> <ul class=\"example-list\"> <li><strong class=\"grammar-target\">I promise</strong> I won't be late. <span class=\"grammar-contrast\">(not I'm promising)</span></li> <li>\"What do you <strong class=\"grammar-target\">suggest</strong> I do?\" \"<strong class=\"grammar-target\">I suggest</strong> that you spend less money.\"</li> </ul> <p>In the same way, we say: <strong class=\"grammar-target\">I advise . . . / I insist . . . / I refuse . . . / I suppose . . .</strong>, etc.</p>"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "2.1",
+      "instruction": "Complete the sentences using the following verbs:",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Tanya "
+              },
+              {
+                "type": "example",
+                "text": "speaks"
+              },
+              {
+                "type": "text",
+                "text": " German very well."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I don't "
+              },
+              {
+                "type": "blank",
+                "id": "2.1-2-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " much coffee."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "drink",
+            "blanks": [
+              [
+                "drink"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The swimming pool "
+              },
+              {
+                "type": "blank",
+                "id": "2.1-3-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " at 7:30 every morning."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "opens",
+            "blanks": [
+              [
+                "opens"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Bad driving "
+              },
+              {
+                "type": "blank",
+                "id": "2.1-4-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " many accidents."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "causes",
+            "blanks": [
+              [
+                "causes"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "My parents "
+              },
+              {
+                "type": "blank",
+                "id": "2.1-5-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " in a very small apartment."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "live",
+            "blanks": [
+              [
+                "live"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The Olympic Games "
+              },
+              {
+                "type": "blank",
+                "id": "2.1-6-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " place every four years."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "take",
+            "blanks": [
+              [
+                "take"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The Panama Canal "
+              },
+              {
+                "type": "blank",
+                "id": "2.1-7-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " the Atlantic and Pacific Oceans."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "connects",
+            "blanks": [
+              [
+                "connects"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ],
+      "wordBank": [
+        {
+          "text": "cause(s)",
+          "used": false
+        },
+        {
+          "text": "connect(s)",
+          "used": false
+        },
+        {
+          "text": "drink(s)",
+          "used": false
+        },
+        {
+          "text": "live(s)",
+          "used": false
+        },
+        {
+          "text": "open(s)",
+          "used": false
+        },
+        {
+          "text": "speak(s)",
+          "used": true
+        },
+        {
+          "text": "take(s)",
+          "used": false
+        }
+      ]
+    },
+    {
+      "id": "2.2",
+      "instruction": "Put the verb into the correct form.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Julie "
+              },
+              {
+                "type": "example",
+                "text": "doesn't drink"
+              },
+              {
+                "type": "text",
+                "text": " (not / drink) tea very often."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "What time "
+              },
+              {
+                "type": "blank",
+                "id": "2.2-2-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (the banks / close) here?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "do the banks close",
+            "blanks": [
+              [
+                "do the banks close"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I have a TV, but I "
+              },
+              {
+                "type": "blank",
+                "id": "2.2-3-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (not / watch) it much."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "don’t watch (do not watch)",
+            "blanks": [
+              [
+                "don’t watch",
+                "do not watch"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "\"Where "
+              },
+              {
+                "type": "blank",
+                "id": "2.2-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (Ricardo / come) from?\" \"He's Cuban.\""
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "does Ricardo come",
+            "blanks": [
+              [
+                "does Ricardo come"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "\"What "
+              },
+              {
+                "type": "blank",
+                "id": "2.2-5-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (you / do)?\" \"I'm an electrician.\""
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "do you do",
+            "blanks": [
+              [
+                "do you do"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "It "
+              },
+              {
+                "type": "blank",
+                "id": "2.2-6-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (take) me an hour to get to work. How long "
+              },
+              {
+                "type": "blank",
+                "id": "2.2-6-2",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (it / take) you?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "takes . . . does it take",
+            "blanks": [
+              [
+                "takes"
+              ],
+              [
+                "does it take"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Look at this sentence. What "
+              },
+              {
+                "type": "blank",
+                "id": "2.2-7-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (this word / mean)?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "does this word mean",
+            "blanks": [
+              [
+                "does this word mean"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "8.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "David isn't in very good shape. He "
+              },
+              {
+                "type": "blank",
+                "id": "2.2-8-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (not / exercise)."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "doesn’t exercise (does not exercise)",
+            "blanks": [
+              [
+                "doesn’t exercise",
+                "does not exercise"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "2.3",
+      "instruction": "Use the following verbs to complete the sentences. Sometimes you need the negative:",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The earth "
+              },
+              {
+                "type": "example",
+                "text": "goes"
+              },
+              {
+                "type": "text",
+                "text": " around the sun."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Rice "
+              },
+              {
+                "type": "example",
+                "text": "doesn't grow"
+              },
+              {
+                "type": "text",
+                "text": " in Canada."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The sun "
+              },
+              {
+                "type": "blank",
+                "id": "2.3-3-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " in the east."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "rises",
+            "blanks": [
+              [
+                "rises"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Bees "
+              },
+              {
+                "type": "blank",
+                "id": "2.3-4-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " honey."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "make",
+            "blanks": [
+              [
+                "make"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Vegetarians "
+              },
+              {
+                "type": "blank",
+                "id": "2.3-5-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " meat."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "don’t eat",
+            "blanks": [
+              [
+                "don’t eat"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "An atheist "
+              },
+              {
+                "type": "blank",
+                "id": "2.3-6-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " in God."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "doesn’t believe",
+            "blanks": [
+              [
+                "doesn’t believe"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "An interpreter "
+              },
+              {
+                "type": "blank",
+                "id": "2.3-7-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " from one language into another."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "translates",
+            "blanks": [
+              [
+                "translates"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "8.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Liars are people who "
+              },
+              {
+                "type": "blank",
+                "id": "2.3-8-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " the truth."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "don’t tell",
+            "blanks": [
+              [
+                "don’t tell"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "9.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The Amazon River "
+              },
+              {
+                "type": "blank",
+                "id": "2.3-9-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " into the Atlantic Ocean."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "flows",
+            "blanks": [
+              [
+                "flows"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ],
+      "wordBank": [
+        {
+          "text": "believe",
+          "used": false
+        },
+        {
+          "text": "eat",
+          "used": false
+        },
+        {
+          "text": "flow",
+          "used": false
+        },
+        {
+          "text": "go",
+          "used": true
+        },
+        {
+          "text": "grow",
+          "used": true
+        },
+        {
+          "text": "make",
+          "used": false
+        },
+        {
+          "text": "rise",
+          "used": false
+        },
+        {
+          "text": "tell",
+          "used": false
+        },
+        {
+          "text": "translate",
+          "used": false
+        }
+      ]
+    },
+    {
+      "id": "2.4",
+      "instruction": "You ask Liz questions about herself and her family. Write the questions.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "You know that Liz plays tennis. You want to know how often. Ask her."
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "How often "
+              },
+              {
+                "type": "example",
+                "text": "do you play tennis"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Perhaps Liz's sister plays tennis, too. You want to know. Ask Liz."
+              }
+            ],
+            [
+              {
+                "type": "blank",
+                "id": "2.4-2-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " your sister "
+              },
+              {
+                "type": "blank",
+                "id": "2.4-2-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Does . . . play tennis?",
+            "blanks": [
+              [
+                "Does"
+              ],
+              [
+                "play tennis?"
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "You know that Liz reads a newspaper every day. You want to know which one. Ask her."
+              }
+            ],
+            [
+              {
+                "type": "blank",
+                "id": "2.4-3-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Which newspaper do you read?",
+            "blanks": [
+              [
+                "Which newspaper do you read?"
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "You know that Liz's brother works. You want to know what he does. Ask Liz."
+              }
+            ],
+            [
+              {
+                "type": "blank",
+                "id": "2.4-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "What does your brother do?",
+            "blanks": [
+              [
+                "What does your brother do?"
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "You know that Liz goes to the movies a lot. You want to know how often. Ask her."
+              }
+            ],
+            [
+              {
+                "type": "blank",
+                "id": "2.4-5-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "How often do you go to the movies?",
+            "blanks": [
+              [
+                "How often do you go to the movies?"
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "You don't know where Liz's grandparents live. You want to know. Ask Liz."
+              }
+            ],
+            [
+              {
+                "type": "blank",
+                "id": "2.4-6-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Where do your grandparents live?",
+            "blanks": [
+              [
+                "Where do your grandparents live?"
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "2.5",
+      "instruction": "Complete using the following:",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "It's a nice day. "
+              },
+              {
+                "type": "example",
+                "text": "I suggest"
+              },
+              {
+                "type": "text",
+                "text": " we go for a walk."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I won't tell anybody what you said. "
+              },
+              {
+                "type": "blank",
+                "id": "2.5-2-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I promise",
+            "blanks": [
+              [
+                "I promise"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I won't let you pay for the meal. "
+              },
+              {
+                "type": "blank",
+                "id": "2.5-3-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " that you let me pay."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I insist",
+            "blanks": [
+              [
+                "I insist"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "2.5-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " for what I did. It won't happen again."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I apologize",
+            "blanks": [
+              [
+                "I apologize"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The new restaurant downtown is very good. "
+              },
+              {
+                "type": "blank",
+                "id": "2.5-5-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " it highly."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I recommend",
+            "blanks": [
+              [
+                "I recommend"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ],
+      "wordBank": [
+        {
+          "text": "I apologize",
+          "used": false
+        },
+        {
+          "text": "I insist",
+          "used": false
+        },
+        {
+          "text": "I promise",
+          "used": false
+        },
+        {
+          "text": "I recommend",
+          "used": false
+        },
+        {
+          "text": "I suggest",
+          "used": true
+        }
+      ]
+    }
+  ]
+}

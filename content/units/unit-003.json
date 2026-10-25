@@ -1,0 +1,1216 @@
+{
+  "number": 3,
+  "title": "Present Continuous and Simple Present 1",
+  "subtitle": "(I am doing and I do)",
+  "block": {
+    "id": 1,
+    "title": "Present and Past",
+    "range": {
+      "from": 1,
+      "to": 6
+    }
+  },
+  "theory": [
+    {
+      "letter": "A",
+      "html": "<p class=\"section-intro\">Compare:</p> <div class=\"comparison-grid\"> <div class=\"comparison-col\"> <div class=\"comparison-title\">Present continuous (I am doing)</div> <p> We use the continuous for things happening at or around the time of speaking. The action is not complete. </p> <img src=\"/content/images/unit_003_tl_continuous.png\" alt=\"Timeline: I am doing\"> <ul class=\"example-list\"> <li>The water <strong class=\"grammar-target\">is boiling</strong>. Can you turn it off?</li> <li>Listen to those people. What language <strong class=\"grammar-target\">are they speaking</strong>?</li> <li>Let's go out. It <strong class=\"grammar-target\">isn't raining</strong> now.</li> <li>\"I'm busy.\" \"What <strong class=\"grammar-target\">are you doing</strong>?\"</li> <li><strong class=\"grammar-target\">I'm getting</strong> hungry. Let's eat.</li> <li>Kate wants to work in Italy, so she'<strong class=\"grammar-target\">s learning</strong> Italian.</li> <li>The population of the world <strong class=\"grammar-target\">is increasing</strong> very fast.</li> </ul> <p> We use the present continuous for <em>temporary</em> situations: </p> <ul class=\"example-list\"> <li><strong class=\"grammar-target\">I'm living</strong> with some friends until I find a place of my own.</li> <li> A: You'<strong class=\"grammar-target\">re working</strong> hard today.<br> B: Yes, I have a lot to do. </li> </ul> <p>See Unit 1 for more information.</p> </div> <div class=\"comparison-col\"> <div class=\"comparison-title\">Simple present (I do)</div> <p> We use the simple for things in general or things that happen repeatedly. </p> <img src=\"/content/images/unit_003_tl_simple.png\" alt=\"Timeline: I do\"> <ul class=\"example-list\"> <li>Water <strong class=\"grammar-target\">boils</strong> at 100 degrees Celsius.</li> <li>Excuse me, <strong class=\"grammar-target\">do you speak</strong> English?</li> <li>It <strong class=\"grammar-target\">doesn't rain</strong> very much in summer.</li> <li>What <strong class=\"grammar-target\">do you usually do</strong> after work?</li> <li>I always <strong class=\"grammar-target\">get</strong> hungry in the afternoon.</li> <li>Most people <strong class=\"grammar-target\">learn</strong> to swim when they are children.</li> <li>Every day the population of the world <strong class=\"grammar-target\">increases</strong> by about 200,000 people.</li> </ul> <p> We use the simple present for <em>permanent</em> situations: </p> <ul class=\"example-list\"> <li>My parents <strong class=\"grammar-target\">live</strong> in Vancouver. They have lived there all their lives.</li> <li>John isn't lazy. He <strong class=\"grammar-target\">works</strong> hard most of the time.</li> </ul> <p>See Unit 2 for more information.</p> </div> </div>"
+    },
+    {
+      "letter": "B",
+      "html": "<p><strong class=\"rule-highlight\">I always do</strong> and <strong class=\"rule-highlight\">I'm always doing</strong></p> <p><strong class=\"rule-highlight\">I always do</strong> (something) = I do it every time:</p> <ul class=\"example-list\"> <li><strong class=\"grammar-target\">I always drive</strong> to work. <span class=\"grammar-contrast\">(not I'm always driving)</span></li> </ul> <p>\"<strong class=\"rule-highlight\">I'm always doing</strong> something\" has a different meaning. For example:</p> <div class=\"example-box\"> <div class=\"example-box-visual\"> <img src=\"/content/images/unit_003_losing_keys.png\" alt=\"I'm always losing things\"> </div> <div class=\"example-box-text\"> \"I've lost my key again. <strong>I'm always losing</strong> things.\" <p> <strong class=\"grammar-target\">I'm always losing</strong> things = I lose things very often, perhaps too often, or more often than normal. </p> </div> </div> <p>Two more examples:</p> <ul class=\"example-list\"> <li> You'<strong class=\"grammar-target\">re always watching</strong> television. You should do something more active. <span class=\"grammar-contrast\">(= You watch too much television)</span> </li> <li> Tim is never satisfied. He'<strong class=\"grammar-target\">s always complaining</strong>. <span class=\"grammar-contrast\">(= He complains too much)</span> </li> </ul>"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "3.1",
+      "instruction": "Are the underlined verbs right or wrong? Correct them where necessary.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Water "
+              },
+              {
+                "type": "underline",
+                "text": "boils"
+              },
+              {
+                "type": "text",
+                "text": " at 212 degrees Fahrenheit. "
+              },
+              {
+                "type": "example",
+                "text": "OK"
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The water "
+              },
+              {
+                "type": "underline",
+                "text": "boils"
+              },
+              {
+                "type": "text",
+                "text": ". Can you turn it off? "
+              },
+              {
+                "type": "example",
+                "text": "is boiling"
+              }
+            ]
+          ]
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Look! That man "
+              },
+              {
+                "type": "underline",
+                "text": "tries"
+              },
+              {
+                "type": "text",
+                "text": " to open the door of your car. "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-3-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "is trying",
+            "blanks": [
+              [
+                "is trying"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Can you hear those people? What "
+              },
+              {
+                "type": "underline",
+                "text": "do"
+              },
+              {
+                "type": "text",
+                "text": " they "
+              },
+              {
+                "type": "underline",
+                "text": "talk"
+              },
+              {
+                "type": "text",
+                "text": " about? "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-4-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "are they talking",
+            "blanks": [
+              [
+                "are they talking"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The moon "
+              },
+              {
+                "type": "underline",
+                "text": "goes"
+              },
+              {
+                "type": "text",
+                "text": " around the earth in about 27 days. "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-5-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "OK",
+            "blanks": [
+              [
+                "OK"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I have to go now. It "
+              },
+              {
+                "type": "underline",
+                "text": "gets"
+              },
+              {
+                "type": "text",
+                "text": " late. "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-6-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "It’s getting (It is getting)",
+            "blanks": [
+              [
+                "It’s getting",
+                "It is getting"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I usually "
+              },
+              {
+                "type": "underline",
+                "text": "drive"
+              },
+              {
+                "type": "text",
+                "text": " to work. "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-7-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "OK",
+            "blanks": [
+              [
+                "OK"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "8.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "\"Hurry up! It's time to leave.\" \"OK, I "
+              },
+              {
+                "type": "underline",
+                "text": "come"
+              },
+              {
+                "type": "text",
+                "text": ".\" "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-8-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I’m coming (I am coming)",
+            "blanks": [
+              [
+                "I’m coming",
+                "I am coming"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "9.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I hear you've got a new job. How "
+              },
+              {
+                "type": "underline",
+                "text": "does"
+              },
+              {
+                "type": "text",
+                "text": " it "
+              },
+              {
+                "type": "underline",
+                "text": "go"
+              },
+              {
+                "type": "text",
+                "text": "? "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-9-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "is it going",
+            "blanks": [
+              [
+                "is it going"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "10.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Paul is never late. He'"
+              },
+              {
+                "type": "underline",
+                "text": "s"
+              },
+              {
+                "type": "text",
+                "text": " always "
+              },
+              {
+                "type": "underline",
+                "text": "getting"
+              },
+              {
+                "type": "text",
+                "text": " to work on time. "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-10-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "He always gets",
+            "blanks": [
+              [
+                "He always gets"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "11.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "They don't get along well. They'"
+              },
+              {
+                "type": "underline",
+                "text": "re"
+              },
+              {
+                "type": "text",
+                "text": " always "
+              },
+              {
+                "type": "underline",
+                "text": "arguing"
+              },
+              {
+                "type": "text",
+                "text": ". "
+              },
+              {
+                "type": "blank",
+                "id": "3.1-11-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "OK",
+            "blanks": [
+              [
+                "OK"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "3.2",
+      "instruction": "Put the verb into the correct form, present continuous or simple present.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Let's go out. It "
+              },
+              {
+                "type": "example",
+                "text": "isn't raining"
+              },
+              {
+                "type": "text",
+                "text": " (not / rain) now."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Julia is very good at languages. She "
+              },
+              {
+                "type": "example",
+                "text": "speaks"
+              },
+              {
+                "type": "text",
+                "text": " (speak) four languages very well."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Hurry up! Everybody "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-3-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (wait) for you."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’s waiting (is waiting)",
+            "blanks": [
+              [
+                "’s waiting",
+                "is waiting"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "\""
+              },
+              {
+                "type": "blank",
+                "id": "3.2-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (you / listen) to the radio?\" \"No, you can turn it off.\""
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Are you listening",
+            "blanks": [
+              [
+                "Are you listening"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "\""
+              },
+              {
+                "type": "blank",
+                "id": "3.2-5-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (you / listen) to the radio every day?\" \"No, just occasionally.\""
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Do you listen",
+            "blanks": [
+              [
+                "Do you listen"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The River Nile "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-6-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (flow) into the Mediterranean."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "flows",
+            "blanks": [
+              [
+                "flows"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The river "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-7-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (flow) very fast today – much faster than usual."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’s flowing (is flowing)",
+            "blanks": [
+              [
+                "’s flowing",
+                "is flowing"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "8.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "We usually "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-8-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (grow) vegetables in our garden, but this year we "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-8-2",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (not / grow) any."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "grow . . . aren’t growing / ’re not growing (are not growing)",
+            "blanks": [
+              [
+                "grow"
+              ],
+              [
+                "aren’t growing",
+                "’re not growing",
+                "are not growing"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "9.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "A: How's your English?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "B: Not bad. I think it "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-9-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (improve) slowly."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’s improving (is improving)",
+            "blanks": [
+              [
+                "’s improving",
+                "is improving"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "10.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Rachel is in New York right now. She "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-10-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (stay) at the Park Hotel. She always "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-10-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (stay) there when she's in New York."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’s staying (is staying) . . . stays",
+            "blanks": [
+              [
+                "’s staying",
+                "is staying"
+              ],
+              [
+                "stays"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "11.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Can we stop walking soon? I "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-11-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (start) to feel tired."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’m starting (am starting)",
+            "blanks": [
+              [
+                "’m starting",
+                "am starting"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "12.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "A: Can you drive?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "B: I "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-12-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (learn). My father "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-12-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (teach) me."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’m learning (am learning) . . . ’s teaching (is teaching)",
+            "blanks": [
+              [
+                "’m learning",
+                "am learning"
+              ],
+              [
+                "’s teaching",
+                "is teaching"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "13.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Normally I "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-13-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (finish) work at five, but this week I "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-13-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (work) until six to earn a little more money."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "finish . . . ’m working (am working)",
+            "blanks": [
+              [
+                "finish"
+              ],
+              [
+                "’m working",
+                "am working"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "14.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "My parents "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-14-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (live) in Taipei. They were born there and have never lived anywhere else. Where "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-14-2",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (your parents / live)?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "live . . . do your parents live",
+            "blanks": [
+              [
+                "live"
+              ],
+              [
+                "do your parents live"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "15.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Sonia "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-15-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (look) for a place to live. She "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-15-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (stay) with her sister until she finds a place."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’s looking (is looking) . . . ’s staying (is staying)",
+            "blanks": [
+              [
+                "’s looking",
+                "is looking"
+              ],
+              [
+                "’s staying",
+                "is staying"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "16.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "A: What "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-16-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (your brother / do)?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "B: He's an architect, but he "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-16-2",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (not / work) right now."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "does your brother do . . . isn’t working / ’s not working (is not working)",
+            "blanks": [
+              [
+                "does your brother do"
+              ],
+              [
+                "isn’t working",
+                "’s not working",
+                "is not working"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "17.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(at a party) I usually "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-17-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (enjoy) parties, but I "
+              },
+              {
+                "type": "blank",
+                "id": "3.2-17-2",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (not / enjoy) this one very much."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "enjoy . . . ’m not enjoying (am not enjoying)",
+            "blanks": [
+              [
+                "enjoy"
+              ],
+              [
+                "’m not enjoying",
+                "am not enjoying"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "3.3",
+      "instruction": "Finish B's sentences. Use always -ing.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "A: I've lost my keys again."
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "B: Not again! "
+              },
+              {
+                "type": "example",
+                "text": "You're always losing your keys"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "A: The car has broken down again."
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "B: That car is useless. It "
+              },
+              {
+                "type": "blank",
+                "id": "3.3-2-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’s always breaking down.",
+            "blanks": [
+              [
+                "’s always breaking down."
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "A: Look! You made the same mistake again."
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "B: Oh no, not again! I "
+              },
+              {
+                "type": "blank",
+                "id": "3.3-3-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’m always making the same mistake. / . . . that mistake.",
+            "blanks": [
+              [
+                "’m always making the same mistake.",
+                ". . . that mistake."
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": true,
+            "aiReason": "an alternative contains a '. . .' wildcard"
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "A: Oh, I forgot my glasses again."
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "B: That's typical! "
+              },
+              {
+                "type": "blank",
+                "id": "3.3-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "You’re always forgetting your glasses.",
+            "blanks": [
+              [
+                "You’re always forgetting your glasses."
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        }
+      ]
+    }
+  ]
+}

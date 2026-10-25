@@ -1,0 +1,1128 @@
+{
+  "number": 5,
+  "title": "Simple Past",
+  "subtitle": "(I did)",
+  "block": {
+    "id": 1,
+    "title": "Present and Past",
+    "range": {
+      "from": 1,
+      "to": 6
+    }
+  },
+  "theory": [
+    {
+      "letter": "A",
+      "html": "<p class=\"section-intro\">Study this example:</p> <div class=\"example-box\"> <div class=\"example-box-text\"> <p>Wolfgang Amadeus Mozart was an Austrian musician and composer. He <strong class=\"grammar-target\">lived</strong> from 1756 to 1791. He <strong class=\"grammar-target\">started</strong> composing at the age of five and <strong class=\"grammar-target\">wrote</strong> more than 600 pieces of music. He <strong class=\"grammar-target\">was</strong> only 35 years old when he <strong class=\"grammar-target\">died</strong>.</p> <p><strong class=\"rule-highlight\">Lived / started / wrote / was / died</strong> are all <em>simple past</em>.</p> </div> <div class=\"example-box-visual\"> <img src=\"/content/images/unit_005_mozart.png\" alt=\"Wolfgang Amadeus Mozart\"> </div> </div>"
+    },
+    {
+      "letter": "B",
+      "html": "<p>Very often the simple past ends in <strong class=\"rule-highlight\">-ed</strong> (<em>regular verbs</em>):</p> <ul class=\"example-list\"> <li>I work in a travel agency now. I <strong class=\"grammar-target\">worked</strong> in a department store before.</li> <li>We <strong class=\"grammar-target\">invited</strong> them to our party, but they <strong class=\"grammar-target\">decided</strong> not to come.</li> <li>The police <strong class=\"grammar-target\">stopped</strong> me on my way home last night.</li> <li>Laura <strong class=\"grammar-target\">passed</strong> her exam because she <strong class=\"grammar-target\">studied</strong> very hard.</li> </ul> <p>For spelling (<strong>stopped</strong>, <strong>studied</strong>, etc.), see Appendix 6.</p> <p>But many verbs are <em>irregular</em>. This means the simple past does <em>not</em> end in <strong>-ed</strong>. For example:</p> <p>write → <strong class=\"grammar-target\">wrote</strong> Mozart <strong class=\"grammar-target\">wrote</strong> more than 600 pieces of music.</p> <p>see → <strong class=\"grammar-target\">saw</strong> We <strong class=\"grammar-target\">saw</strong> Rose at the mall a few days ago.</p> <p>go → <strong class=\"grammar-target\">went</strong> I <strong class=\"grammar-target\">went</strong> to the movies three times last week.</p> <p>shut → <strong class=\"grammar-target\">shut</strong> It was cold, so I <strong class=\"grammar-target\">shut</strong> the window.</p> <p>For a list of irregular verbs, see Appendix 1.</p>"
+    },
+    {
+      "letter": "C",
+      "html": "<p>In questions and negatives we use <strong class=\"rule-highlight\">did / didn't + base form</strong> (<strong>enjoy / see / go</strong>, etc.):</p> <table class=\"grammar-table\"> <tbody> <tr><td>I / she / they</td><td>enjoyed<br>saw<br>went</td></tr> </tbody> </table> <table class=\"grammar-table\"> <tbody> <tr><td>did</td><td>you<br>she<br>they</td><td>enjoy?<br>see?<br>go?</td></tr> </tbody> </table> <table class=\"grammar-table\"> <tbody> <tr><td>I<br>she<br>they</td><td>didn't</td><td>enjoy<br>see<br>go</td></tr> </tbody> </table> <ul class=\"example-list\"> <li> A: <strong class=\"grammar-target\">Did</strong> you <strong class=\"grammar-target\">go</strong> out last night?<br> B: Yes, I <strong class=\"grammar-target\">went</strong> to the movies, but I <strong class=\"grammar-target\">didn't enjoy</strong> the film much. </li> <li>\"When <strong class=\"grammar-target\">did</strong> Mr. Thomas <strong class=\"grammar-target\">die</strong>?\" \"About 10 years ago.\"</li> <li>They <strong class=\"grammar-target\">didn't invite</strong> her to the party, so she <strong class=\"grammar-target\">didn't go</strong>.</li> <li>\"<strong class=\"grammar-target\">Did</strong> you <strong class=\"grammar-target\">have</strong> time to write the letter?\" \"No, I <strong class=\"grammar-target\">didn't</strong>.\"</li> </ul> <p> In the following examples, <strong>do</strong> is the main verb in the sentence (<em>did . . . do / didn't do</em>): </p> <ul class=\"example-list\"> <li>What <strong class=\"grammar-target\">did</strong> you <strong class=\"grammar-target\">do</strong> on the weekend? <span class=\"grammar-contrast\">(not What did you on the weekend?)</span></li> <li>I <strong class=\"grammar-target\">didn't do</strong> anything. <span class=\"grammar-contrast\">(not I didn't anything)</span></li> </ul>"
+    },
+    {
+      "letter": "D",
+      "html": "<p>The past of <strong class=\"rule-highlight\">be (am / is / are)</strong> is <strong class=\"rule-highlight\">was / were</strong>:</p> <table class=\"grammar-table\"> <tbody> <tr><td>I / he / she / it</td><td>was / wasn't</td></tr> <tr><td>we / you / they</td><td>were / weren't</td></tr> </tbody> </table> <table class=\"grammar-table\"> <tbody> <tr><td>was</td><td>I / he / she / it?</td></tr> <tr><td>were</td><td>we / you / they?</td></tr> </tbody> </table> <p>Note that we do not use <strong>did</strong> in negatives and questions with <strong>was / were</strong>:</p> <ul class=\"example-list\"> <li>I <strong class=\"grammar-target\">was</strong> angry because they <strong class=\"grammar-target\">were</strong> late.</li> <li><strong class=\"grammar-target\">Was</strong> the weather good when you <strong class=\"grammar-target\">were</strong> on vacation?</li> <li>They <strong class=\"grammar-target\">weren't</strong> able to come because they <strong class=\"grammar-target\">were</strong> so busy.</li> <li><strong class=\"grammar-target\">Did</strong> you go out last night, or <strong class=\"grammar-target\">were</strong> you too tired?</li> </ul>"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "5.1",
+      "instruction": "Read what Debbie says about a typical working day:",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "example",
+                "text": "She got up at 7:00."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "She "
+              },
+              {
+                "type": "blank",
+                "id": "5.1-2-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " a big breakfast."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "had",
+            "blanks": [
+              [
+                "had"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "She "
+              },
+              {
+                "type": "blank",
+                "id": "5.1-3-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "walked to work",
+            "blanks": [
+              [
+                "walked to work"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "It "
+              },
+              {
+                "type": "blank",
+                "id": "5.1-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " to get to work."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "took her (about) half an hour",
+            "blanks": [
+              [
+                "took her (about) half an hour"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.1-5-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " at 8:45."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "She started work",
+            "blanks": [
+              [
+                "She started work"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.1-6-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " lunch."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "She didn’t have / She didn’t eat (She did not have/eat)",
+            "blanks": [
+              [
+                "She didn’t have",
+                "She didn’t eat",
+                "She did not have",
+                "She did not eat"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.1-7-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " at 5:00."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "She finished work",
+            "blanks": [
+              [
+                "She finished work"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "8.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.1-8-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " tired when "
+              },
+              {
+                "type": "blank",
+                "id": "5.1-8-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " home."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "She was . . . she got",
+            "blanks": [
+              [
+                "She was"
+              ],
+              [
+                "she got"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "9.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.1-9-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " dinner a little later."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "She cooked",
+            "blanks": [
+              [
+                "She cooked"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "10.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.1-10-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " out last night."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "She didn’t go",
+            "blanks": [
+              [
+                "She didn’t go"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "11.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.1-11-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " at 11:00."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "She went to bed",
+            "blanks": [
+              [
+                "She went to bed"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "12.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.1-12-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " well last night."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "She slept",
+            "blanks": [
+              [
+                "She slept"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ],
+      "passage": "<div class=\"example-box\"> <p> \"I usually get up at 7:00 and have a big breakfast. I walk to work, which takes me about half an hour. I start work at 8:45. I never have lunch. I finish work at 5:00. I'm always tired when I get home. I usually cook dinner a little later. I don't usually go out. I go to bed around 11:00, and I always sleep well.\" </p> </div> <p> Yesterday was a typical working day for Debbie. Write what she did or didn't do yesterday. </p>"
+    },
+    {
+      "id": "5.2",
+      "instruction": "Complete the sentences using the following verbs in the correct form:",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Mozart "
+              },
+              {
+                "type": "example",
+                "text": "wrote"
+              },
+              {
+                "type": "text",
+                "text": " more than 600 pieces of music."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "\"How did you learn to drive?\" \"My father "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-2-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " me.\""
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "taught",
+            "blanks": [
+              [
+                "taught"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "We couldn't afford to keep our car, so we "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-3-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " it."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "sold",
+            "blanks": [
+              [
+                "sold"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Dave "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-4-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " down the stairs this morning and "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-4-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " his leg."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "fell . . . hurt",
+            "blanks": [
+              [
+                "fell"
+              ],
+              [
+                "hurt"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Jim "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-5-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " the ball to Sue, who "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-5-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " it."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "threw . . . caught",
+            "blanks": [
+              [
+                "threw"
+              ],
+              [
+                "caught"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Ann "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-6-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " a lot of money yesterday. She "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-6-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " a dress that "
+              },
+              {
+                "type": "blank",
+                "id": "5.2-6-3",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " $200."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "spent . . . bought . . . cost",
+            "blanks": [
+              [
+                "spent"
+              ],
+              [
+                "bought"
+              ],
+              [
+                "cost"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ],
+      "wordBank": [
+        {
+          "text": "buy",
+          "used": false
+        },
+        {
+          "text": "catch",
+          "used": false
+        },
+        {
+          "text": "cost",
+          "used": false
+        },
+        {
+          "text": "fall",
+          "used": false
+        },
+        {
+          "text": "hurt",
+          "used": false
+        },
+        {
+          "text": "sell",
+          "used": false
+        },
+        {
+          "text": "spend",
+          "used": false
+        },
+        {
+          "text": "teach",
+          "used": false
+        },
+        {
+          "text": "throw",
+          "used": false
+        },
+        {
+          "text": "write",
+          "used": true
+        }
+      ]
+    },
+    {
+      "id": "5.3",
+      "instruction": "You ask James about his vacation. Write your questions.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Where "
+              },
+              {
+                "type": "example",
+                "text": "did you go"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "We went on a trip from San Francisco to Denver."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "How "
+              },
+              {
+                "type": "blank",
+                "id": "5.3-2-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "? By car?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "Yes, we rented a car in San Francisco."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "did you travel / did you go",
+            "blanks": [
+              [
+                "did you travel",
+                "did you go"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "It's a long way to drive. How long "
+              },
+              {
+                "type": "blank",
+                "id": "5.3-3-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "Two weeks."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "did it take (you) / were you there",
+            "blanks": [
+              [
+                "did it take (you)",
+                "were you there"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Where "
+              },
+              {
+                "type": "blank",
+                "id": "5.3-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "? In hotels?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "Yes, small hotels or motels."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "did you stay",
+            "blanks": [
+              [
+                "did you stay"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.3-5-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "It was very hot – sometimes too hot."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "How was the weather?",
+            "blanks": [
+              [
+                "How was the weather?"
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "blank",
+                "id": "5.3-6-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " the Grand Canyon?"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "Of course. It was wonderful."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Did you go to / Did you see / Did you visit",
+            "blanks": [
+              [
+                "Did you go to",
+                "Did you see",
+                "Did you visit"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ],
+      "passage": "Hi. How are things? / Fine, thanks. I've just had a great vacation."
+    },
+    {
+      "id": "5.4",
+      "instruction": "Complete the sentences. Put the verb into the correct form, positive or negative.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "It was warm, so I "
+              },
+              {
+                "type": "example",
+                "text": "took"
+              },
+              {
+                "type": "text",
+                "text": " off my coat. (take)"
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The movie wasn't very good. I "
+              },
+              {
+                "type": "example",
+                "text": "didn't enjoy"
+              },
+              {
+                "type": "text",
+                "text": " it very much. (enjoy)"
+              }
+            ]
+          ]
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I knew Sarah was very busy, so I "
+              },
+              {
+                "type": "blank",
+                "id": "5.4-3-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " her. (disturb)"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "didn’t disturb",
+            "blanks": [
+              [
+                "didn’t disturb"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I was very tired, so I "
+              },
+              {
+                "type": "blank",
+                "id": "5.4-4-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " the party early. (leave)"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "left",
+            "blanks": [
+              [
+                "left"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The bed was very uncomfortable. I "
+              },
+              {
+                "type": "blank",
+                "id": "5.4-5-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " very well. (sleep)"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "didn’t sleep",
+            "blanks": [
+              [
+                "didn’t sleep"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The window was open and a bird "
+              },
+              {
+                "type": "blank",
+                "id": "5.4-6-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " into the room. (fly)"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "flew",
+            "blanks": [
+              [
+                "flew"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The hotel wasn't very expensive. It "
+              },
+              {
+                "type": "blank",
+                "id": "5.4-7-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " very much. (cost)"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "didn’t cost",
+            "blanks": [
+              [
+                "didn’t cost"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "8.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I was in a hurry, so I "
+              },
+              {
+                "type": "blank",
+                "id": "5.4-8-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " time to call you. (have)"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "didn’t have",
+            "blanks": [
+              [
+                "didn’t have"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "9.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "It was hard carrying the bags. They "
+              },
+              {
+                "type": "blank",
+                "id": "5.4-9-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " very heavy. (be)"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "were",
+            "blanks": [
+              [
+                "were"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,973 @@
+{
+  "number": 6,
+  "title": "Past Continuous",
+  "subtitle": "(I was doing)",
+  "block": {
+    "id": 1,
+    "title": "Present and Past",
+    "range": {
+      "from": 1,
+      "to": 6
+    }
+  },
+  "theory": [
+    {
+      "letter": "A",
+      "html": "<p class=\"section-intro\">Study this example situation:</p> <div class=\"example-box\"> <div class=\"example-box-text\"> <p>Yesterday Karen and Jim played tennis. They began at 10:00 and finished at 11:30.</p> <p>So, at 10:30 they <strong class=\"grammar-target\">were playing</strong> tennis.</p> <p><strong class=\"grammar-target\">They were playing</strong> = they were in the middle of playing. They had not finished playing.</p> <p><strong class=\"rule-highlight\">Was / were -ing</strong> is the <em>past continuous</em>:</p> </div> <div class=\"example-box-visual\"> <img src=\"/content/images/unit_006_tennis.png\" alt=\"Karen and Jim playing tennis\"> </div> </div> <table class=\"grammar-table\"> <tbody> <tr> <td>I / he / she / it</td> <td>was</td> <td rowspan=\"2\"> play<strong>ing</strong><br> do<strong>ing</strong><br> work<strong>ing</strong>, etc. </td> </tr> <tr> <td>we / you / they</td> <td>were</td> </tr> </tbody> </table>"
+    },
+    {
+      "letter": "B",
+      "html": "<p><strong class=\"rule-highlight\">I was doing</strong> something = I was in the middle of doing something at a certain time. The action or situation had already started before this time, but had not finished:</p> <img src=\"/content/images/unit_006_timeline.png\" alt=\"Timeline: I was doing\"> <ul class=\"example-list\"> <li>This time last year I <strong class=\"grammar-target\">was living</strong> in Brazil.</li> <li>What <strong class=\"grammar-target\">were</strong> you <strong class=\"grammar-target\">doing</strong> at 10:00 last night?</li> <li>I waved to Helen, but she <strong class=\"grammar-target\">wasn't looking</strong>.</li> </ul>"
+    },
+    {
+      "letter": "C",
+      "html": "<p>Compare the <em>past continuous</em> (<strong class=\"grammar-target\">I was doing</strong>) and <em>simple past</em> (<strong class=\"grammar-target\">I did</strong>):</p> <div class=\"comparison-grid\"> <div class=\"comparison-col\"> <div class=\"comparison-title\">Past continuous (in the middle of an action)</div> <ul class=\"example-list\"> <li>I <strong class=\"grammar-target\">was walking</strong> home when I met Dave.</li> <li>Kate <strong class=\"grammar-target\">was watching</strong> television when we arrived.</li> </ul> </div> <div class=\"comparison-col\"> <div class=\"comparison-title\">Simple past (complete action)</div> <ul class=\"example-list\"> <li>I <strong class=\"grammar-target\">walked</strong> home after the party last night.</li> <li>Kate <strong class=\"grammar-target\">watched</strong> television a lot when she was sick last year.</li> </ul> </div> </div>"
+    },
+    {
+      "letter": "D",
+      "html": "<p>We often use the simple past and the past continuous together to say that something happened in the middle of something else:</p> <ul class=\"example-list\"> <li>Matt <strong class=\"grammar-target\">burned</strong> his hand while he <strong class=\"grammar-target\">was cooking</strong> dinner.</li> <li>It <strong class=\"grammar-target\">was raining</strong> when I <strong class=\"grammar-target\">got</strong> up.</li> <li>I <strong class=\"grammar-target\">saw</strong> you in the park yesterday. You <strong class=\"grammar-target\">were sitting</strong> on the grass and <strong class=\"grammar-target\">reading</strong> a book.</li> <li>I <strong class=\"grammar-target\">hurt</strong> my back while I <strong class=\"grammar-target\">was working</strong> in the garden.</li> </ul> <p>But we use the simple past to say that one thing happened <em>after</em> another:</p> <ul class=\"example-list\"> <li>I <strong class=\"grammar-target\">was walking</strong> downtown when I <strong class=\"grammar-target\">saw</strong> Dave. So I <strong class=\"grammar-target\">stopped</strong>, and we <strong class=\"grammar-target\">talked</strong> for a while.</li> </ul> <p>Compare:</p> <div class=\"comparison-grid\"> <div class=\"comparison-col\"> <p>When Karen arrived, we <strong class=\"grammar-target\">were having</strong> dinner. <span class=\"grammar-contrast\">(= we had already started before she arrived)</span></p> </div> <div class=\"comparison-col\"> <p>When Karen arrived, we <strong class=\"grammar-target\">had</strong> dinner. <span class=\"grammar-contrast\">(= Karen arrived, and then we had dinner together.)</span></p> </div> </div>"
+    },
+    {
+      "letter": "E",
+      "html": "<p>Some verbs (for example, <strong class=\"grammar-target\">know</strong> and <strong class=\"grammar-target\">want</strong>) are not normally used in the continuous (see Unit 4A):</p> <ul class=\"example-list\"> <li>We were good friends. We <strong class=\"grammar-target\">knew</strong> each other well. <span class=\"grammar-contrast\">(not We were knowing)</span></li> <li>I was having a good time at the party, but Chris <strong class=\"grammar-target\">wanted</strong> to go home. <span class=\"grammar-contrast\">(not was wanting)</span></li> </ul>"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "6.1",
+      "instruction": "What were you doing at these times? Write sentences as in the examples. The past continuous is not always necessary (see the second example).",
+      "evaluation": "ai",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(at 8:00 last night) "
+              },
+              {
+                "type": "example",
+                "text": "I was having dinner."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(at 5:00 last Monday) "
+              },
+              {
+                "type": "example",
+                "text": "I was on a bus on my way home."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(at 10:15 yesterday morning) "
+              },
+              {
+                "type": "blank",
+                "id": "6.1-3-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I was working.",
+            "blanks": [
+              [
+                "I was working."
+              ]
+            ],
+            "kind": "open",
+            "needsAi": true,
+            "aiReason": "open answer: the key only lists example answers"
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(at 4:30 this morning) "
+              },
+              {
+                "type": "blank",
+                "id": "6.1-4-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I was in bed asleep. / I was sleeping.",
+            "blanks": [
+              [
+                "I was in bed asleep.",
+                "I was sleeping."
+              ]
+            ],
+            "kind": "open",
+            "needsAi": true,
+            "aiReason": "open answer: the key only lists example answers"
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(at 7:45 last night) "
+              },
+              {
+                "type": "blank",
+                "id": "6.1-5-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I was getting ready to go out.",
+            "blanks": [
+              [
+                "I was getting ready to go out."
+              ]
+            ],
+            "kind": "open",
+            "needsAi": true,
+            "aiReason": "open answer: the key only lists example answers"
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(half an hour ago) "
+              },
+              {
+                "type": "blank",
+                "id": "6.1-6-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I was watching TV at home.",
+            "blanks": [
+              [
+                "I was watching TV at home."
+              ]
+            ],
+            "kind": "open",
+            "needsAi": true,
+            "aiReason": "open answer: the key only lists example answers"
+          }
+        }
+      ],
+      "answerNote": "Example answers:"
+    },
+    {
+      "id": "6.2",
+      "instruction": "Use your own ideas to complete the sentences. Use the past continuous.",
+      "evaluation": "ai",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Matt burned his hand while he "
+              },
+              {
+                "type": "example",
+                "text": "was cooking dinner"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The doorbell rang while I "
+              },
+              {
+                "type": "blank",
+                "id": "6.2-2-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "was taking a shower",
+            "blanks": [
+              [
+                "was taking a shower"
+              ]
+            ],
+            "kind": "open",
+            "needsAi": true,
+            "aiReason": "open answer: the key only lists example answers"
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "We saw an accident while we "
+              },
+              {
+                "type": "blank",
+                "id": "6.2-3-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "were driving to work",
+            "blanks": [
+              [
+                "were driving to work"
+              ]
+            ],
+            "kind": "open",
+            "needsAi": true,
+            "aiReason": "open answer: the key only lists example answers"
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Lauren fell asleep while she "
+              },
+              {
+                "type": "blank",
+                "id": "6.2-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "was reading the paper",
+            "blanks": [
+              [
+                "was reading the paper"
+              ]
+            ],
+            "kind": "open",
+            "needsAi": true,
+            "aiReason": "open answer: the key only lists example answers"
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "The television was on, but nobody "
+              },
+              {
+                "type": "blank",
+                "id": "6.2-5-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": "."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "was watching it",
+            "blanks": [
+              [
+                "was watching it"
+              ]
+            ],
+            "kind": "open",
+            "needsAi": true,
+            "aiReason": "open answer: the key only lists example answers"
+          }
+        }
+      ],
+      "answerNote": "Example answers:"
+    },
+    {
+      "id": "6.3",
+      "instruction": "Put the verb into the correct form, past continuous or simple past.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I "
+              },
+              {
+                "type": "example",
+                "text": "saw"
+              },
+              {
+                "type": "text",
+                "text": " (see) Sue in town yesterday, but she "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-1-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (not / see) me. She "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-1-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (look) the other way."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "didn’t see . . . was looking",
+            "blanks": [
+              [
+                "didn’t see"
+              ],
+              [
+                "was looking"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-2-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (meet) Tom and Jane at the airport a few weeks ago. They "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-2-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (go) to Boston and I "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-2-3",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (go) to Montreal. We "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-2-4",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (talk) while we "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-2-5",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (wait) for our flights."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "met . . . were going . . . was going . . . talked . . . were waiting or waited",
+            "blanks": [
+              [
+                "met"
+              ],
+              [
+                "were going"
+              ],
+              [
+                "was going"
+              ],
+              [
+                "talked"
+              ],
+              [
+                "were waiting",
+                "waited"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-3-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (ride) my bicycle yesterday when a man "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-3-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (step) out into the street in front of me. I "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-3-3",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (go) pretty fast, but luckily I "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-3-4",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (manage) to stop in time and "
+              },
+              {
+                "type": "blank",
+                "id": "6.3-3-5",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (not / hit) him."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "was riding . . . stepped . . . was going . . . managed . . . didn’t hit",
+            "blanks": [
+              [
+                "was riding"
+              ],
+              [
+                "stepped"
+              ],
+              [
+                "was going"
+              ],
+              [
+                "managed"
+              ],
+              [
+                "didn’t hit"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "6.4",
+      "instruction": "Put the verb into the correct form, past continuous or simple past.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Jane "
+              },
+              {
+                "type": "example",
+                "text": "was waiting"
+              },
+              {
+                "type": "text",
+                "text": " (wait) for me when I "
+              },
+              {
+                "type": "example",
+                "text": "arrived"
+              },
+              {
+                "type": "text",
+                "text": " (arrive)."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "\"What "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-2-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (you / do) at this time yesterday?\" \"I was asleep.\""
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "were you doing",
+            "blanks": [
+              [
+                "were you doing"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "\""
+              },
+              {
+                "type": "blank",
+                "id": "6.4-3-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (you / go) out last night?\" \"No, I was too tired.\""
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Did you go",
+            "blanks": [
+              [
+                "Did you go"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "How fast "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (you / drive) when the accident "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-4-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (happen)?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "were you driving . . . happened",
+            "blanks": [
+              [
+                "were you driving"
+              ],
+              [
+                "happened"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Sam "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-5-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (take) a picture of me while I "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-5-2",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (not / look)."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "took . . . wasn’t looking",
+            "blanks": [
+              [
+                "took"
+              ],
+              [
+                "wasn’t looking"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "We were in a very difficult position. We "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-6-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (not / know) what to do."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "didn’t know",
+            "blanks": [
+              [
+                "didn’t know"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I haven't seen David for ages. The last time I "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-7-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (see) him, he "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-7-2",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (try) to find a job in Miami."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "saw . . . was trying",
+            "blanks": [
+              [
+                "saw"
+              ],
+              [
+                "was trying"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "8.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-8-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (walk) along the street when suddenly I "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-8-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (hear) footsteps behind me. Somebody "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-8-3",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (follow) me. I was scared and I "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-8-4",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (start) to run."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "was walking . . . heard . . . was following . . . started",
+            "blanks": [
+              [
+                "was walking"
+              ],
+              [
+                "heard"
+              ],
+              [
+                "was following"
+              ],
+              [
+                "started"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "9.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "When I was young, I "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-9-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (want) to be a pilot."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "wanted",
+            "blanks": [
+              [
+                "wanted"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "10.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Last night I "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-10-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (drop) a plate while I "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-10-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (do) the dishes. Fortunately it "
+              },
+              {
+                "type": "blank",
+                "id": "6.4-10-3",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " (not / break)."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "dropped . . . was doing . . . didn’t break",
+            "blanks": [
+              [
+                "dropped"
+              ],
+              [
+                "was doing"
+              ],
+              [
+                "didn’t break"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ]
+    }
+  ]
+}

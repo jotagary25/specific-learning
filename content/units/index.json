@@ -1,0 +1,100 @@
+{
+  "units": [
+    {
+      "number": 1,
+      "title": "Present Continuous",
+      "subtitle": "(I am doing)",
+      "block": {
+        "id": 1,
+        "title": "Present and Past",
+        "range": {
+          "from": 1,
+          "to": 6
+        }
+      },
+      "file": "unit-001.json",
+      "exerciseCount": 4,
+      "itemCount": 24
+    },
+    {
+      "number": 2,
+      "title": "Simple Present",
+      "subtitle": "(I do)",
+      "block": {
+        "id": 1,
+        "title": "Present and Past",
+        "range": {
+          "from": 1,
+          "to": 6
+        }
+      },
+      "file": "unit-002.json",
+      "exerciseCount": 5,
+      "itemCount": 35
+    },
+    {
+      "number": 3,
+      "title": "Present Continuous and Simple Present 1",
+      "subtitle": "(I am doing and I do)",
+      "block": {
+        "id": 1,
+        "title": "Present and Past",
+        "range": {
+          "from": 1,
+          "to": 6
+        }
+      },
+      "file": "unit-003.json",
+      "exerciseCount": 3,
+      "itemCount": 32
+    },
+    {
+      "number": 4,
+      "title": "Present Continuous and Simple Present 2",
+      "subtitle": "(I am doing and I do)",
+      "block": {
+        "id": 1,
+        "title": "Present and Past",
+        "range": {
+          "from": 1,
+          "to": 6
+        }
+      },
+      "file": "unit-004.json",
+      "exerciseCount": 4,
+      "itemCount": 26
+    },
+    {
+      "number": 5,
+      "title": "Simple Past",
+      "subtitle": "(I did)",
+      "block": {
+        "id": 1,
+        "title": "Present and Past",
+        "range": {
+          "from": 1,
+          "to": 6
+        }
+      },
+      "file": "unit-005.json",
+      "exerciseCount": 4,
+      "itemCount": 33
+    },
+    {
+      "number": 6,
+      "title": "Past Continuous",
+      "subtitle": "(I was doing)",
+      "block": {
+        "id": 1,
+        "title": "Present and Past",
+        "range": {
+          "from": 1,
+          "to": 6
+        }
+      },
+      "file": "unit-006.json",
+      "exerciseCount": 4,
+      "itemCount": 24
+    }
+  ]
+}

@@ -1,0 +1,864 @@
+{
+  "number": 4,
+  "title": "Present Continuous and Simple Present 2",
+  "subtitle": "(I am doing and I do)",
+  "block": {
+    "id": 1,
+    "title": "Present and Past",
+    "range": {
+      "from": 1,
+      "to": 6
+    }
+  },
+  "theory": [
+    {
+      "letter": "A",
+      "html": "<p>We use continuous forms for actions and happenings that have started but not finished (they <strong class=\"grammar-target\">are eating</strong> / it <strong class=\"grammar-target\">is raining</strong>, etc.). Some verbs (for example, <strong class=\"grammar-target\">know</strong> and <strong class=\"grammar-target\">like</strong>) are not normally used in this way. We do not say \"I am knowing\" or \"they are liking\"; we say I <strong class=\"grammar-target\">know</strong>, they <strong class=\"grammar-target\">like</strong>.</p> <p>The following verbs are not normally used in the present continuous:</p> likelovehatewantneedprefer knowrealizesupposemeanunderstandbelieve rememberbelongfitcontainconsistseem <ul class=\"example-list\"> <li>I'm hungry. I <strong class=\"grammar-target\">want</strong> something to eat. <span class=\"grammar-contrast\">(not I'm wanting)</span></li> <li>Do you <strong class=\"grammar-target\">understand</strong> what I <strong class=\"grammar-target\">mean</strong>?</li> <li>Ann <strong class=\"grammar-target\">doesn't seem</strong> very happy.</li> </ul>"
+    },
+    {
+      "letter": "B",
+      "html": "<p><strong class=\"rule-highlight\">Think</strong></p> <p>When <strong class=\"grammar-target\">think</strong> means \"believe\" or \"have an opinion,\" we do not use the continuous:</p> <ul class=\"example-list\"> <li>I <strong class=\"grammar-target\">think</strong> Mary is Canadian, but I'm not sure. <span class=\"grammar-contrast\">(not I'm thinking)</span></li> <li>What do you <strong class=\"grammar-target\">think</strong> about my plan? <span class=\"grammar-contrast\">(= What is your opinion?)</span></li> </ul> <p>When <strong class=\"grammar-target\">think</strong> means \"consider,\" the continuous is possible:</p> <ul class=\"example-list\"> <li>I'<strong class=\"grammar-target\">m thinking</strong> about what happened. I often <strong class=\"grammar-target\">think</strong> about it.</li> <li>Nicky <strong class=\"grammar-target\">is thinking</strong> of quitting her job. <span class=\"grammar-contrast\">(= she is considering it)</span></li> </ul>"
+    },
+    {
+      "letter": "C",
+      "html": "<p><strong class=\"rule-highlight\">He is selfish</strong> and <strong class=\"rule-highlight\">He is being selfish</strong></p> <p><strong class=\"grammar-target\">He's being</strong> = He's behaving / He's acting. Compare:</p> <ul class=\"example-list\"> <li>I can't understand why he'<strong class=\"grammar-target\">s being</strong> so selfish. He isn't usually like that.<br> <span class=\"grammar-contrast\">(<strong>being</strong> selfish = behaving selfishly at the moment)</span></li> <li>He never thinks about other people. He <strong class=\"grammar-target\">is</strong> very selfish. <span class=\"grammar-contrast\">(not He is being)</span><br> <span class=\"grammar-contrast\">(= He is selfish generally, not only at the moment)</span></li> </ul> <p>We use am / is / are <strong class=\"grammar-target\">being</strong> to say how somebody is <em>behaving</em>. It is not usually possible in other sentences:</p> <ul class=\"example-list\"> <li>It'<strong class=\"grammar-target\">s</strong> hot today. <span class=\"grammar-contrast\">(not It's being hot)</span></li> <li>Sarah <strong class=\"grammar-target\">is</strong> very tired. <span class=\"grammar-contrast\">(not is being tired)</span></li> </ul>"
+    },
+    {
+      "letter": "D",
+      "html": "<p><strong class=\"rule-highlight\">See hear smell taste</strong></p> <p>We normally use the simple present (not continuous) with these verbs:</p> <ul class=\"example-list\"> <li>Do you <strong class=\"grammar-target\">see</strong> that man over there? <span class=\"grammar-contrast\">(not Are you seeing)</span></li> <li>This room <strong class=\"grammar-target\">smells</strong>. Let's open a window.</li> </ul> <p>We often use <strong class=\"grammar-target\">can + see / hear / smell / taste</strong>:</p> <ul class=\"example-list\"> <li>I <strong class=\"grammar-target\">can hear</strong> a strange noise. <strong class=\"grammar-target\">Can</strong> you <strong class=\"grammar-target\">hear</strong> it?</li> </ul>"
+    },
+    {
+      "letter": "E",
+      "html": "<p><strong class=\"rule-highlight\">Look feel</strong></p> <p>You can use the simple present or continuous to say how somebody looks or feels now:</p> <ul class=\"example-list\"> <li>You <strong class=\"grammar-target\">look</strong> good today. <em>or</em> You'<strong class=\"grammar-target\">re looking</strong> good today.</li> <li>How do you <strong class=\"grammar-target\">feel</strong> now? <em>or</em> How are you <strong class=\"grammar-target\">feeling</strong> now?</li> </ul> <p><em>but</em></p> <ul class=\"example-list\"> <li>I usually <strong class=\"grammar-target\">feel</strong> tired in the morning. <span class=\"grammar-contrast\">(not I'm usually feeling)</span></li> </ul>"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "4.1",
+      "instruction": "Are the underlined verbs right or wrong? Correct them where necessary.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Nicky "
+              },
+              {
+                "type": "underline",
+                "text": "is thinking"
+              },
+              {
+                "type": "text",
+                "text": " of giving up her job. "
+              },
+              {
+                "type": "example",
+                "text": "OK"
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "underline",
+                "text": "Are"
+              },
+              {
+                "type": "text",
+                "text": " you "
+              },
+              {
+                "type": "underline",
+                "text": "believing"
+              },
+              {
+                "type": "text",
+                "text": " in God? "
+              },
+              {
+                "type": "blank",
+                "id": "4.1-2-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Do you believe",
+            "blanks": [
+              [
+                "Do you believe"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "underline",
+                "text": "I'm feeling"
+              },
+              {
+                "type": "text",
+                "text": " hungry. Is there anything to eat? "
+              },
+              {
+                "type": "blank",
+                "id": "4.1-3-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "OK",
+            "blanks": [
+              [
+                "OK"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "This sauce is great. "
+              },
+              {
+                "type": "underline",
+                "text": "It's tasting"
+              },
+              {
+                "type": "text",
+                "text": " really good. "
+              },
+              {
+                "type": "blank",
+                "id": "4.1-4-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "It tastes",
+            "blanks": [
+              [
+                "It tastes"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "underline",
+                "text": "I'm thinking"
+              },
+              {
+                "type": "text",
+                "text": " this is your key. Is it? "
+              },
+              {
+                "type": "blank",
+                "id": "4.1-5-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "I think",
+            "blanks": [
+              [
+                "I think"
+              ]
+            ],
+            "kind": "ok-or-fix",
+            "needsAi": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "4.2",
+      "instruction": "Use the words in parentheses to make sentences. (You should also study Unit 3 before you do this exercise.)",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(you / not / seem / very happy today)"
+              }
+            ],
+            [
+              {
+                "type": "example",
+                "text": "You don't seem very happy today."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(what / you / do?) "
+              },
+              {
+                "type": "blank",
+                "id": "4.2-2-1",
+                "size": "long"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "Be quiet! (I / think) "
+              },
+              {
+                "type": "blank",
+                "id": "4.2-2-2",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "What are you doing? I’m thinking.",
+            "blanks": [
+              [
+                "What are you doing? I’m thinking."
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": true,
+            "aiReason": "answer has 1 part for 2 blanks"
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(who / this umbrella / belong to?) "
+              },
+              {
+                "type": "blank",
+                "id": "4.2-3-1",
+                "size": "long"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "I have no idea."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Who does this umbrella belong to?",
+            "blanks": [
+              [
+                "Who does this umbrella belong to?"
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "(dinner / smell / good) "
+              },
+              {
+                "type": "blank",
+                "id": "4.2-4-1",
+                "size": "long"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Dinner smells good.",
+            "blanks": [
+              [
+                "Dinner smells good."
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Excuse me. (anybody / sit / there?) "
+              },
+              {
+                "type": "blank",
+                "id": "4.2-5-1",
+                "size": "long"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "No, go ahead."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Is anybody sitting there?",
+            "blanks": [
+              [
+                "Is anybody sitting there?"
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Ladies Gloves: (these gloves / not / fit / me) "
+              },
+              {
+                "type": "blank",
+                "id": "4.2-6-1",
+                "size": "long"
+              }
+            ],
+            [
+              {
+                "type": "text",
+                "text": "They're too small."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "These gloves don’t fit me.",
+            "blanks": [
+              [
+                "These gloves don’t fit me."
+              ]
+            ],
+            "kind": "sentence",
+            "needsAi": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "4.3",
+      "instruction": "Put the verb into the correct form, present continuous or simple present.",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Are you hungry? "
+              },
+              {
+                "type": "example",
+                "text": "Do you want"
+              },
+              {
+                "type": "text",
+                "text": " (you / want) something to eat?"
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Don't put the dictionary away. I "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-2-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (use) it."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’m using",
+            "blanks": [
+              [
+                "’m using"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Don't put the dictionary away. I "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-3-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (need) it."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "need",
+            "blanks": [
+              [
+                "need"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Who is that man? What "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-4-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (he / want)?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "does he want",
+            "blanks": [
+              [
+                "does he want"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Who is that man? Why "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-5-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (he / look) at us?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "is he looking",
+            "blanks": [
+              [
+                "is he looking"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "6.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Alan says he's 80 years old, but nobody "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-6-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (believe) him."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "believes",
+            "blanks": [
+              [
+                "believes"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "7.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "She told me her name, but I "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-7-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (not / remember) it now."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "don’t remember or can’t remember",
+            "blanks": [
+              [
+                "don’t remember",
+                "can’t remember"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "8.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-8-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (think) of selling my car. Are you interested in buying it?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’m thinking",
+            "blanks": [
+              [
+                "’m thinking"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "9.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-9-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (think) you should sell your car. You "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-9-2",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (not / use) it very often."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "think . . . don’t use",
+            "blanks": [
+              [
+                "think"
+              ],
+              [
+                "don’t use"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "10.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Air "
+              },
+              {
+                "type": "blank",
+                "id": "4.3-10-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " (consist) mainly of nitrogen and oxygen."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "consists",
+            "blanks": [
+              [
+                "consists"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "4.4",
+      "instruction": "Complete the sentences using the most appropriate form of be, simple present (am/is/are) or present continuous (am/is/are being).",
+      "evaluation": "auto",
+      "items": [
+        {
+          "num": "1.",
+          "isExample": true,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "I can't understand why "
+              },
+              {
+                "type": "example",
+                "text": "he's being"
+              },
+              {
+                "type": "text",
+                "text": " so selfish. He isn't usually like that."
+              }
+            ]
+          ]
+        },
+        {
+          "num": "2.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Sarah "
+              },
+              {
+                "type": "blank",
+                "id": "4.4-2-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " very nice to me these days. I wonder why."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "is being",
+            "blanks": [
+              [
+                "is being"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "3.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "You'll like Debbie when you meet her. She "
+              },
+              {
+                "type": "blank",
+                "id": "4.4-3-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " very nice."
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "’s",
+            "blanks": [
+              [
+                "’s"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "4.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "You're usually very patient, so why "
+              },
+              {
+                "type": "blank",
+                "id": "4.4-4-1",
+                "size": "long"
+              },
+              {
+                "type": "text",
+                "text": " unreasonable about waiting 10 more minutes?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "are you being",
+            "blanks": [
+              [
+                "are you being"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        },
+        {
+          "num": "5.",
+          "isExample": false,
+          "lines": [
+            [
+              {
+                "type": "text",
+                "text": "Why isn't Steve at work today? "
+              },
+              {
+                "type": "blank",
+                "id": "4.4-5-1",
+                "size": "short"
+              },
+              {
+                "type": "text",
+                "text": " sick?"
+              }
+            ]
+          ],
+          "answer": {
+            "raw": "Is he",
+            "blanks": [
+              [
+                "Is he"
+              ]
+            ],
+            "kind": "blanks",
+            "needsAi": false
+          }
+        }
+      ]
+    }
+  ]
+}
