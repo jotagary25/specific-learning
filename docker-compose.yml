@@ -1,0 +1,82 @@
+# Local development stack: postgres + api (tsx watch) + web (vite dev server).
+# Usage: cp .env.example .env && docker compose up -d
+name: english-course
+
+x-node-dev: &node-dev
+  image: node:24
+  working_dir: /app
+  env_file: .env
+  environment: &node-env
+    CI: "true"
+    COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    COREPACK_HOME: /corepack
+  volumes:
+    - .:/app
+    # Container-owned node_modules so host and container installs never clash.
+    - node_modules:/app/node_modules
+    - api_node_modules:/app/apps/api/node_modules
+    - web_node_modules:/app/apps/web/node_modules
+    - shared_node_modules:/app/packages/shared/node_modules
+    - pnpm_store:/pnpm/store
+    - corepack:/corepack
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      # postgres 18+ keeps versioned data under /var/lib/postgresql/<major>/docker.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot dependency install shared by api and web.
+  deps:
+    <<: *node-dev
+    command: corepack pnpm install --frozen-lockfile --store-dir /pnpm/store
+
+  api:
+    <<: *node-dev
+    command: corepack pnpm --filter @english-course/api dev
+    environment:
+      <<: *node-env
+      PORT: ${PORT:-3000}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    depends_on:
+      db:
+        condition: service_healthy
+      deps:
+        condition: service_completed_successfully
+
+  web:
+    <<: *node-dev
+    command: corepack pnpm --filter @english-course/web dev
+    environment:
+      <<: *node-env
+      API_URL: http://api:${PORT:-3000}
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_started
+      deps:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  node_modules:
+  api_node_modules:
+  web_node_modules:
+  shared_node_modules:
+  pnpm_store:
+  corepack:

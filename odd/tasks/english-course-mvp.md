@@ -44,7 +44,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | ID | Task | Route | Trigger evidence | Status | Commit |
 |----|------|-------|------------------|--------|--------|
 | T01 | Methodology doc + product spec | delegated (fork writer) | 2 non-trivial docs needing conversation context | [x] | see Progress |
-| T02 | Monorepo scaffold, Docker, Postgres, health check | delegated writer | 2+ non-trivial files | [ ] | |
+| T02 | Monorepo scaffold, Docker, Postgres, health check | delegated writer | 2+ non-trivial files | [x] | see evidence |
 | T03 | Book importer (units 1–6 → content JSON + DB seed) | delegated writer | preparation reading of HTML + multi-file | [ ] | |
 | T04 | Answer checker domain (normalization, variants) TDD | delegated writer | multi-file + tests | [ ] | |
 | T05 | DB schema + migrations (all features) | delegated writer | multi-file | [ ] | |
@@ -68,8 +68,9 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 ## Verification evidence
 
-_(per task)_
+- T01 (`47ab8cf`): structural readback of headings; `wc -l` 117/400. RDD assess: `passive` (non_executable_only), review not due; reviewed boundary → `47ab8cf`.
+- T02: api 2/2 + web 1/1 tests (RED observed first), typecheck + lint clean, compose up → `/api/health` db ok, web 200; parent spot check `pnpm -r test` passed. Notes: api runs TS directly on Node 24 (no build), pnpm 11 `allowBuilds`, jsdom 29 pinned (Node 24.12), postgres:18 volume at /var/lib/postgresql. Migrations-on-start deferred to T05.
 
 ## Next step
 
-T02 — monorepo scaffold.
+T03 — book importer.
