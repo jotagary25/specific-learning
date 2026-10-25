@@ -9,7 +9,9 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "test:db": "node --env-file-if-exists=../../.env src/shared/db/test-db.ts",
+    "db:seed": "node --env-file-if-exists=../../.env src/shared/db/seed/cli.ts"
   },
   "dependencies": {
     "@english-course/shared": "workspace:*",

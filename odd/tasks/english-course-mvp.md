@@ -47,7 +47,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T02 | Monorepo scaffold, Docker, Postgres, health check | delegated writer | 2+ non-trivial files | [x] | see evidence |
 | T03 | Book importer (units 1–6 → content JSON + DB seed) | delegated writer | preparation reading of HTML + multi-file | [x] | see evidence |
 | T04 | Answer checker domain (normalization, variants) TDD | delegated writer | multi-file + tests | [x] | see evidence |
-| T05 | DB schema + migrations (all features) | delegated writer | multi-file | [ ] | |
+| T05 | DB schema + migrations (all features) | delegated writer | multi-file | [x] | see evidence |
 | T06 | LLM port + Ollama adapter + settings (key, model, effort) | delegated writer | multi-file | [ ] | |
 | T07 | System prompts per AI function | delegated writer | multi-file | [ ] | |
 | T08 | Authored content: block 1 serial story, puzzles, ES contrast notes, analogies | delegated writer | content files | [ ] | |
@@ -73,6 +73,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 - T03 (`fda28ef`): importer `packages/book-importer`, schemas in `packages/shared/src/content`. Units 1–6 → 24 exercises, 174 items (146 graded), 10 needsAi (3.3#3 wildcard, 4.2#2 one key part for 2 blanks, 6.1/6.2 open), 9 images. Tests 40/40 (RED first), typecheck/lint clean; parent spot check of unit-001 JSON (1.1#2 alternatives, 1.3 dialogue blanks). ~20 later units fail validation (deferred until added). Spec §9 updated to actual paths. RDD assess: review_due false (`under_budget`), slice still pending since `47ab8cf`.
 - T04: pure checker in `packages/shared/src/units` (normalize, contraction canonicalization driven by key first, wildcard, "almost" = apostrophe slip or OSA distance 1 on ≥5 chars excluding function words/-s/-d endings/vowel swaps; needsAi items checked deterministically first). Shared tests 126/126 (RED first); sweep over all key alternatives in units 1–6: 0 failures. Parent spot check: shared tests 126/126. Known limitation: bought/brought-type real-word drops count as almost.
 
+- T05: 22+ tables in `apps/api/src/shared/db/schema/` (by feature; `study_session` instead of `session`, extra `block`, theory as jsonb sections), migration `drizzle/0000_init.sql`, migrate + idempotent seed on api start, `/content/images/*` static route; parent added `/content` vite proxy. Tests: api 15 (+5 DB integration passed against compose db via `test:db`), all suites green, lint clean; compose: seed 6 units/24 exercises/174 items, restart writes 0 rows. Pending for user: add `CONTENT_DIR` (optional) and `DATABASE_URL_TEST` to `.env.example` (writes to `.env*` blocked by permissions).
+
 ## Next step
 
-T05 — DB schema + migrations + seed.
+T06 — LLM port + Ollama adapter + settings.

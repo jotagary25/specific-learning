@@ -1,10 +1,10 @@
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "./schema.ts";
+import * as schema from "./schema/index.ts";
 
 export function createDb(databaseUrl: string) {
-  const client = postgres(databaseUrl, { connect_timeout: 5 });
+  const client = postgres(databaseUrl, { connect_timeout: 5, onnotice: () => {} });
   const db = drizzle({ client, schema });
 
   return {

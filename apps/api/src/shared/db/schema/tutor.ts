@@ -1,0 +1,35 @@
+import { sql } from "drizzle-orm";
+import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+
+/** Where the tutor was opened from (screen, unit, item, article span, writing error). */
+export type TutorContext = Record<string, unknown>;
+
+/** A doubt the learner (or the tutor's `add_doubt` tool) parked for later. */
+export const doubt = pgTable("doubt", {
+  id: uuid("id").primaryKey().default(sql`uuidv7()`),
+  context: jsonb("context").$type<TutorContext>().notNull().default({}),
+  text: text("text").notNull(),
+  resolved: boolean("resolved").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const tutorConversation = pgTable("tutor_conversation", {
+  id: uuid("id").primaryKey().default(sql`uuidv7()`),
+  context: jsonb("context").$type<TutorContext>().notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const tutorMessage = pgTable(
+  "tutor_message",
+  {
+    id: uuid("id").primaryKey().default(sql`uuidv7()`),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => tutorConversation.id, { onDelete: "cascade" }),
+    role: text("role").$type<"system" | "user" | "assistant" | "tool">().notNull(),
+    content: text("content").notNull(),
+    toolCalls: jsonb("tool_calls").$type<Record<string, unknown>[]>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("tutor_message_conversation_id_created_at_idx").on(t.conversationId, t.createdAt)],
+);
