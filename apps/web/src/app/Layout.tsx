@@ -1,10 +1,20 @@
-import { Outlet } from "react-router";
+import { NavLink, Outlet } from "react-router";
 import styles from "./Layout.module.css";
 
 export function Layout() {
   return (
     <div className={styles.shell}>
-      <header className={styles.header}>English Course</header>
+      <header className={styles.header}>
+        <span className={styles.brand}>English Course</span>
+        <nav aria-label="Main" className={styles.nav}>
+          <NavLink to="/" end className={styles.link}>
+            Home
+          </NavLink>
+          <NavLink to="/settings" className={styles.link}>
+            Settings
+          </NavLink>
+        </nav>
+      </header>
       <main className={styles.main}>
         <Outlet />
       </main>

@@ -10,6 +10,15 @@ const EnvSchema = z.object({
     .string()
     .regex(/^[0-9a-fA-F]{64}$/, "APP_SECRET must be 32 bytes encoded as 64 hex chars"),
   OLLAMA_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  OLLAMA_BASE_URL: z.preprocess(emptyToUndefined, z.url().default("https://ollama.com")),
+  /** Session cookie `Secure` flag: `auto` = Secure unless the request host is local. */
+  COOKIE_SECURE: z.preprocess(
+    emptyToUndefined,
+    z
+      .enum(["auto", "true", "false"])
+      .default("auto")
+      .transform((value) => (value === "auto" ? value : value === "true")),
+  ),
 });
 
 export type Config = z.infer<typeof EnvSchema>;

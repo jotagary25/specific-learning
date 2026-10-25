@@ -1,10 +1,15 @@
 import { serve } from "@hono/node-server";
+import { getConnInfo } from "@hono/node-server/conninfo";
 import { createApp } from "./app.ts";
+import { createAuth } from "./auth/auth.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
+import { createSettings } from "./settings/settings.service.ts";
+import { createDrizzleSettingsStore } from "./settings/settings.store.ts";
 import { loadConfig } from "./shared/config.ts";
 import { createDb } from "./shared/db/client.ts";
 import { runMigrations } from "./shared/db/migrate.ts";
 import { formatSeedResult, seed } from "./shared/db/seed/index.ts";
+import { createOllamaClient } from "./shared/llm/ollama.ts";
 
 const config = loadConfig();
 const contentDir = resolveContentDir();
@@ -19,7 +24,26 @@ try {
   process.exit(1);
 }
 
-const app = createApp({ pingDb: database.ping, contentDir });
+const auth = createAuth({
+  password: config.APP_PASSWORD,
+  appSecret: config.APP_SECRET,
+  cookieSecure: config.COOKIE_SECURE,
+  clientKey: (c) => {
+    try {
+      return getConnInfo(c).remote.address ?? "unknown";
+    } catch {
+      return "unknown";
+    }
+  },
+});
+const settings = createSettings({
+  store: createDrizzleSettingsStore(database.db),
+  appSecret: config.APP_SECRET,
+  envApiKey: config.OLLAMA_API_KEY,
+  createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
+});
+
+const app = createApp({ pingDb: database.ping, contentDir, auth, settings });
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`api listening on http://localhost:${info.port}`);

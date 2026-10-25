@@ -10,6 +10,32 @@
   background: var(--color-primary);
   color: var(--color-on-primary);
   font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.brand {
+  font-weight: 600;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.link {
+  color: inherit;
+  font-weight: 400;
+  text-decoration: none;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid transparent;
+}
+
+.link:global(.active) {
+  border-bottom-color: currentColor;
 }
 
 .main {

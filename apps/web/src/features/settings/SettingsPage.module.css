@@ -1,0 +1,180 @@
+.page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.heading {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.warning {
+  margin: 0;
+  color: var(--color-down);
+}
+
+.message {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.keyForm {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.input,
+.select {
+  font: inherit;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-muted);
+  border-radius: 0.5rem;
+  background: var(--color-bg);
+  color: inherit;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.primary,
+.secondary {
+  font: inherit;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.secondary {
+  border: 1px solid var(--color-primary);
+  background: transparent;
+  color: inherit;
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Mobile first: each table row is a card with labelled fields. */
+.table,
+.table tbody {
+  display: block;
+  width: 100%;
+}
+
+.table thead {
+  display: none;
+}
+
+.row {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-muted) 40%, transparent);
+}
+
+.fnCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.cell {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.cellLabel {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.tier {
+  font-size: 0.75rem;
+  font-weight: 400;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-muted);
+  color: var(--color-muted);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (min-width: 48rem) {
+  .table {
+    display: table;
+    border-collapse: collapse;
+  }
+
+  .table tbody {
+    display: table-row-group;
+  }
+
+  .table thead {
+    display: table-header-group;
+    text-align: left;
+  }
+
+  .row {
+    display: table-row;
+  }
+
+  .fnCell,
+  .cell {
+    display: table-cell;
+    padding: 0.5rem 0.5rem 0.5rem 0;
+    vertical-align: middle;
+  }
+
+  .cellLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

@@ -48,7 +48,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T03 | Book importer (units 1–6 → content JSON + DB seed) | delegated writer | preparation reading of HTML + multi-file | [x] | see evidence |
 | T04 | Answer checker domain (normalization, variants) TDD | delegated writer | multi-file + tests | [x] | see evidence |
 | T05 | DB schema + migrations (all features) | delegated writer | multi-file | [x] | see evidence |
-| T06 | LLM port + Ollama adapter + settings (key, model, effort) | delegated writer | multi-file | [ ] | |
+| T06 | LLM port + Ollama adapter + settings (key, model, effort) | delegated writer | multi-file | [x] | see evidence |
 | T07 | System prompts per AI function | delegated writer | multi-file | [ ] | |
 | T08 | Authored content: block 1 serial story, puzzles, ES contrast notes, analogies | delegated writer | content files | [ ] | |
 | T09 | Units UI: list, unit flow, exercises, hints, timeline drag, completion | delegated writer | multi-file | [ ] | |
@@ -75,6 +75,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T05: 22+ tables in `apps/api/src/shared/db/schema/` (by feature; `study_session` instead of `session`, extra `block`, theory as jsonb sections), migration `drizzle/0000_init.sql`, migrate + idempotent seed on api start, `/content/images/*` static route; parent added `/content` vite proxy. Tests: api 15 (+5 DB integration passed against compose db via `test:db`), all suites green, lint clean; compose: seed 6 units/24 exercises/174 items, restart writes 0 rows. Pending for user: add `CONTENT_DIR` (optional) and `DATABASE_URL_TEST` to `.env.example` (writes to `.env*` blocked by permissions).
 
+- T06: single-user auth (signed httpOnly cookie, rate-limited login), LLM port + Ollama native adapter (stream, chatJson with zod + 1 retry, tools, /api/tags, /api/show thinking), AES-256-GCM key storage (env fallback), per-function model/effort settings + Settings/Login UI. Defaults: fast `gemma4:31b` (low; select_article medium), quality `deepseek-v4-pro` (medium; review_writing high). Tests: api 81 (+5 db skipped), web 7, all green; compose: 401 unauthenticated, login 200 + cookie, key endpoint exposes last4 only. Parent spot check: api tests 81 passed. Pending for user: `.env.example` additions `OLLAMA_BASE_URL`, `COOKIE_SECURE`; set Ollama key in Settings.
+
 ## Next step
 
-T06 — LLM port + Ollama adapter + settings.
+T07 — system prompts per AI function.
