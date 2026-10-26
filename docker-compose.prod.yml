@@ -1,7 +1,6 @@
-# Production stack: one `app` container (api + built web) against PostgreSQL 18.
+# Production stack: one `app` container (api + built web) against your PostgreSQL 18
+# (DATABASE_URL in `.env`).
 #   docker compose -f docker-compose.prod.yml up -d --build
-# No PostgreSQL server yet? Enable the bundled one and point DATABASE_URL at host `db`:
-#   docker compose -f docker-compose.prod.yml --profile with-db up -d --build
 # Settings come from `.env`; see README "Environment variables".
 
 services:
@@ -21,29 +20,3 @@ services:
     extra_hosts:
       # Lets DATABASE_URL use host.docker.internal for a PostgreSQL installed on the host.
       - "host.docker.internal:host-gateway"
-    depends_on:
-      db:
-        condition: service_healthy
-        required: false
-
-  db:
-    image: postgres:18
-    profiles: [with-db]
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-english}
-      # Required with this profile: the postgres image refuses to start without it.
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
-      POSTGRES_DB: ${POSTGRES_DB:-english_course}
-      TZ: UTC
-    volumes:
-      # postgres 18 keeps versioned data under /var/lib/postgresql/<major>/docker.
-      - pgdata:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-volumes:
-  pgdata:

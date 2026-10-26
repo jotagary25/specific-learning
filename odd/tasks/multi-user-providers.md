@@ -59,6 +59,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L17 (user): "no debe haber un compose para dokploy, debe ser uno para producción, el punto es que dokploy no necesita nada especial para funcionar, despliega cualquier cosa." → S6 final: one generic production compose (`docker-compose.prod.yml`: published `${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}`, `env_file: .env`, TZ UTC, `extra_hosts`, optional `with-db`), nothing Dokploy-specific; README "Production deployment" is generic with a 3-line Dokploy note.
 
+- L18 (user): "te fui claro que cuando despliego en producción lo hago en mi propia database, que parte no entiendes?" → bundled `db` service, `with-db` profile, `pgdata` volume and `depends_on` removed from `docker-compose.prod.yml`; README production/backup/env rows updated (POSTGRES_* are dev only).
+
 ## Next step
 
 Feature complete. User: update `.env.example`; push/PR/merge are user decisions.

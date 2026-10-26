@@ -83,7 +83,7 @@ invalid. Empty values count as unset.
 | `WEB_DIST_DIR` | no | unset (`/app/apps/web/dist` in the image) | When set, the api also serves the built web app with SPA fallback. Leave unset in development. |
 | `DATABASE_URL_TEST` | no | `DATABASE_URL` with `_test` appended to the db name | Database for `pnpm --filter @english-course/api test:db` (created if missing; name must end in `_test`). |
 | `API_URL` | no | `http://localhost:3000` | Dev only: where the Vite dev server proxies `/api` and `/content` (`http://api:3000` in compose). |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | dev; prod `with-db` | prod: `english` / — / `english_course` | Credentials for the bundled `postgres:18` service. Keep them in sync with `DATABASE_URL`. |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | dev only | — | Credentials of the local development `postgres:18` service (`docker-compose.yml`). Production uses your own database via `DATABASE_URL`. |
 
 ## AI providers
 
@@ -150,8 +150,6 @@ The user must own the database: the app creates its tables on start. In `DATABAS
   make PostgreSQL listen on the Docker bridge (`listen_addresses`) and allow the Docker subnet in
   `pg_hba.conf`, e.g. `host english_course english_course 172.16.0.0/12 scram-sha-256`.
 - **PostgreSQL in another container or service**: its hostname on a shared Docker network.
-- **No PostgreSQL server**: enable the profile `with-db` (bundled `postgres:18`, volume `pgdata`,
-  not published), set `POSTGRES_PASSWORD` and use host `db`.
 
 ### 2. Environment and start
 
@@ -197,11 +195,7 @@ support, install on the phone) requires HTTPS.
 ### Backups
 
 ```sh
-# External database
 pg_dump -Fc "$DATABASE_URL" > english-course-$(date +%F).dump
-# Bundled database (with-db profile)
-docker compose -f docker-compose.prod.yml exec -T db \
-  pg_dump -U english -Fc english_course > english-course-$(date +%F).dump
 # Restore into an empty database
 pg_restore --no-owner -d "$DATABASE_URL" english-course-YYYY-MM-DD.dump
 ```
