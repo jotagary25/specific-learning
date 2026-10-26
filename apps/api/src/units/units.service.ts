@@ -32,10 +32,17 @@ import type {
   UnitsStore,
 } from "./units.store.ts";
 
+/** Port to the vocabulary feature: turns an item the learner keeps missing into an SRS card. */
+export type MissedItemCards = {
+  createCardFromMissedItem(itemId: string): Promise<unknown>;
+};
+
 export type UnitsDeps = {
   store: UnitsStore;
   /** AI model resolution; without it every AI path degrades to "ai-unavailable". */
   ai?: Pick<Settings, "getLlmForFunction">;
+  /** Optional: without it missed items create no SRS card. */
+  missedItems?: MissedItemCards;
 };
 
 export class UnitsError extends Error {
@@ -77,6 +84,31 @@ export function completionFor(
       };
     });
   return unitCompletion(outcomes);
+}
+
+/** An item counts as missed on its 3rd incorrect attempt… */
+export const MISSED_AFTER_INCORRECT = 3;
+/** …or on an incorrect attempt made after the learner saw this hint level. */
+export const MISSED_AFTER_HINT_LEVEL = 3;
+
+function missedAt(own: readonly AttemptRecord[], index: number): boolean {
+  const current = own[index];
+  if (current?.result.status !== "incorrect") return false;
+  const before = own.slice(0, index);
+  const incorrect = before.filter((a) => a.result.status === "incorrect").length + 1;
+  const hintSeen = Math.max(0, ...before.map((a) => a.hintLevel));
+  return incorrect >= MISSED_AFTER_INCORRECT || hintSeen >= MISSED_AFTER_HINT_LEVEL;
+}
+
+/**
+ * True when the latest of an item's attempts (oldest first) is the first one that makes the item
+ * "missed": still incorrect after hint level 3 was shown, or the 3rd incorrect attempt. Hint levels
+ * are stored on the attempt that was latest when the hint was shown, so they count for later ones.
+ */
+export function isNewlyMissed(own: readonly AttemptRecord[]): boolean {
+  const last = own.length - 1;
+  if (!missedAt(own, last)) return false;
+  return !own.slice(0, last).some((_, index) => missedAt(own, index));
 }
 
 function hasGradedAttempt(attempts: readonly AttemptRecord[]): boolean {
@@ -212,10 +244,17 @@ export function createUnits(deps: UnitsDeps) {
         const own = attempts.filter((a) => a.itemId === item.id);
         const latest = own.at(-1);
         if (latest) {
+          const { feedbackEs, hintEs } = latest.feedback ?? {};
           progressItems.push({
             itemId: item.id,
             attempts: own.length,
-            latest: { inputs: latest.inputs, result: latest.result, method: latest.method },
+            latest: {
+              inputs: latest.inputs,
+              result: latest.result,
+              method: latest.method,
+              ...(feedbackEs ? { feedbackEs } : {}),
+              ...(hintEs ? { hintEs } : {}),
+            },
           });
         }
       }
@@ -229,7 +268,7 @@ export function createUnits(deps: UnitsDeps) {
         extras,
         story: c.chapter
           ? {
-              title: null,
+              title: c.chapter.storyTitle,
               chapter: {
                 id: c.chapter.id,
                 position: c.chapter.position,
@@ -304,10 +343,22 @@ export function createUnits(deps: UnitsDeps) {
 
       const before = await store.listAttempts(unitNumber);
       const attemptNo = before.filter((a) => a.itemId === itemId).length + 1;
-      await store.insertAttempt({ itemId, inputs, result, method, attemptNo });
+      const feedback =
+        feedbackEs || hintEs
+          ? { ...(feedbackEs ? { feedbackEs } : {}), ...(hintEs ? { hintEs } : {}) }
+          : null;
+      await store.insertAttempt({ itemId, inputs, result, method, attemptNo, feedback });
       await store.markInProgress(unitNumber);
 
       const attempts = await store.listAttempts(unitNumber);
+      if (deps.missedItems && isNewlyMissed(attempts.filter((a) => a.itemId === itemId))) {
+        try {
+          await deps.missedItems.createCardFromMissedItem(itemId);
+        } catch (cardError) {
+          // A missing card must never fail the learner's attempt.
+          console.warn(`units: missed-item card for ${itemId} failed`, cardError);
+        }
+      }
       const completion = completionFor(c.items, attempts);
       const canDoEs = c.unit.extras?.canDoEs ?? [];
       const unitCompleted =
@@ -339,6 +390,8 @@ export function createUnits(deps: UnitsDeps) {
       const { item, answer, exercise } = gradedItem(c, itemId);
       const own = (await store.listAttempts(unitNumber)).filter((a) => a.itemId === itemId);
       const level = hintLevelFor(Math.max(own.length, shown + 1));
+      // Stored on the item's latest attempt; it makes a later wrong attempt count as "missed".
+      await store.recordHintLevel(itemId, level);
       const ai = await runAi("hint_exercise", {
         unit: unitRef(c.unit),
         theorySummary: theorySummary(c.unit),
@@ -388,14 +441,17 @@ export function createUnits(deps: UnitsDeps) {
         previousExplanations: context.previousExplanations,
         wantsProgrammerAnalogy: context.wantsProgrammerAnalogy,
       });
-      await store.insertDoubt(context.question ?? task, {
-        screen: "unit",
-        unitId: c.unit.id,
-        step: context.step,
-        itemId: context.itemId,
-        timelineItemId: context.timelineItemId,
-        explanationEs: explanation?.explanationEs,
-      });
+      await store.insertDoubt(
+        context.question ?? task,
+        {
+          screen: "unit",
+          unitId: c.unit.id,
+          step: context.step,
+          itemId: context.itemId,
+          timelineItemId: context.timelineItemId,
+        },
+        explanation?.explanationEs ?? null,
+      );
       if (!explanation) {
         throw new UnitsError("ai-unavailable", "The AI tutor is unavailable right now");
       }

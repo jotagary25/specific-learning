@@ -26,6 +26,8 @@ export const writingMission = pgTable("writing_mission", {
   targetUnitId: integer("target_unit_id").references(() => unit.id, { onDelete: "set null" }),
   status: text("status").$type<WritingMissionStatus>().notNull().default("pending"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  /** Last learner work on the mission (draft saved, text submitted, status change). */
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 /**

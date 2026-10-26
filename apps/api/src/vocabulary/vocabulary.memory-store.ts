@@ -6,7 +6,7 @@ import type { CardRecord, MissedItem, VocabularyStore } from "./vocabulary.store
 
 export type MemoryVocabularyStore = VocabularyStore & {
   cards: CardRecord[];
-  reviews: Array<{ cardId: string; rating: number; reviewedAt: Date }>;
+  reviews: Array<{ cardId: string; rating: number; reviewedAt: Date; answer: string | null }>;
   items: MissedItem[];
   events: Array<{ type: string; payload: Record<string, unknown> }>;
 };
@@ -18,7 +18,7 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
   const reviews: MemoryVocabularyStore["reviews"] = [];
   const items: MissedItem[] = [];
   const events: MemoryVocabularyStore["events"] = [];
-  const active = (c: CardRecord) => !c.state.suspended;
+  const active = (c: CardRecord) => !c.suspended;
   const dueAt = (now: Date) =>
     cards
       .filter((c) => active(c) && !isNew(c.state) && c.due.getTime() <= now.getTime())
@@ -54,6 +54,7 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
       const last = cards.at(-1)?.createdAt.getTime() ?? 0;
       const card: CardRecord = {
         ...clone(value),
+        suspended: false,
         id: randomUUID(),
         createdAt: new Date(Math.max(Date.now(), last + 1)),
       };
@@ -109,12 +110,17 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
         .map((r) => new Date(r.reviewedAt));
     },
 
-    async recordReview(id, rating, next, reviewedAt) {
+    async recordReview(id, rating, next, reviewedAt, answer) {
       const card = cards.find((c) => c.id === id);
       if (!card) return undefined;
       card.state = clone(next.state);
       card.due = new Date(next.due);
-      reviews.push({ cardId: id, rating, reviewedAt: new Date(reviewedAt) });
+      reviews.push({
+        cardId: id,
+        rating,
+        reviewedAt: new Date(reviewedAt),
+        answer: answer ?? null,
+      });
       return clone(card);
     },
 

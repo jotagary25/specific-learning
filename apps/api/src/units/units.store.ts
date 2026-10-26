@@ -8,9 +8,10 @@ import type {
   UnitExtras,
   WordBankEntry,
 } from "@english-course/shared";
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "../shared/db/client.ts";
 import {
+  type AttemptFeedback,
   attempt,
   block,
   canDo,
@@ -66,6 +67,8 @@ export type ChapterRecord = {
   blockId: number;
   unitId: number | null;
   position: number;
+  /** Title of the serial story; null for rows seeded before T18. */
+  storyTitle: string | null;
   title: string;
   body: string;
   grammarSpans: GrammarSpan[];
@@ -89,12 +92,16 @@ export type AttemptRecord = {
   result: ItemCheckResult;
   method: "deterministic" | "ai";
   attemptNo: number;
+  /** AI feedback returned with the attempt; null for deterministic checks. */
+  feedback: AttemptFeedback | null;
+  /** Highest hint level shown while this was the item's latest attempt (0 = none). */
+  hintLevel: number;
   createdAt: Date;
 };
 
 export type ItemRef = { id: string; unitId: number; isExample: boolean };
 
-export type NewAttempt = Omit<AttemptRecord, "createdAt" | "unitId">;
+export type NewAttempt = Omit<AttemptRecord, "createdAt" | "unitId" | "hintLevel">;
 
 export type UnitContent = {
   unit: UnitRecord;
@@ -115,6 +122,11 @@ export interface UnitsStore {
   /** Attempts in creation order; all units when `unitId` is omitted. */
   listAttempts(unitId?: number): Promise<AttemptRecord[]>;
   insertAttempt(value: NewAttempt): Promise<void>;
+  /**
+   * Raises `hint_level` of the item's latest attempt to `level` (never lowers it). Returns false
+   * when the item has no attempt yet: hints before the first attempt are not stored.
+   */
+  recordHintLevel(itemId: string, level: number): Promise<boolean>;
   /** `new` → `in_progress`; other states are kept. */
   markInProgress(unitId: number): Promise<void>;
   /**
@@ -126,7 +138,11 @@ export interface UnitsStore {
     payload: Record<string, unknown>,
     canDoEs: string[],
   ): Promise<boolean>;
-  insertDoubt(text: string, context: Record<string, unknown>): Promise<void>;
+  insertDoubt(
+    text: string,
+    context: Record<string, unknown>,
+    explanation: string | null,
+  ): Promise<void>;
 }
 
 type TimelineShape = { expected: TimelineExpected; tolerance: number; explanationEs: string };
@@ -232,6 +248,8 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
           result: attempt.result,
           method: attempt.method,
           attemptNo: attempt.attemptNo,
+          feedback: attempt.feedback,
+          hintLevel: attempt.hintLevel,
           createdAt: attempt.createdAt,
         })
         .from(attempt)
@@ -252,7 +270,23 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
         score: value.result.score,
         method: value.method,
         attemptNo: value.attemptNo,
+        feedback: value.feedback,
       });
+    },
+
+    async recordHintLevel(itemId, level) {
+      const latest = db
+        .select({ id: attempt.id })
+        .from(attempt)
+        .where(eq(attempt.itemId, itemId))
+        .orderBy(desc(attempt.createdAt), desc(attempt.id))
+        .limit(1);
+      const rows = await db
+        .update(attempt)
+        .set({ hintLevel: sql`greatest(${attempt.hintLevel}, ${level})` })
+        .where(inArray(attempt.id, latest))
+        .returning({ id: attempt.id });
+      return rows.length > 0;
     },
 
     async markInProgress(unitId) {
@@ -280,8 +314,8 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
       });
     },
 
-    async insertDoubt(text, context) {
-      await db.insert(doubt).values({ text, context });
+    async insertDoubt(text, context, explanation) {
+      await db.insert(doubt).values({ text, context, explanation });
     },
   };
 }

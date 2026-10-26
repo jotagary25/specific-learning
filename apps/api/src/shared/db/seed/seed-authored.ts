@@ -34,7 +34,16 @@ export async function seedAuthored(db: Db, content: AuthoredContent): Promise<Au
           target: storyChapter.id,
           ...updateContent(
             storyChapter,
-            ["blockId", "unitId", "position", "title", "body", "grammarSpans", "teaser"],
+            [
+              "blockId",
+              "unitId",
+              "position",
+              "storyTitle",
+              "title",
+              "body",
+              "grammarSpans",
+              "teaser",
+            ],
             { touchUpdatedAt: false },
           ),
         })

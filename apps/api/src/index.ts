@@ -12,6 +12,7 @@ import { createEditor } from "./reading/editor.ts";
 import { createReading } from "./reading/reading.service.ts";
 import { createDrizzleReadingStore } from "./reading/reading.store.ts";
 import { startEditorScheduler } from "./reading/scheduler.ts";
+import { createPreferences } from "./settings/preferences.ts";
 import { createSettings } from "./settings/settings.service.ts";
 import { createDrizzleSettingsStore } from "./settings/settings.store.ts";
 import { loadConfig } from "./shared/config.ts";
@@ -66,7 +67,19 @@ const settings = createSettings({
   createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
 });
 
-const units = createUnits({ store: createDrizzleUnitsStore(database.db), ai: settings });
+const preferences = createPreferences(settingsStore);
+
+const vocabularyStore = createDrizzleVocabularyStore(database.db);
+const vocabulary = createVocabulary({
+  store: vocabularyStore,
+  settings: settingsStore,
+});
+
+const units = createUnits({
+  store: createDrizzleUnitsStore(database.db),
+  ai: settings,
+  missedItems: vocabulary,
+});
 
 const readingStore = createDrizzleReadingStore(database.db);
 const editor = createEditor({
@@ -90,12 +103,6 @@ const scheduler = config.EDITOR_ENABLED
       hasArticle: async (date) => (await readingStore.getArticleForDate(date)) !== undefined,
     })
   : undefined;
-
-const vocabularyStore = createDrizzleVocabularyStore(database.db);
-const vocabulary = createVocabulary({
-  store: vocabularyStore,
-  settings: settingsStore,
-});
 
 const writing = createWriting({
   store: createDrizzleWritingStore(database.db),
@@ -144,6 +151,7 @@ const app = createApp({
   contentDir,
   auth,
   settings,
+  preferences,
   units,
   reading,
   vocabulary,

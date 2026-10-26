@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMature, isNew, parseState, phaseOf, review, scheduleNew } from "./srs.ts";
+import { isMature, isNew, parseState, phaseOf, review, scheduleNew, storedState } from "./srs.ts";
 
 const NOW = new Date("2026-10-25T13:00:00.000Z");
 const MINUTE = 60_000;
@@ -48,10 +48,18 @@ describe("srs", () => {
     expect(again.due.getTime()).toBeGreaterThan(first.due.getTime());
   });
 
-  it("keeps the suspended flag across reviews and ignores junk state", () => {
-    expect(review({ suspended: true }, 3, NOW).state.suspended).toBe(true);
+  it("reads null, legacy {} and junk as a new card and drops a legacy suspended flag", () => {
     expect(parseState(null)).toEqual({});
+    expect(parseState({})).toEqual({});
     expect(parseState({ foo: 1 })).toEqual({});
     expect(isNew(parseState({ suspended: true }))).toBe(true);
+    const scheduled = JSON.parse(JSON.stringify(review({}, 3, NOW).state));
+    expect(parseState({ ...scheduled, suspended: true })).not.toHaveProperty("suspended");
+  });
+
+  it("stores a new card as null and a scheduled one as its FSRS fields", () => {
+    expect(storedState({})).toBeNull();
+    const next = review({}, 3, NOW).state;
+    expect(storedState(next)).toEqual(next);
   });
 });

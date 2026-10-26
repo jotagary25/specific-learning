@@ -1,14 +1,14 @@
-import type {
-  CanDoEntry,
-  CanDoListResponse,
+import {
+  type CanDoEntry,
+  type CanDoListResponse,
   CanDoSource,
-  ErrorsResponse,
-  MirrorDueResponse,
-  MirrorReflection,
-  MirrorResponse,
-  MirrorSeenResponse,
-  ProgressSummary,
-  TimelineResponse,
+  type ErrorsResponse,
+  type MirrorDueResponse,
+  type MirrorReflection,
+  type MirrorResponse,
+  type MirrorSeenResponse,
+  type ProgressSummary,
+  type TimelineResponse,
 } from "@english-course/shared";
 import {
   buildTimeline,
@@ -47,7 +47,7 @@ export type ProgressDeps = { store: ProgressStore; now?: () => Date };
 const canDoView = (c: CanDoRecord): CanDoEntry => ({
   id: c.id,
   text: c.text,
-  source: (c.source === "suggested" ? "suggested" : "learner") satisfies CanDoSource,
+  source: CanDoSource.safeParse(c.source).data ?? "learner",
   createdAt: c.createdAt.toISOString(),
 });
 

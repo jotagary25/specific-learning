@@ -82,6 +82,9 @@ export const ItemProgress = z.object({
     inputs: z.array(z.string()),
     result: ItemCheckResult,
     method: AttemptMethod,
+    /** AI feedback (Spanish) stored with the attempt, so it survives a reload. */
+    feedbackEs: z.string().optional(),
+    hintEs: z.string().optional(),
   }),
 });
 export type ItemProgress = z.infer<typeof ItemProgress>;

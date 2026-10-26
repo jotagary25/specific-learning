@@ -1,4 +1,5 @@
-// Pure FSRS scheduling around ts-fsrs. The card state is stored as JSON in `srs_card.state`.
+// Pure FSRS scheduling around ts-fsrs. The card state is stored as JSON in `srs_card.state`
+// (`null` = new card); suspension has its own `srs_card.suspended` column.
 import type { CardPhase, SrsRating } from "@english-course/shared";
 import { type Card, createEmptyCard, fsrs, type Grade, State } from "ts-fsrs";
 import { z } from "zod";
@@ -18,24 +19,26 @@ const ScheduledFields = z.object({
 });
 type ScheduledFields = z.infer<typeof ScheduledFields>;
 
-/**
- * Stored state: `{}` (or only flags) = new, never reviewed; otherwise the FSRS card fields.
- * `suspended` lives here until the schema has its own column (T18).
- */
-export type SrsState = Partial<ScheduledFields> & { suspended?: boolean };
+/** In-memory state: `{}` = new, never reviewed; otherwise the FSRS card fields. */
+export type SrsState = Partial<ScheduledFields>;
 
 const scheduler = fsrs({ enable_fuzz: true });
 
 /** Intervals of at least this many days count as "mature" (Anki's convention). */
 export const MATURE_DAYS = 21;
 
-/** Lenient read of a jsonb value: unknown or partial shapes become a new card. */
+/**
+ * Lenient read of the stored jsonb: `null`, the legacy `{}` placeholder and unknown or partial
+ * shapes become a new card; a legacy `suspended` key inside the state is ignored.
+ */
 export function parseState(value: unknown): SrsState {
-  const record = typeof value === "object" && value !== null ? value : {};
-  const suspended = (record as { suspended?: unknown }).suspended === true;
-  const flags = suspended ? { suspended } : {};
-  const scheduled = ScheduledFields.safeParse(record);
-  return scheduled.success ? { ...scheduled.data, ...flags } : flags;
+  const scheduled = ScheduledFields.safeParse(value);
+  return scheduled.success ? scheduled.data : {};
+}
+
+/** What `srs_card.state` stores: `null` for a new card, else the FSRS fields. */
+export function storedState(state: SrsState): SrsState | null {
+  return isNew(state) ? null : state;
 }
 
 export const isNew = (state: SrsState): boolean => state.state === undefined;
@@ -83,20 +86,17 @@ function toCard(state: SrsState, now: Date): Card {
   };
 }
 
-const keepFlags = (state: SrsState): Pick<SrsState, "suspended"> =>
-  state.suspended ? { suspended: true } : {};
-
 /** A card that has never been reviewed: empty state, due now. */
 export function scheduleNew(now: Date): { state: SrsState; due: Date } {
   return { state: {}, due: now };
 }
 
-/** Applies one rating; returns the next state (flags kept) and its due date. */
+/** Applies one rating; returns the next state and its due date. */
 export function review(
   state: SrsState,
   rating: SrsRating,
   now: Date,
 ): { state: SrsState; due: Date } {
   const { card } = scheduler.next(toCard(state, now), now, rating as Grade);
-  return { state: { ...serialize(card), ...keepFlags(state) }, due: card.due };
+  return { state: serialize(card), due: card.due };
 }

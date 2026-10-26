@@ -3,13 +3,21 @@ import { useState } from "react";
 import styles from "./Units.module.css";
 import { highlightBody } from "./units.model.ts";
 
-export function StoryStep({ chapter }: { chapter: StoryChapterView }) {
+export function StoryStep({
+  chapter,
+  storyTitle,
+}: {
+  chapter: StoryChapterView;
+  storyTitle?: string | null;
+}) {
   const [note, setNote] = useState<GrammarSpan | null>(null);
   const paragraphs = highlightBody(chapter.body, chapter.grammarSpans);
 
   return (
     <article className={styles.card} aria-labelledby="story-title">
-      <p className={styles.eyebrow}>Chapter {chapter.position}</p>
+      <p className={styles.eyebrow}>
+        {storyTitle ? `${storyTitle} · ` : ""}Chapter {chapter.position}
+      </p>
       <h2 id="story-title" className={styles.heading}>
         {chapter.title}
       </h2>

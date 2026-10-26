@@ -109,7 +109,7 @@ export function cardView(card: CardRecord): CardView {
     back: card.back,
     phase: phaseOf(card.state),
     due: card.due.toISOString(),
-    suspended: card.state.suspended === true,
+    suspended: card.suspended,
     reps: card.state.reps ?? 0,
     lapses: card.state.lapses ?? 0,
     createdAt: card.createdAt.toISOString(),

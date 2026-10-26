@@ -25,6 +25,8 @@ const reviewWriting: AiFunctionConfig = {
 
 function settingsApi() {
   const puts: unknown[] = [];
+  const preferencePuts: unknown[] = [];
+  let preferences = { "today.writingDay": 6, "srs.newPerDay": 5 };
   const fetchMock = mockApi({
     "GET /api/auth/me": () => Response.json({ authenticated: true }),
     "GET /api/settings/ai-key": () =>
@@ -50,12 +52,18 @@ function settingsApi() {
       }),
     "GET /api/settings/models/deepseek-v4-pro/capabilities": () =>
       Response.json({ model: "deepseek-v4-pro", capabilities: ["completion"], thinking: null }),
+    "GET /api/settings/preferences": () => Response.json(preferences),
+    "PUT /api/settings/preferences": ({ body }) => {
+      preferencePuts.push(body);
+      preferences = { ...preferences, ...(body as object) };
+      return Response.json(preferences);
+    },
     "PUT /api/settings/ai-functions/check_answer": ({ body }) => {
       puts.push(body);
       return Response.json({ ...checkAnswer, ...(body as object), isDefault: false });
     },
   });
-  return { fetchMock, puts };
+  return { fetchMock, puts, preferencePuts };
 }
 
 describe("SettingsPage", () => {
@@ -125,5 +133,44 @@ describe("SettingsPage", () => {
         "high",
       ]),
     );
+  });
+
+  it("saves the writing day and the new cards per day", async () => {
+    const { preferencePuts } = settingsApi();
+    renderAt("/settings");
+
+    const day = (await screen.findByLabelText("Writing day")) as HTMLSelectElement;
+    expect(day.value).toBe("6");
+    expect([...day.options].map((o) => o.textContent)).toEqual([
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ]);
+    const perDay = screen.getByLabelText("New cards per day") as HTMLInputElement;
+    expect(perDay.value).toBe("5");
+
+    fireEvent.change(day, { target: { value: "3" } });
+    fireEvent.change(perDay, { target: { value: "8" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save preferences" }));
+
+    expect(await screen.findByText("Preferences saved.")).toBeTruthy();
+    expect(preferencePuts).toEqual([{ "today.writingDay": 3, "srs.newPerDay": 8 }]);
+  });
+
+  it("does not save an empty or fractional number of new cards", async () => {
+    const { preferencePuts } = settingsApi();
+    renderAt("/settings");
+
+    const perDay = (await screen.findByLabelText("New cards per day")) as HTMLInputElement;
+    const saveButton = screen.getByRole("button", { name: "Save preferences" });
+    fireEvent.change(perDay, { target: { value: "" } });
+    expect((saveButton as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(perDay, { target: { value: "2.5" } });
+    expect((saveButton as HTMLButtonElement).disabled).toBe(true);
+    expect(preferencePuts).toEqual([]);
   });
 });

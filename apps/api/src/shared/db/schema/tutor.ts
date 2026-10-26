@@ -9,6 +9,8 @@ export const doubt = pgTable("doubt", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),
   context: jsonb("context").$type<TutorContext>().notNull().default({}),
   text: text("text").notNull(),
+  /** Tutor explanation shown for the doubt, when there was one. */
+  explanation: text("explanation"),
   resolved: boolean("resolved").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
@@ -29,6 +31,8 @@ export const tutorMessage = pgTable(
     role: text("role").$type<"system" | "user" | "assistant" | "tool">().notNull(),
     content: text("content").notNull(),
     toolCalls: jsonb("tool_calls").$type<Record<string, unknown>[]>(),
+    /** Tool that produced a `tool` message; null for other roles. */
+    toolName: text("tool_name"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("tutor_message_conversation_id_created_at_idx").on(t.conversationId, t.createdAt)],

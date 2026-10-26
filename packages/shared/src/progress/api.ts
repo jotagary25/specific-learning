@@ -223,7 +223,8 @@ export type ReflectionRequest = z.infer<typeof ReflectionRequest>;
 
 // --- Can-do log ----------------------------------------------------------------------------
 
-export const CanDoSource = z.enum(["learner", "suggested"]);
+/** `mirror`: written from the monthly mirror (stored source widened in T18). */
+export const CanDoSource = z.enum(["learner", "suggested", "mirror"]);
 export type CanDoSource = z.infer<typeof CanDoSource>;
 
 export const CanDoEntry = z.object({

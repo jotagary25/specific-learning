@@ -46,14 +46,19 @@ const VERDICT_TEXT: Record<Verdict, string> = {
 function VerdictBox({
   result,
   response,
+  saved,
   local,
 }: {
   result: ItemCheckResult;
   response?: AttemptResponse;
+  /** The stored latest attempt, used for its AI feedback after a reload. */
+  saved?: ItemProgress["latest"];
   local: boolean;
 }) {
   const verdict = verdictOf(result);
   const unavailable = response?.error === "ai-unavailable";
+  const feedbackEs = response ? response.feedbackEs : saved?.feedbackEs;
+  const hintEs = response ? response.hintEs : saved?.hintEs;
   return (
     <div className={styles.verdict} data-verdict={verdict} role="status">
       <p className={styles.verdictText}>
@@ -71,10 +76,10 @@ function VerdictBox({
           : VERDICT_TEXT[verdict]}
         {local ? <span className={styles.muted}> (checking with the server…)</span> : null}
       </p>
-      {response?.feedbackEs ? <p lang="es">{response.feedbackEs}</p> : null}
-      {response?.hintEs ? (
+      {feedbackEs ? <p lang="es">{feedbackEs}</p> : null}
+      {hintEs ? (
         <p lang="es" className={styles.muted}>
-          Pista: {response.hintEs}
+          Pista: {hintEs}
         </p>
       ) : null}
     </div>
@@ -237,7 +242,12 @@ export function ExerciseItem({
         </div>
 
         {shown ? (
-          <VerdictBox result={shown} response={response} local={localResult !== undefined} />
+          <VerdictBox
+            result={shown}
+            response={response}
+            saved={localResult ? undefined : progress?.latest}
+            local={localResult !== undefined}
+          />
         ) : null}
         {submit.isError ? <p className={styles.error}>{submit.error.message}</p> : null}
         {hints.length > 0 ? (

@@ -96,7 +96,14 @@ export const exerciseItem = pgTable(
   (t) => [index("exercise_item_exercise_id_position_idx").on(t.exerciseId, t.position)],
 );
 
-/** One learner answer to an exercise item. */
+/** AI feedback stored with an attempt (Spanish texts from `check_answer`). */
+export type AttemptFeedback = { feedbackEs?: string; hintEs?: string };
+
+/**
+ * One learner answer to an exercise item. `hint_level` is the highest graduated hint (1–3) the
+ * learner saw while this was the item's latest attempt (0 = none); hints asked before the first
+ * attempt are not stored.
+ */
 export const attempt = pgTable(
   "attempt",
   {
@@ -111,6 +118,8 @@ export const attempt = pgTable(
     score: real("score").notNull(),
     method: text("method").$type<"deterministic" | "ai">().notNull(),
     attemptNo: smallint("attempt_no").notNull(),
+    feedback: jsonb("feedback").$type<AttemptFeedback>(),
+    hintLevel: smallint("hint_level").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("attempt_item_id_created_at_idx").on(t.itemId, t.createdAt)],
@@ -141,6 +150,8 @@ export const storyChapter = pgTable(
       .references(() => block.id, { onDelete: "cascade" }),
     unitId: integer("unit_id").references(() => unit.id, { onDelete: "set null" }),
     position: integer("position").notNull(),
+    /** Title of the serial story the chapter belongs to (authored `story.title`). */
+    storyTitle: text("story_title"),
     title: text("title").notNull(),
     body: text("body").notNull(),
     grammarSpans: jsonb("grammar_spans").$type<Record<string, unknown>[]>().notNull().default([]),

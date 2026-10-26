@@ -30,6 +30,8 @@ export function createMemoryTodayStore(): MemoryTodayStore {
         id: randomUUID(),
         endedAt: null,
         bonusMin: 0,
+        blocksDone: null,
+        endReason: null,
       };
       sessions.push(record);
       return clone(record);
@@ -56,6 +58,8 @@ export function createMemoryTodayStore(): MemoryTodayStore {
       if (!found || found.endedAt !== null) return undefined;
       found.endedAt = end.endedAt;
       found.bonusMin = end.bonusMin;
+      found.blocksDone = end.blocksDone;
+      found.endReason = end.endReason;
       if (ev) events.push(clone(ev));
       return clone(found);
     },

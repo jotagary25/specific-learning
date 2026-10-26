@@ -24,7 +24,11 @@ export type TutorToolDeps = {
    * tutor writes new-card rows through the vocabulary store port (same shape as reading's cards).
    */
   wordCards?: Pick<VocabularyStore, "insertCard" | "findCardByRef">;
-  saveDoubt?: (text: string, context: Record<string, unknown>) => Promise<{ id: string }>;
+  saveDoubt?: (
+    text: string,
+    context: Record<string, unknown>,
+    explanation?: string | null,
+  ) => Promise<{ id: string }>;
   now?: () => Date;
 };
 
@@ -315,14 +319,27 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
       define({
         name: "save_doubt",
         description: "Save a doubt the learner wants to revisit later.",
-        args: z.object({ text: z.string().trim().min(1).max(500) }),
+        args: z.object({
+          text: z.string().trim().min(1).max(500),
+          explanation: z
+            .string()
+            .trim()
+            .min(1)
+            .max(2000)
+            .optional()
+            .describe("Short explanation you gave for the doubt, if any"),
+        }),
         label: () => "saved your doubt",
         run: async (a, ctx) => {
-          const saved = await saveDoubt(a.text, {
-            screen: "tutor",
-            conversationId: ctx.conversationId,
-            tutorContext: ctx.context,
-          });
+          const saved = await saveDoubt(
+            a.text,
+            {
+              screen: "tutor",
+              conversationId: ctx.conversationId,
+              tutorContext: ctx.context,
+            },
+            a.explanation ?? null,
+          );
           return { saved: true, id: saved.id };
         },
       }),

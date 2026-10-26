@@ -20,7 +20,7 @@ export type MemoryUnitsStore = UnitsStore & {
   attempts: AttemptRecord[];
   events: Array<{ type: string; payload: Record<string, unknown> }>;
   canDos: Array<{ text: string; source: "learner" | "suggested" }>;
-  doubts: Array<{ text: string; context: Record<string, unknown> }>;
+  doubts: Array<{ text: string; context: Record<string, unknown>; explanation: string | null }>;
 };
 
 export async function createMemoryUnitsStore(
@@ -73,6 +73,7 @@ export async function createMemoryUnitsStore(
     blockId: c.blockId,
     unitId: c.unitId ?? null,
     position: c.position,
+    storyTitle: c.storyTitle ?? null,
     title: c.title,
     body: c.body,
     grammarSpans: c.grammarSpans as ChapterRecord["grammarSpans"],
@@ -127,9 +128,16 @@ export async function createMemoryUnitsStore(
     async insertAttempt(value) {
       store.attempts.push({
         ...structuredClone(value),
+        hintLevel: 0,
         unitId: unitOfItem(value.itemId),
         createdAt: new Date(),
       });
+    },
+    async recordHintLevel(itemId, level) {
+      const latest = store.attempts.filter((a) => a.itemId === itemId).at(-1);
+      if (!latest) return false;
+      latest.hintLevel = Math.max(latest.hintLevel, level);
+      return true;
     },
     async markInProgress(unitId) {
       const record = units.get(unitId);
@@ -144,8 +152,8 @@ export async function createMemoryUnitsStore(
       for (const text of canDoEs) store.canDos.push({ text, source: "suggested" });
       return true;
     },
-    async insertDoubt(text, context) {
-      store.doubts.push({ text, context });
+    async insertDoubt(text, context, explanation) {
+      store.doubts.push({ text, context, explanation });
     },
   };
   return store;

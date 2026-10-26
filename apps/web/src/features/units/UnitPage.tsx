@@ -165,7 +165,9 @@ function UnitFlow({ unit }: { unit: UnitDetail }) {
       </button>
 
       <div className={styles.stepBody}>
-        {step === "story" && unit.story ? <StoryStep chapter={unit.story.chapter} /> : null}
+        {step === "story" && unit.story ? (
+          <StoryStep chapter={unit.story.chapter} storyTitle={unit.story.title} />
+        ) : null}
         {step === "puzzle" && unit.extras ? <PuzzleStep puzzle={unit.extras.puzzle} /> : null}
         {step === "theory" ? <TheoryStep sections={unit.theory} extras={unit.extras} /> : null}
         {step === "timeline" ? (

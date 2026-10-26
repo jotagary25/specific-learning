@@ -133,6 +133,8 @@ export function createToday(deps: TodayDeps) {
         await store.endSession(open.id, {
           endedAt: new Date(Math.min(at.getTime(), planned)),
           bonusMin: open.bonusMin,
+          blocksDone: null,
+          endReason: "superseded",
         });
       }
       const done = (await store.listSessionsSince(startOfLocalDay(at))).filter(
@@ -166,9 +168,10 @@ export function createToday(deps: TodayDeps) {
       }
       const elapsed = Math.round((at.getTime() - found.startedAt.getTime()) / MINUTE);
       const minutes = Math.min(Math.max(0, elapsed), found.budgetMin + bonusMin);
+      const blocksDone = Math.min(request.blocksDone ?? 0, found.plan.blocks.length);
       const ended = await store.endSession(
         id,
-        { endedAt: at, bonusMin },
+        { endedAt: at, bonusMin, blocksDone, endReason: request.reason },
         {
           type: "session_completed",
           payload: {
@@ -177,7 +180,7 @@ export function createToday(deps: TodayDeps) {
             budgetMin: found.budgetMin,
             minutes,
             bonusMinutes: bonusMin,
-            blocksDone: Math.min(request.blocksDone ?? 0, found.plan.blocks.length),
+            blocksDone,
             blocksPlanned: found.plan.blocks.length,
             reason: request.reason,
           },

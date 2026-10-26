@@ -118,6 +118,10 @@ describe("today routes", () => {
     expect(res.status).toBe(200);
     const ended = StudySessionView.parse(await res.json());
     expect(ended.endedAt).not.toBeNull();
+    expect(store.sessions.find((s) => s.id === session.id)).toMatchObject({
+      blocksDone: 2,
+      endReason: "timer",
+    });
     expect(store.events).toEqual([
       {
         type: "session_completed",
@@ -183,9 +187,11 @@ describe("today routes", () => {
     const first = await start(call);
     advance(200);
     await start(call, "minimum");
-    expect(store.sessions.find((s) => s.id === first.id)?.endedAt).toEqual(
-      new Date(MONDAY_MORNING.getTime() + 25 * 60_000),
-    );
+    expect(store.sessions.find((s) => s.id === first.id)).toMatchObject({
+      endedAt: new Date(MONDAY_MORNING.getTime() + 25 * 60_000),
+      blocksDone: null,
+      endReason: "superseded",
+    });
     expect(store.events).toHaveLength(0);
   });
 

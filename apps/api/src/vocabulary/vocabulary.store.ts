@@ -2,7 +2,7 @@ import type { CardSource, ItemAnswer, Segment } from "@english-course/shared";
 import { and, asc, desc, eq, gte, ilike, lte, or, type SQL, sql } from "drizzle-orm";
 import type { Db } from "../shared/db/client.ts";
 import { event, exercise, exerciseItem, srsCard, srsReview } from "../shared/db/schema/index.ts";
-import { parseState, type SrsState } from "./srs.ts";
+import { parseState, type SrsState, storedState } from "./srs.ts";
 
 export type CardRecord = {
   id: string;
@@ -11,6 +11,7 @@ export type CardRecord = {
   back: string;
   ref: Record<string, unknown>;
   state: SrsState;
+  suspended: boolean;
   due: Date;
   createdAt: Date;
 };
@@ -44,10 +45,10 @@ export interface VocabularyStore {
   /** First card of `source` whose `ref[key]` equals `value`. */
   findCardByRef(source: CardSource, key: string, value: string): Promise<CardRecord | undefined>;
   insertCard(value: NewCard): Promise<CardRecord>;
-  /** Content/state edit that keeps `due` (edit, suspend). */
+  /** Content edit or (un)suspend; keeps state and `due`. */
   updateCard(
     id: string,
-    patch: { front?: string; back?: string; state?: SrsState },
+    patch: { front?: string; back?: string; suspended?: boolean },
   ): Promise<CardRecord | undefined>;
   deleteCard(id: string): Promise<boolean>;
   /** Scheduled, not suspended cards due at or before `now`, earliest first. */
@@ -58,12 +59,13 @@ export interface VocabularyStore {
   /** Cards whose very first review happened at or after `since`. */
   countFirstReviewsSince(since: Date): Promise<number>;
   reviewTimesSince(since: Date): Promise<Date[]>;
-  /** Writes the review row and the new state/due in one transaction. */
+  /** Writes the review row (with the typed answer, if any) and the new state/due in one transaction. */
   recordReview(
     id: string,
     rating: number,
     next: { state: SrsState; due: Date },
     reviewedAt: Date,
+    answer?: string,
   ): Promise<CardRecord | undefined>;
   getMissedItem(itemId: string): Promise<MissedItem | undefined>;
   insertEvent(type: string, payload: Record<string, unknown>): Promise<void>;
@@ -77,14 +79,16 @@ function toCard(row: typeof srsCard.$inferSelect): CardRecord {
     back: row.back,
     ref: row.ref,
     state: parseState(row.state),
+    suspended: row.suspended,
     due: row.due,
     createdAt: row.createdAt,
   };
 }
 
+// A null state is a new card; legacy `{}` rows (no `state` key) count as new too.
 const isNewCard = sql`(${srsCard.state} ->> 'state') is null`;
 const isScheduled = sql`(${srsCard.state} ->> 'state') is not null`;
-const notSuspended = sql`coalesce((${srsCard.state} ->> 'suspended')::boolean, false) = false`;
+const notSuspended = eq(srsCard.suspended, false);
 
 const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`);
 
@@ -121,7 +125,10 @@ export function createDrizzleVocabularyStore(db: Db): VocabularyStore {
     },
 
     async insertCard(value) {
-      const [row] = await db.insert(srsCard).values(value).returning();
+      const [row] = await db
+        .insert(srsCard)
+        .values({ ...value, state: storedState(value.state) })
+        .returning();
       if (!row) throw new Error("srs card insert returned no row");
       return toCard(row);
     },
@@ -191,15 +198,17 @@ export function createDrizzleVocabularyStore(db: Db): VocabularyStore {
       return rows.map((r) => r.at);
     },
 
-    async recordReview(id, rating, next, reviewedAt) {
+    async recordReview(id, rating, next, reviewedAt, answer) {
       return db.transaction(async (tx) => {
         const [row] = await tx
           .update(srsCard)
-          .set({ state: next.state, due: next.due, updatedAt: reviewedAt })
+          .set({ state: storedState(next.state), due: next.due, updatedAt: reviewedAt })
           .where(eq(srsCard.id, id))
           .returning();
         if (!row) return undefined;
-        await tx.insert(srsReview).values({ cardId: id, rating, reviewedAt });
+        await tx
+          .insert(srsReview)
+          .values({ cardId: id, rating, reviewedAt, answer: answer ?? null });
         return toCard(row);
       });
     },

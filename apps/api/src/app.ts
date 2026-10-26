@@ -9,6 +9,7 @@ import { progressRoutes } from "./progress/progress.routes.ts";
 import type { Progress } from "./progress/progress.service.ts";
 import { readingRoutes } from "./reading/reading.routes.ts";
 import type { Reading } from "./reading/reading.service.ts";
+import { type PreferencesService, preferencesRoutes } from "./settings/preferences.ts";
 import { settingsRoutes } from "./settings/settings.routes.ts";
 import type { Settings } from "./settings/settings.service.ts";
 import { todayRoutes } from "./today/today.routes.ts";
@@ -28,6 +29,7 @@ export type AppDeps = HealthDeps & {
   /** Single-user session auth. Without it every protected /api route answers 401. */
   auth?: Auth;
   settings?: Settings;
+  preferences?: PreferencesService;
   units?: Units;
   reading?: Reading;
   vocabulary?: Vocabulary;
@@ -43,6 +45,7 @@ export function createApp(deps: AppDeps) {
   const api = new Hono().route("/health", healthRoutes(deps));
   if (deps.auth) api.route("/auth", deps.auth.routes);
   api.use("*", requireSession(deps.auth));
+  if (deps.preferences) api.route("/settings/preferences", preferencesRoutes(deps.preferences));
   if (deps.settings) api.route("/settings", settingsRoutes(deps.settings));
   if (deps.units) api.route("/units", unitsRoutes(deps.units));
   if (deps.reading) api.route("/reading", readingRoutes(deps.reading));

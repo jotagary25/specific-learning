@@ -76,7 +76,11 @@ describe("write tools", () => {
   it("create a word card once, park items and save doubts", async () => {
     const cards = createMemoryVocabularyStore();
     const parked: string[] = [];
-    const doubts: Array<{ text: string; context: Record<string, unknown> }> = [];
+    const doubts: Array<{
+      text: string;
+      context: Record<string, unknown>;
+      explanation: string | null | undefined;
+    }> = [];
     const tools = createTutorTools({
       wordCards: cards,
       vocabulary: createVocabulary({ store: cards }),
@@ -86,8 +90,8 @@ describe("write tools", () => {
           return { id: "p-1", text, done: false, createdAt: "2026-10-25T09:00:00.000Z" };
         },
       },
-      saveDoubt: async (text, context) => {
-        doubts.push({ text, context });
+      saveDoubt: async (text, context, explanation) => {
+        doubts.push({ text, context, explanation });
         return { id: "d-1" };
       },
       now: () => new Date("2026-10-25T09:00:00Z"),
@@ -121,10 +125,21 @@ describe("write tools", () => {
 
     const context: TutorContext = { kind: "unit", ref: "2" };
     await tools.run("save_doubt", { text: "¿do vs does?" }, ctx(context));
+    await tools.run(
+      "save_doubt",
+      { text: "¿since vs for?", explanation: "Since + punto en el tiempo." },
+      ctx(context),
+    );
     expect(doubts).toEqual([
       {
         text: "¿do vs does?",
         context: { screen: "tutor", conversationId: "c-1", tutorContext: context },
+        explanation: null,
+      },
+      {
+        text: "¿since vs for?",
+        context: { screen: "tutor", conversationId: "c-1", tutorContext: context },
+        explanation: "Since + punto en el tiempo.",
       },
     ]);
   });

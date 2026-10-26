@@ -57,6 +57,7 @@ describe("mapAuthored", () => {
         blockId: 1,
         unitId: 1,
         position: 1,
+        storyTitle: "Apollo 13",
         title: "Live from Space",
         body: "Three astronauts are flying to the Moon.",
         grammarSpans: [{ text: "are flying", unitId: 1, note: "In progress." }],

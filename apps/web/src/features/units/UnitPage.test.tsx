@@ -117,6 +117,20 @@ describe("UnitPage flow", () => {
     await waitFor(() => expect(stepButton("Puzzle").getAttribute("aria-current")).toBe("step"));
   });
 
+  it("shows the story title above the chapter when the api has one", async () => {
+    const unit = unitFixture();
+    unitApi({
+      "GET /api/units/1": () =>
+        Response.json({
+          ...unit,
+          story: unit.story && { ...unit.story, title: "Apollo 13: The Successful Failure" },
+        }),
+    });
+    renderAt("/units/1");
+
+    expect(await screen.findByText("Apollo 13: The Successful Failure · Chapter 1")).toBeTruthy();
+  });
+
   it("goes straight to the exercises from any step", async () => {
     unitApi();
     renderAt("/units/1");
@@ -169,6 +183,37 @@ describe("exercise items", () => {
     const status = await screen.findByText(text);
     expect(status.closest("[data-verdict]")?.getAttribute("data-verdict")).toBe(verdict);
     expect(blank.dataset.verdict).toBe(verdict);
+  });
+
+  it("show the stored AI feedback of the latest attempt after a reload", async () => {
+    const unit = unitFixture();
+    unitApi({
+      "GET /api/units/1": () =>
+        Response.json({
+          ...unit,
+          progress: {
+            ...unit.progress,
+            status: "in-progress",
+            items: [
+              {
+                itemId: "1.1-2",
+                attempts: 1,
+                latest: {
+                  inputs: ["am look"],
+                  result: { status: "incorrect", blanks: [{ verdict: "incorrect" }], score: 0 },
+                  method: "ai",
+                  feedbackEs: "Falta el -ing.",
+                  hintEs: "Piensa en una acción en curso.",
+                },
+              },
+            ],
+          },
+        }),
+    });
+    renderAt("/units/1?step=exercises");
+
+    expect(await screen.findByText("Falta el -ing.")).toBeTruthy();
+    expect(screen.getByText(/Piensa en una acción en curso/)).toBeTruthy();
   });
 
   it("say when the AI check is unavailable", async () => {

@@ -50,6 +50,7 @@ export function mapAuthored(content: AuthoredContent, known: KnownContent): Auth
         blockId: story.blockId,
         unitId: chapter.unitId,
         position: chapter.position,
+        storyTitle: story.title,
         title: chapter.title,
         body: chapter.body,
         grammarSpans: chapter.grammarSpans,

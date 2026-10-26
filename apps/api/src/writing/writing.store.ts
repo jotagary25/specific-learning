@@ -85,6 +85,8 @@ export type MissionRecord = {
   targetUnitId: number | null;
   status: WritingMissionStatus;
   createdAt: Date;
+  /** Bumped on every draft save, submission update and status change. */
+  updatedAt: Date;
 };
 
 export type SubmissionRecord = {
@@ -134,7 +136,7 @@ export type ErrorRecord = {
   createdAt: Date;
 };
 
-export type NewMission = Omit<MissionRecord, "id" | "createdAt">;
+export type NewMission = Omit<MissionRecord, "id" | "createdAt" | "updatedAt">;
 export type NewSubmission = Pick<SubmissionRecord, "textOriginal" | "meta" | "flow">;
 export type NewError = Omit<ErrorRecord, "id" | "submissionId" | "createdAt">;
 export type SubmissionPatch = Partial<
@@ -243,6 +245,7 @@ function toMission(row: typeof writingMission.$inferSelect): MissionRecord {
     targetUnitId: row.targetUnitId,
     status: row.status,
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -368,7 +371,10 @@ export function createDrizzleWritingStore(db: Db): WritingStore {
     },
 
     async setMissionStatus(id, status) {
-      await db.update(writingMission).set({ status }).where(eq(writingMission.id, id));
+      await db
+        .update(writingMission)
+        .set({ status, updatedAt: sql`now()` })
+        .where(eq(writingMission.id, id));
     },
 
     async updateSubmission(id, patch) {
@@ -399,6 +405,12 @@ export function createDrizzleWritingStore(db: Db): WritingStore {
               : {}),
           })
           .where(eq(writingSubmission.id, id));
+        if (row.missionId) {
+          await tx
+            .update(writingMission)
+            .set({ updatedAt: sql`now()` })
+            .where(eq(writingMission.id, row.missionId));
+        }
       });
     },
 

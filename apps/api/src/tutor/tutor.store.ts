@@ -7,7 +7,7 @@ export type TutorRole = "user" | "assistant" | "tool";
 
 /**
  * What `tutor_message.tool_calls` holds: on assistant messages the calls the model asked for,
- * on tool messages one entry describing the tool that answered (there is no `tool_name` column).
+ * on tool messages one entry describing the tool that answered (its name is also in `tool_name`).
  */
 export type StoredToolCall = {
   name: string;
@@ -24,10 +24,20 @@ export type MessageRecord = {
   role: TutorRole;
   content: string;
   toolCalls: StoredToolCall[] | null;
+  /** Tool that answered, on `tool` messages; null otherwise. */
+  toolName: string | null;
   createdAt: Date;
 };
 
-export type NewMessage = Omit<MessageRecord, "id" | "createdAt">;
+/** `toolName` defaults to the first stored tool call's name on `tool` messages. */
+export type NewMessage = Omit<MessageRecord, "id" | "createdAt" | "toolName"> & {
+  toolName?: string | null;
+};
+
+export function toolNameOf(message: NewMessage): string | null {
+  if (message.role !== "tool") return null;
+  return message.toolName ?? message.toolCalls?.[0]?.name ?? null;
+}
 
 /** Persistence port of the tutor feature. */
 export interface TutorStore {
@@ -40,7 +50,11 @@ export interface TutorStore {
   /** Oldest first. */
   listMessages(conversationId: string): Promise<MessageRecord[]>;
   insertMessage(message: NewMessage): Promise<MessageRecord>;
-  insertDoubt(text: string, context: Record<string, unknown>): Promise<{ id: string }>;
+  insertDoubt(
+    text: string,
+    context: Record<string, unknown>,
+    explanation?: string | null,
+  ): Promise<{ id: string }>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -57,6 +71,7 @@ const toMessage = (row: typeof tutorMessage.$inferSelect): MessageRecord => ({
   role: row.role as TutorRole,
   content: row.content,
   toolCalls: (row.toolCalls as StoredToolCall[] | null) ?? null,
+  toolName: row.toolName,
   createdAt: row.createdAt,
 });
 
@@ -121,6 +136,7 @@ export function createDrizzleTutorStore(db: Db): TutorStore {
           role: message.role,
           content: message.content,
           toolCalls: message.toolCalls as Record<string, unknown>[] | null,
+          toolName: toolNameOf(message),
           // Rows of one turn are written within milliseconds: keep their order stable.
           createdAt: sql`clock_timestamp()`,
         })
@@ -128,8 +144,11 @@ export function createDrizzleTutorStore(db: Db): TutorStore {
       return toMessage(row as typeof tutorMessage.$inferSelect);
     },
 
-    async insertDoubt(text, context) {
-      const [row] = await db.insert(doubt).values({ text, context }).returning({ id: doubt.id });
+    async insertDoubt(text, context, explanation) {
+      const [row] = await db
+        .insert(doubt)
+        .values({ text, context, explanation: explanation ?? null })
+        .returning({ id: doubt.id });
       return { id: (row as { id: string }).id };
     },
   };

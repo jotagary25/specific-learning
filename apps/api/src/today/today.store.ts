@@ -1,7 +1,13 @@
 import type { TodayMode, TodayPlan } from "@english-course/shared";
 import { and, asc, desc, eq, gte, inArray, isNull, max } from "drizzle-orm";
 import type { Db } from "../shared/db/client.ts";
-import { event, parkingItem, studySession, writingMission } from "../shared/db/schema/index.ts";
+import {
+  event,
+  parkingItem,
+  type StudySessionEndReason,
+  studySession,
+  writingMission,
+} from "../shared/db/schema/index.ts";
 
 export type SessionRecord = {
   id: string;
@@ -11,6 +17,16 @@ export type SessionRecord = {
   startedAt: Date;
   endedAt: Date | null;
   bonusMin: number;
+  /** Plan blocks finished; null while open or when closed without the learner (superseded). */
+  blocksDone: number | null;
+  endReason: StudySessionEndReason | null;
+};
+
+export type SessionEnd = {
+  endedAt: Date;
+  bonusMin: number;
+  blocksDone: number | null;
+  endReason: StudySessionEndReason;
 };
 
 export type NewSession = Pick<SessionRecord, "mode" | "budgetMin" | "plan" | "startedAt">;
@@ -32,11 +48,7 @@ export interface TodayStore {
    * Ends a session that is still open and appends `event` in the same transaction.
    * Returns `undefined` when the session was already ended (nothing is written).
    */
-  endSession(
-    id: string,
-    end: { endedAt: Date; bonusMin: number },
-    event?: TodayEvent,
-  ): Promise<SessionRecord | undefined>;
+  endSession(id: string, end: SessionEnd, event?: TodayEvent): Promise<SessionRecord | undefined>;
 
   /** Open items first, then newest first. */
   listParking(): Promise<ParkingRecord[]>;
@@ -47,7 +59,7 @@ export interface TodayStore {
   ): Promise<ParkingRecord | undefined>;
   deleteParking(id: string): Promise<boolean>;
 
-  /** Latest writing activity: a mission created, a text submitted or completed. */
+  /** Latest writing activity: a mission created or worked on (`updated_at`), a text submitted or completed. */
   lastWritingActivity(): Promise<Date | undefined>;
 }
 
@@ -58,13 +70,14 @@ type SessionRow = typeof studySession.$inferSelect;
 
 const toSession = (row: SessionRow): SessionRecord => ({
   id: row.id,
-  // The column type predates the T13 modes; values are written by this module only.
-  mode: row.mode as unknown as TodayMode,
+  mode: row.mode,
   budgetMin: row.budgetMin,
   plan: row.plan as unknown as TodayPlan,
   startedAt: row.startedAt,
   endedAt: row.endedAt,
   bonusMin: row.bonusMin,
+  blocksDone: row.blocksDone,
+  endReason: row.endReason,
 });
 
 export function createDrizzleTodayStore(db: Db): TodayStore {
@@ -73,7 +86,7 @@ export function createDrizzleTodayStore(db: Db): TodayStore {
       const [row] = await db
         .insert(studySession)
         .values({
-          mode: session.mode as unknown as SessionRow["mode"],
+          mode: session.mode,
           budgetMin: session.budgetMin,
           plan: session.plan as unknown as Record<string, unknown>,
           startedAt: session.startedAt,
@@ -112,7 +125,12 @@ export function createDrizzleTodayStore(db: Db): TodayStore {
       return db.transaction(async (tx) => {
         const [row] = await tx
           .update(studySession)
-          .set({ endedAt: end.endedAt, bonusMin: end.bonusMin })
+          .set({
+            endedAt: end.endedAt,
+            bonusMin: end.bonusMin,
+            blocksDone: end.blocksDone,
+            endReason: end.endReason,
+          })
           .where(and(eq(studySession.id, id), isNull(studySession.endedAt)))
           .returning();
         if (!row) return undefined;
@@ -159,7 +177,7 @@ export function createDrizzleTodayStore(db: Db): TodayStore {
           .select({ at: max(event.createdAt) })
           .from(event)
           .where(inArray(event.type, WRITING_EVENT_TYPES)),
-        db.select({ at: max(writingMission.createdAt) }).from(writingMission),
+        db.select({ at: max(writingMission.updatedAt) }).from(writingMission),
       ]);
       const times = [events?.at, missions?.at].filter((d): d is Date => d instanceof Date);
       if (times.length === 0) return undefined;

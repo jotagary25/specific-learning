@@ -1,10 +1,20 @@
 // In-memory TutorStore for tests.
-import type { ConversationRecord, MessageRecord, TutorStore } from "./tutor.store.ts";
+import {
+  type ConversationRecord,
+  type MessageRecord,
+  type TutorStore,
+  toolNameOf,
+} from "./tutor.store.ts";
 
 export type MemoryTutorStore = TutorStore & {
   conversations: ConversationRecord[];
   messages: MessageRecord[];
-  doubts: Array<{ id: string; text: string; context: Record<string, unknown> }>;
+  doubts: Array<{
+    id: string;
+    text: string;
+    context: Record<string, unknown>;
+    explanation: string | null;
+  }>;
 };
 
 export function createMemoryTutorStore(): MemoryTutorStore {
@@ -38,12 +48,12 @@ export function createMemoryTutorStore(): MemoryTutorStore {
       return store.messages.filter((m) => m.conversationId === conversationId);
     },
     async insertMessage(message) {
-      const record = { ...message, id: nextId(), createdAt: tick() };
+      const record = { ...message, toolName: toolNameOf(message), id: nextId(), createdAt: tick() };
       store.messages.push(record);
       return record;
     },
-    async insertDoubt(text, context) {
-      const record = { id: nextId(), text, context };
+    async insertDoubt(text, context, explanation) {
+      const record = { id: nextId(), text, context, explanation: explanation ?? null };
       store.doubts.push(record);
       return { id: record.id };
     },

@@ -105,6 +105,19 @@ describe("queue", () => {
     await vocabulary.update(card.id, { suspended: false });
     expect((await vocabulary.queue(10)).cards).toHaveLength(1);
   });
+
+  it("keeps suspension in its own field, out of the FSRS state, across reviews", async () => {
+    const { store, vocabulary } = setup();
+    const card = await store.insertCard(wordCard("thrive"));
+    const view = await vocabulary.update(card.id, { suspended: true });
+    expect(view.suspended).toBe(true);
+    expect(store.cards[0]).toMatchObject({ suspended: true, state: {} });
+
+    await vocabulary.review(card.id, { rating: 3 });
+    expect(store.cards[0]?.suspended).toBe(true);
+    expect(store.cards[0]?.state).not.toHaveProperty("suspended");
+    expect((await vocabulary.stats()).suspended).toBe(1);
+  });
 });
 
 describe("review", () => {
@@ -113,7 +126,9 @@ describe("review", () => {
     const card = await store.insertCard(wordCard("thrive"));
     const result = await vocabulary.review(card.id, { rating: 3, answer: "thrive" });
     expect(new Date(result.due).getTime()).toBeGreaterThan(NOW.getTime());
-    expect(store.reviews).toEqual([{ cardId: card.id, rating: 3, reviewedAt: NOW }]);
+    expect(store.reviews).toEqual([
+      { cardId: card.id, rating: 3, reviewedAt: NOW, answer: "thrive" },
+    ]);
     const saved = await store.getCard(card.id);
     expect(saved?.state.reps).toBe(1);
     expect(saved?.due.toISOString()).toBe(result.due);

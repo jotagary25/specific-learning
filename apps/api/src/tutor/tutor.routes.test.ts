@@ -178,6 +178,7 @@ describe("tutor turn (agent loop over SSE)", () => {
 
     // Persisted: user, assistant (tool call), tool result, final assistant.
     expect(store.messages.map((m) => m.role)).toEqual(["user", "assistant", "tool", "assistant"]);
+    expect(store.messages.map((m) => m.toolName)).toEqual([null, null, "get_unit_theory", null]);
     expect(store.messages[1]?.toolCalls).toEqual([
       { name: "get_unit_theory", arguments: { unitNumber: 1 } },
     ]);

@@ -85,7 +85,13 @@ export function createMemoryWritingStore(units: UnitInfo[] = sampleUnits()): Mem
       return newestFirst().flatMap((m) => aggregate(m) ?? []);
     },
     async createMission(mission, submission) {
-      const m: MissionRecord = { ...clone(mission), id: randomUUID(), createdAt: stamp() };
+      const createdAt = stamp();
+      const m: MissionRecord = {
+        ...clone(mission),
+        id: randomUUID(),
+        createdAt,
+        updatedAt: createdAt,
+      };
       const s: SubmissionRecord = {
         ...clone(submission),
         id: randomUUID(),
@@ -101,11 +107,17 @@ export function createMemoryWritingStore(units: UnitInfo[] = sampleUnits()): Mem
     },
     async setMissionStatus(id, status) {
       const found = missions.find((m) => m.id === id);
-      if (found) found.status = status;
+      if (found) {
+        found.status = status;
+        found.updatedAt = stamp();
+      }
     },
     async updateSubmission(id, patch) {
       const found = submissions.find((s) => s.id === id);
-      if (found) Object.assign(found, clone(patch));
+      if (!found) return;
+      Object.assign(found, clone(patch));
+      const mission = missions.find((m) => m.id === found.missionId);
+      if (mission) mission.updatedAt = stamp();
     },
     async listErrors(submissionIds) {
       return clone(errors.filter((e) => submissionIds.includes(e.submissionId)));

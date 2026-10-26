@@ -60,7 +60,11 @@ export function historyMessages(records: MessageRecord[], limit = HISTORY_LIMIT)
   if (start < 0) return [];
   return recent.slice(start).map((m): ChatMessage => {
     if (m.role === "tool") {
-      return { role: "tool", content: m.content, toolName: m.toolCalls?.[0]?.name ?? "unknown" };
+      return {
+        role: "tool",
+        content: m.content,
+        toolName: m.toolName ?? m.toolCalls?.[0]?.name ?? "unknown",
+      };
     }
     if (m.role === "assistant") {
       const calls = (m.toolCalls ?? []).map((c) => ({
@@ -81,7 +85,7 @@ export function createTutor(deps: TutorDeps) {
   const { store } = deps;
   const tools = createTutorTools({
     ...deps,
-    saveDoubt: (text, context) => store.insertDoubt(text, context),
+    saveDoubt: (text, context, explanation) => store.insertDoubt(text, context, explanation),
   });
 
   async function conversationOr404(id: string): Promise<ConversationRecord> {

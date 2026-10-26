@@ -31,7 +31,13 @@ export function applyAttempt(
   response: AttemptResponse,
   inputs: string[],
 ): UnitDetail {
-  const latest = { inputs, result: response.result, method: response.method };
+  const latest = {
+    inputs,
+    result: response.result,
+    method: response.method,
+    ...(response.feedbackEs ? { feedbackEs: response.feedbackEs } : {}),
+    ...(response.hintEs ? { hintEs: response.hintEs } : {}),
+  };
   const others = unit.progress.items.filter((item) => item.itemId !== response.itemId);
   const status =
     response.unitCompleted || unit.progress.status === "completed" ? "completed" : "in-progress";

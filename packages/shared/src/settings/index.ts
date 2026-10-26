@@ -117,3 +117,4 @@ export const UpdateAiFunctionRequest = z.object({
   think: ThinkValue,
 });
 export type UpdateAiFunctionRequest = z.infer<typeof UpdateAiFunctionRequest>;
+export * from "./preferences.ts";

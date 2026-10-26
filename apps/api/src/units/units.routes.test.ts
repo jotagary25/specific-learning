@@ -14,7 +14,19 @@ import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { LlmError } from "../shared/llm/errors.ts";
 import { createFakeLlm, type FakeLlm } from "../shared/llm/fake.ts";
 import { createMemoryUnitsStore, type MemoryUnitsStore } from "./units.memory-store.ts";
-import { createUnits } from "./units.service.ts";
+import { createUnits, type MissedItemCards } from "./units.service.ts";
+
+/** Records which items were turned into SRS cards. */
+function fakeMissedItems(): MissedItemCards & { calls: string[] } {
+  const calls: string[] = [];
+  return {
+    calls,
+    async createCardFromMissedItem(itemId) {
+      calls.push(itemId);
+      return { cardId: `card-${itemId}`, created: true };
+    },
+  };
+}
 
 const APP_SECRET = "cd".repeat(32);
 const PASSWORD = "pw";
@@ -25,7 +37,9 @@ beforeAll(async () => {
   pristine = await createMemoryUnitsStore();
 });
 
-async function setup(options: { llm?: FakeLlm; noAi?: boolean } = {}) {
+async function setup(
+  options: { llm?: FakeLlm; noAi?: boolean; missedItems?: MissedItemCards } = {},
+) {
   const store = await createMemoryUnitsStore();
   const llm = options.llm ?? createFakeLlm();
   const settings = createSettings({
@@ -33,7 +47,11 @@ async function setup(options: { llm?: FakeLlm; noAi?: boolean } = {}) {
     appSecret: APP_SECRET,
     createClient: () => llm,
   });
-  const units = createUnits({ store, ai: options.noAi ? undefined : settings });
+  const units = createUnits({
+    store,
+    ai: options.noAi ? undefined : settings,
+    missedItems: options.missedItems,
+  });
   const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
   const app = createApp({ pingDb: async () => true, auth, units });
   const login = await app.request("/api/auth/login", {
@@ -95,6 +113,7 @@ describe("units routes", () => {
     const unit = UnitDetail.parse(JSON.parse(raw));
     expect(unit.exercises.length).toBeGreaterThan(0);
     expect(unit.story?.chapter.grammarSpans.length).toBeGreaterThan(0);
+    expect(unit.story?.title).toBe("Apollo 13: The Successful Failure");
     expect(unit.extras?.puzzle.question).toBeTruthy();
     expect(unit.timeline.length).toBeGreaterThanOrEqual(3);
     expect(raw).not.toContain('"answer"');
@@ -182,6 +201,27 @@ describe("attempts", () => {
     expect(JSON.stringify(call?.req?.messages)).toContain("I was writing code.");
   });
 
+  it("persist the AI feedback and return it with the unit on reload", async () => {
+    const llm = createFakeLlm({
+      jsonReplies: [JSON.stringify({ verdict: "correct", feedbackEs: "Bien: past continuous." })],
+    });
+    const { attempt, call, store } = await setup({ llm });
+    await attempt("6.1-3", ["I was writing code."]);
+    expect(store.attempts[0]?.feedback).toEqual({ feedbackEs: "Bien: past continuous." });
+
+    const unit = UnitDetail.parse(await (await call("/6")).json());
+    const item = unit.progress.items.find((i) => i.itemId === "6.1-3");
+    expect(item?.latest).toMatchObject({ method: "ai", feedbackEs: "Bien: past continuous." });
+  });
+
+  it("store no feedback for deterministic checks", async () => {
+    const { attempt, call, store } = await setup({ noAi: true });
+    await attempt("1.1-2", ["look"]);
+    expect(store.attempts[0]?.feedback).toBeNull();
+    const unit = UnitDetail.parse(await (await call("/1")).json());
+    expect(unit.progress.items[0]?.latest).not.toHaveProperty("feedbackEs");
+  });
+
   it("degrade to needs-ai / ai-unavailable when no AI key is configured", async () => {
     const llm = createFakeLlm({ failWith: new LlmError("not_configured", "no key") });
     const { attempt } = await setup({ llm });
@@ -232,6 +272,62 @@ describe("hints", () => {
     const res = await post("/1/items/1.1-2/hint", undefined);
     expect(HintResponse.parse(await res.json())).toMatchObject({ level: 2, source: "fallback" });
   });
+
+  it("record the level shown on the item's latest attempt, never lowering it", async () => {
+    const { post, attempt, store } = await setup({ noAi: true });
+    // Before any attempt there is nothing to attach the hint to.
+    await post("/1/items/1.1-2/hint", { shown: 0 });
+    await attempt("1.1-2", ["look"]);
+    await post("/1/items/1.1-2/hint", { shown: 2 });
+    await post("/1/items/1.1-2/hint", { shown: 0 });
+    expect(store.attempts.map((a) => a.hintLevel)).toEqual([3]);
+    await attempt("1.1-2", ["looks"]);
+    expect(store.attempts.map((a) => a.hintLevel)).toEqual([3, 0]);
+  });
+});
+
+describe("missed items", () => {
+  it("create an SRS card once, on the 3rd incorrect attempt", async () => {
+    const missedItems = fakeMissedItems();
+    const { attempt } = await setup({ noAi: true, missedItems });
+    await attempt("1.1-2", ["look"]);
+    await attempt("1.1-2", ["looks"]);
+    expect(missedItems.calls).toEqual([]);
+    await attempt("1.1-2", ["looked"]);
+    await attempt("1.1-2", ["is look"]);
+    expect(missedItems.calls).toEqual(["1.1-2"]);
+  });
+
+  it("create a card when the item is still wrong after hint level 3", async () => {
+    const missedItems = fakeMissedItems();
+    const { attempt, post } = await setup({ noAi: true, missedItems });
+    await attempt("1.1-2", ["look"]);
+    await post("/1/items/1.1-2/hint", { shown: 2 });
+    await attempt("1.1-2", ["looks"]);
+    expect(missedItems.calls).toEqual(["1.1-2"]);
+    await attempt("1.1-2", ["looked"]);
+    expect(missedItems.calls).toEqual(["1.1-2"]);
+  });
+
+  it("create no card when the item ends up correct, and never fail the attempt", async () => {
+    const failing: MissedItemCards = {
+      createCardFromMissedItem: async () => {
+        throw new Error("db down");
+      },
+    };
+    const { attempt } = await setup({ noAi: true, missedItems: failing });
+    await attempt("1.1-2", ["look"]);
+    await attempt("1.1-2", ["looks"]);
+    const third = await attempt("1.1-2", ["looked"]);
+    expect(third.status).toBe("incorrect");
+
+    const counting = fakeMissedItems();
+    const ok = await setup({ noAi: true, missedItems: counting });
+    await ok.attempt("1.1-2", ["look"]);
+    await ok.attempt("1.1-2", ["looks"]);
+    await ok.attempt("1.1-2", ["am looking"]);
+    expect(counting.calls).toEqual([]);
+  });
 });
 
 describe("explain (I don't get it)", () => {
@@ -252,8 +348,10 @@ describe("explain (I don't get it)", () => {
       {
         text: "¿Por qué no look?",
         context: expect.objectContaining({ unitId: 1, step: "exercises", itemId: "1.1-2" }),
+        explanation: reply.explanationEs,
       },
     ]);
+    expect(store.doubts[0]?.context).not.toHaveProperty("explanationEs");
   });
 
   it("answer 503 ai-unavailable without AI, still parking the doubt", async () => {
@@ -262,6 +360,7 @@ describe("explain (I don't get it)", () => {
     expect(res.status).toBe(503);
     expect(await res.json()).toMatchObject({ error: "ai-unavailable" });
     expect(store.doubts).toHaveLength(1);
+    expect(store.doubts[0]?.explanation).toBeNull();
   });
 });
 

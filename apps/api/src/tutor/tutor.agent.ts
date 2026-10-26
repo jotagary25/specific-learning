@@ -100,6 +100,7 @@ export async function* runTutorTurn(options: AgentOptions): AsyncGenerator<Tutor
       await persist({
         role: "tool",
         content: outcome.content,
+        toolName: call.name,
         toolCalls: [
           {
             name: call.name,

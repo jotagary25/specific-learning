@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router";
 import { logout } from "../auth/auth.api.ts";
 import { AiFunctionsSection } from "./AiFunctionsSection.tsx";
 import { ApiKeySection } from "./ApiKeySection.tsx";
+import { PreferencesSection } from "./PreferencesSection.tsx";
 import styles from "./SettingsPage.module.css";
 
 export function SettingsPage() {
@@ -23,6 +24,7 @@ export function SettingsPage() {
       <h1 className={styles.title}>Settings</h1>
       <ApiKeySection />
       <AiFunctionsSection />
+      <PreferencesSection />
       <section className={styles.section} aria-labelledby={evalTitle}>
         <h2 id={evalTitle} className={styles.heading}>
           Model evaluation

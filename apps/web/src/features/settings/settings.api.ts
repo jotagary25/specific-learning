@@ -6,7 +6,9 @@ import {
   AiKeyTestResult,
   ModelCapabilities,
   ModelsResponse,
+  Preferences,
   type UpdateAiFunctionRequest,
+  type UpdatePreferencesRequest,
 } from "@english-course/shared";
 import { apiRequest } from "../../shared/api/http.ts";
 
@@ -39,3 +41,10 @@ export const fetchAiFunctions = async () =>
 
 export const saveAiFunction = (id: AiFunctionId, body: UpdateAiFunctionRequest) =>
   apiRequest(`${base}/ai-functions/${id}`, AiFunctionConfig, { method: "PUT", body });
+
+export const preferencesKey = ["settings", "preferences"] as const;
+
+export const fetchPreferences = () => apiRequest(`${base}/preferences`, Preferences);
+
+export const savePreferences = (body: UpdatePreferencesRequest) =>
+  apiRequest(`${base}/preferences`, Preferences, { method: "PUT", body });

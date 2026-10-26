@@ -95,7 +95,7 @@ export function createVocabulary(deps: VocabularyDeps) {
       const card = await cardOrThrow(id);
       const at = now();
       const next = scheduleReview(card.state, request.rating, at);
-      const saved = await store.recordReview(id, request.rating, next, at);
+      const saved = await store.recordReview(id, request.rating, next, at, request.answer);
       if (!saved) throw new VocabularyError("not_found", "Card not found");
       return {
         cardId: id,
@@ -110,15 +110,8 @@ export function createVocabulary(deps: VocabularyDeps) {
     },
 
     async update(id: string, patch: CardPatch): Promise<CardView> {
-      const card = await cardOrThrow(id);
-      const { suspended, ...content } = patch;
-      const state =
-        suspended === undefined
-          ? undefined
-          : suspended
-            ? { ...card.state, suspended: true }
-            : (({ suspended: _, ...rest }) => rest)(card.state);
-      const saved = await store.updateCard(id, { ...content, ...(state ? { state } : {}) });
+      await cardOrThrow(id);
+      const saved = await store.updateCard(id, patch);
       if (!saved) throw new VocabularyError("not_found", "Card not found");
       return cardView(saved);
     },
@@ -138,7 +131,7 @@ export function createVocabulary(deps: VocabularyDeps) {
         store.countFirstReviewsSince(today),
         store.reviewTimesSince(since),
       ]);
-      const active = cards.filter((c) => !c.state.suspended);
+      const active = cards.filter((c) => !c.suspended);
       const byDay = new Map<string, number>();
       for (const t of reviewTimes) byDay.set(localDate(t), (byDay.get(localDate(t)) ?? 0) + 1);
       return {

@@ -283,6 +283,21 @@ describe("writing review flow", () => {
     ).toBe(409);
   });
 
+  it("bumps the mission's updated_at on draft saves and submissions", async () => {
+    const { mission, store } = await setup();
+    const { mission: m } = await mission("/missions/generate");
+    const stamp = () => store.missions.find((x) => x.id === m.id)?.updatedAt.getTime() ?? 0;
+    const created = stamp();
+    expect(created).toBe(store.missions[0]?.createdAt.getTime());
+
+    await mission(`/missions/${m.id}/draft`, "PUT", { text: DRAFT });
+    const drafted = stamp();
+    expect(drafted).toBeGreaterThan(created);
+
+    await mission(`/missions/${m.id}/submit`, "POST", { text: DRAFT });
+    expect(stamp()).toBeGreaterThan(drafted);
+  });
+
   it("validates ids and bodies", async () => {
     const { call, mission } = await setup();
     expect((await call("/missions/nope/rewrite", { method: "POST" })).status).toBe(404);
