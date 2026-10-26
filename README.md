@@ -68,9 +68,9 @@ invalid. Empty values count as unset.
 | `APP_USER_PASSWORD` | yes | — | Admin password, at least 8 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
 | `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored provider keys unreadable (save them again). |
 | `PORT` | no | `3000` | API listen port. `docker-compose.prod.yml` pins it to 3000 inside the container. |
-| `OLLAMA_API_KEY` | no | — | Instance Ollama Cloud key, the fallback for every user; a key a user saves in Settings overrides it for that user. |
+| `OLLAMA_API_KEY` | no | — | Instance Ollama Cloud key. Only the admin falls back to it (it is the admin's spend); other users must save their own key in Settings. A saved key always wins. |
 | `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show). |
-| `OPENROUTER_API_KEY` | no | — | Instance OpenRouter key, the fallback for every user; a key a user saves in Settings overrides it for that user. Users who never chose a provider start on OpenRouter when this is the only env key. |
+| `OPENROUTER_API_KEY` | no | — | Instance OpenRouter key. Only the admin falls back to it; other users save their own key. A user who never chose a provider uses the provider whose key they saved, else OpenRouter when this is the only env key. |
 | `OPENROUTER_BASE_URL` | no | `https://openrouter.ai/api/v1` | OpenRouter API base URL (chat/completions, models, key). |
 | `APP_PUBLIC_URL` | no | — | Public URL of this app, sent to OpenRouter as `HTTP-Referer` (with the title `English Course`) for app attribution. Omitted when unset. |
 | `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |

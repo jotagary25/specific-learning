@@ -398,5 +398,13 @@ describe("SettingsPage: AI providers", () => {
         "high",
       ]),
     );
+
+    // Switching back shows Ollama's own choice, not the OpenRouter row state.
+    fireEvent.click(screen.getByLabelText("Ollama Cloud"));
+    await waitFor(() =>
+      expect((screen.getByLabelText("Model for Check answer") as HTMLSelectElement).value).toBe(
+        "gemma4:31b",
+      ),
+    );
   });
 });

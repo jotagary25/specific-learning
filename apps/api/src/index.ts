@@ -68,6 +68,8 @@ const settings = createSettings({
   store: settingsStore,
   appSecret: config.APP_SECRET,
   envApiKey: config.OLLAMA_API_KEY,
+  // Instance env keys are the admin's spend; other users bring their own key.
+  mayUseEnvKeys: async (userId) => (await users.findById(userId))?.role === "admin",
   createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
   openrouter: {
     envApiKey: config.OPENROUTER_API_KEY,

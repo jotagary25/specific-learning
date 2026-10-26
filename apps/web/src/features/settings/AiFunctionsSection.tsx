@@ -160,7 +160,8 @@ export function AiFunctionsSection({ provider }: { provider: AiProviderId }) {
           <tbody>
             {functions.data.map((config) => (
               <AiFunctionRow
-                key={config.id}
+                // Per-provider key: each provider's row state is seeded from its own config.
+                key={`${provider}:${config.id}`}
                 provider={provider}
                 config={config}
                 models={models.data ?? []}

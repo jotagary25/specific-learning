@@ -438,6 +438,22 @@ describe("openrouter adapter: chatJson", () => {
     expect(calls).toHaveLength(4);
   });
 
+  it.each([
+    ["a moderation block (403)", 403, "flagged by moderation"],
+    ["an ordinary bad request (400)", 400, "maximum context length exceeded"],
+  ])("does not retry in json_object mode after %s", async (_label, status, message) => {
+    const { fetchFn, calls } = mockFetch(
+      Response.json(MODELS),
+      new Response(JSON.stringify({ error: { code: status, message } }), { status }),
+    );
+    const c = client(fetchFn);
+
+    await expect(
+      c.chatJson({ model: "openai/gpt-oss-120b", messages: [] }, schema),
+    ).rejects.toMatchObject({ code: "bad_request" });
+    expect(calls).toHaveLength(2);
+  });
+
   it("throws upstream for a 200 body that carries an error object", async () => {
     const { fetchFn } = mockFetch(
       Response.json(MODELS),

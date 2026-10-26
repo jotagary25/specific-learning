@@ -249,6 +249,15 @@ async function readErrorMessage(res: Response): Promise<string | undefined> {
   }
 }
 
+function isStrictSchemaRejection(error: unknown): boolean {
+  return (
+    isLlmError(error) &&
+    error.code === "bad_request" &&
+    error.status === 400 &&
+    /schema|response_format|structured/i.test(error.message)
+  );
+}
+
 function errorFromResponse(status: number, message?: string, retryAfter?: string | null) {
   const detail = message ? `: ${message}` : "";
   if (status === 402) {
@@ -405,8 +414,9 @@ export function createOpenRouterClient(opts: OpenRouterClientOptions): LlmClient
     try {
       return await completeWith(req, mode);
     } catch (error) {
-      // Strict schemas are rejected by some endpoints (e.g. optional fields): fall back.
-      if (mode !== "schema" || !isLlmError(error) || error.code !== "bad_request") throw error;
+      // Strict schemas are rejected by some endpoints (e.g. optional fields): fall back. Only a
+      // 400 that names the schema counts; moderation (403) and other 400s are real failures.
+      if (mode !== "schema" || !isStrictSchemaRejection(error)) throw error;
       strictRejected.add(req.model);
       return completeWith(req, "object");
     }

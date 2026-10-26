@@ -55,6 +55,8 @@ export type SettingsOptions = {
   createClient: ClientFactory;
   /** OpenRouter; without it the provider cannot be selected. */
   openrouter?: ProviderConfig;
+  /** Whether a user may fall back to the instance env keys (default: everyone). */
+  mayUseEnvKeys?: (userId: string) => Promise<boolean>;
   now?: () => number;
   cacheTtlMs?: number;
 };
@@ -104,11 +106,21 @@ export function createSettings(options: SettingsOptions) {
     return config;
   };
 
+  /** Explicit choice, else the provider whose key the user stored, else the env default. */
   async function activeProvider(userId: string): Promise<AiProviderId> {
     const stored = await store.getSetting(userId, PROVIDER_SETTING);
-    return typeof stored === "string" && stored in providers
-      ? (stored as AiProviderId)
-      : defaultProvider;
+    if (typeof stored === "string" && stored in providers) return stored as AiProviderId;
+    for (const id of available) {
+      if (await store.getSecret(userId, API_KEY_SECRET[id])) return id;
+    }
+    return defaultProvider;
+  }
+
+  /** Instance env keys are shared spend: only users allowed by the host may fall back to them. */
+  async function envKeyFor(userId: string, id: AiProviderId): Promise<string | undefined> {
+    const envApiKey = providers[id]?.envApiKey;
+    if (envApiKey === undefined) return undefined;
+    return (await (options.mayUseEnvKeys?.(userId) ?? true)) ? envApiKey : undefined;
   }
   const pick = async (userId: string, provider?: AiProviderId) =>
     provider ?? (await activeProvider(userId));
@@ -161,7 +173,7 @@ export function createSettings(options: SettingsOptions) {
     if (!fresh(state.resolvedKey)) {
       const stored = await readStoredKey(userId, id);
       state.resolvedKey = {
-        value: stored.state === "ok" ? stored.key : providers[id]?.envApiKey,
+        value: stored.state === "ok" ? stored.key : await envKeyFor(userId, id),
         at: now(),
       };
     }
@@ -177,7 +189,7 @@ export function createSettings(options: SettingsOptions) {
 
   async function keyStatus(userId: string, provider?: AiProviderId): Promise<AiKeyStatus> {
     const id = await pick(userId, provider);
-    const envApiKey = providers[id]?.envApiKey;
+    const envApiKey = await envKeyFor(userId, id);
     const stored = await readStoredKey(userId, id);
     if (stored.state === "ok") return { configured: true, source: "db", last4: stored.last4 };
     if (stored.state === "undecryptable") {
