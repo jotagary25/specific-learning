@@ -21,6 +21,8 @@ import { createTheConversationSource } from "./shared/news/theconversation.ts";
 import { createToday } from "./today/today.service.ts";
 import { createTodaySources } from "./today/today.sources.ts";
 import { createDrizzleTodayStore } from "./today/today.store.ts";
+import { createTutor } from "./tutor/tutor.service.ts";
+import { createDrizzleTutorStore } from "./tutor/tutor.store.ts";
 import { createUnits } from "./units/units.service.ts";
 import { createDrizzleUnitsStore } from "./units/units.store.ts";
 import { createVocabulary } from "./vocabulary/vocabulary.service.ts";
@@ -86,8 +88,9 @@ const scheduler = config.EDITOR_ENABLED
     })
   : undefined;
 
+const vocabularyStore = createDrizzleVocabularyStore(database.db);
 const vocabulary = createVocabulary({
-  store: createDrizzleVocabularyStore(database.db),
+  store: vocabularyStore,
   settings: settingsStore,
 });
 
@@ -112,6 +115,17 @@ const today = createToday({
 
 const progress = createProgress({ store: createDrizzleProgressStore(database.db) });
 
+const tutor = createTutor({
+  store: createDrizzleTutorStore(database.db),
+  ai: settings,
+  units,
+  reading,
+  vocabulary,
+  progress,
+  today,
+  wordCards: vocabularyStore,
+});
+
 const app = createApp({
   pingDb: database.ping,
   contentDir,
@@ -123,6 +137,7 @@ const app = createApp({
   writing,
   today,
   progress,
+  tutor,
 });
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {

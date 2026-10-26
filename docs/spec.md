@@ -230,12 +230,9 @@ Runs daily at 05:00 (server time, configurable) and selects **one article per da
 - Opened from any screen with **context** (screen, unit, item, article span, writing error).
 - Explains in **Spanish**, with a **different angle** from the book: programmer analogies, Spanish-contrast pitfalls, timeline descriptions, mini examples. Keeps answers short (~2 min read) and ends with a "back to where you were" action.
 - **Tools** (function calling):
-  - `get_unit_theory(unit_id)`
-  - `get_learner_errors(unit_id?, limit)`
-  - `get_progress_summary()`
-  - `create_srs_card(front, back, source)`
-  - `generate_practice(unit_id, n)` (returns items checked by the normal pipeline)
-  - `add_doubt(text)`
+  - Read: `get_unit_theory(unitNumber, section?)`, `get_item(itemId)` (answer key only after every item of the exercise was attempted), `get_today_article_excerpt(paragraph?)`, `get_recent_errors(limit)`, `get_progress_summary()`, `search_my_cards(query)`
+  - Write (safe, reversible): `create_vocab_card(word, sentence, meaningEs)`, `add_parking_item(text)`, `save_doubt(text)`
+  - Loop: max 4 tool rounds, results truncated to ~4k chars, streamed to the web over SSE (`thinking`, `text`, `tool`, `done`, `error`).
 - The free chat mode is available from the menu. Conversations are stored.
 
 **Acceptance criteria**

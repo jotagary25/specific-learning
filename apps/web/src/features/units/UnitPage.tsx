@@ -2,6 +2,7 @@ import type { AttemptResponse, UnitDetail, UnitStep } from "@english-course/shar
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
+import { useTutor } from "../tutor/TutorProvider.tsx";
 import { ExerciseCard } from "./ExerciseCard.tsx";
 import { ExplainSheet } from "./ExplainSheet.tsx";
 import { PuzzleStep } from "./PuzzleStep.tsx";
@@ -70,6 +71,7 @@ function UnitFlow({ unit }: { unit: UnitDetail }) {
   const index = steps.indexOf(step);
 
   const [explainOpen, setExplainOpen] = useState(false);
+  const { openTutor } = useTutor();
   const [celebrate, setCelebrate] = useState(false);
   const focusedItem = useRef<{ step: UnitStep; itemId?: string; timelineItemId?: string }>({
     step,
@@ -233,7 +235,21 @@ function UnitFlow({ unit }: { unit: UnitDetail }) {
       </button>
 
       {explainOpen ? (
-        <ExplainSheet unitNumber={unit.number} context={context} onBack={closeExplain} />
+        <ExplainSheet
+          unitNumber={unit.number}
+          context={context}
+          onBack={closeExplain}
+          onFollowUp={(shown) => {
+            // Same context as the sheet; "Back to my task" returns to the same spot.
+            setExplainOpen(false);
+            openTutor({
+              context: context.itemId
+                ? { kind: "exercise", ref: context.itemId, snippet: shown }
+                : { kind: "unit", ref: `${unit.number}#${step}`, snippet: shown },
+              returnFocus: returnFocus.current,
+            });
+          }}
+        />
       ) : null}
     </>
   );

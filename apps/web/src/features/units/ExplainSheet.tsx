@@ -10,6 +10,8 @@ type Props = {
   context: Pick<ExplainContext, "step" | "itemId" | "timelineItemId">;
   /** Closes the sheet; the page restores the exact step and item. */
   onBack: () => void;
+  /** Continues in the tutor chat; receives the explanation already shown (if any). */
+  onFollowUp?: (shownExplanation?: string) => void;
 };
 
 const unavailable = (error: Error) =>
@@ -18,7 +20,7 @@ const unavailable = (error: Error) =>
     : error.message;
 
 /** "I don't get it": a Spanish explanation of what is on screen, then back to the same spot. */
-export function ExplainSheet({ unitNumber, context, onBack }: Props) {
+export function ExplainSheet({ unitNumber, context, onBack, onFollowUp }: Props) {
   const titleId = useId();
   const questionId = useId();
   const [question, setQuestion] = useState("");
@@ -103,6 +105,21 @@ export function ExplainSheet({ unitNumber, context, onBack }: Props) {
             <button type="submit" className={styles.secondary} disabled={explain.isPending}>
               Explain it differently
             </button>
+            {onFollowUp ? (
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={() =>
+                  onFollowUp(
+                    current
+                      ? `Explanation already shown: ${current.explanationEs}`.slice(0, 2000)
+                      : undefined,
+                  )
+                }
+              >
+                Ask a follow-up
+              </button>
+            ) : null}
             <button ref={backRef} type="button" className={styles.primary} onClick={onBack}>
               Back to where I was
             </button>

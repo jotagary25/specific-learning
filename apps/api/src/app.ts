@@ -11,6 +11,8 @@ import { settingsRoutes } from "./settings/settings.routes.ts";
 import type { Settings } from "./settings/settings.service.ts";
 import { todayRoutes } from "./today/today.routes.ts";
 import type { Today } from "./today/today.service.ts";
+import { tutorRoutes } from "./tutor/tutor.routes.ts";
+import type { Tutor } from "./tutor/tutor.service.ts";
 import { unitsRoutes } from "./units/units.routes.ts";
 import type { Units } from "./units/units.service.ts";
 import { vocabularyRoutes } from "./vocabulary/vocabulary.routes.ts";
@@ -30,6 +32,7 @@ export type AppDeps = HealthDeps & {
   writing?: Writing;
   today?: Today;
   progress?: Progress;
+  tutor?: Tutor;
 };
 
 export function createApp(deps: AppDeps) {
@@ -44,6 +47,7 @@ export function createApp(deps: AppDeps) {
   if (deps.writing) api.route("/writing", writingRoutes(deps.writing));
   if (deps.today) api.route("/today", todayRoutes(deps.today));
   if (deps.progress) api.route("/progress", progressRoutes(deps.progress));
+  if (deps.tutor) api.route("/tutor", tutorRoutes(deps.tutor));
 
   return new Hono()
     .route("/api", api)

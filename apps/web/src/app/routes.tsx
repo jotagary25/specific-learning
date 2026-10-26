@@ -8,6 +8,7 @@ import { HistoryPage } from "../features/reading/HistoryPage.tsx";
 import { ReadingPage } from "../features/reading/ReadingPage.tsx";
 import { SettingsPage } from "../features/settings/SettingsPage.tsx";
 import { TodayPage } from "../features/today/TodayPage.tsx";
+import { TutorPage } from "../features/tutor/TutorPage.tsx";
 import { UnitPage } from "../features/units/UnitPage.tsx";
 import { UnitsPage } from "../features/units/UnitsPage.tsx";
 import { CardsPage } from "../features/vocabulary/CardsPage.tsx";
@@ -39,6 +40,8 @@ export const routes: RouteObject[] = [
       { path: "writing/history", element: <WritingHistoryPage /> },
       { path: "progress", element: <ProgressPage /> },
       { path: "progress/mirror/:month", element: <MirrorPage /> },
+      { path: "tutor", element: <TutorPage /> },
+      { path: "tutor/:id", element: <TutorPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],
   },
