@@ -57,6 +57,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L16 (user): "osea que ahora hay 3 composes? que basura es esta>" / "en que mundo vives si te estoy diciendo que quiero desplegar en compose en dokploy?" → S6 clarified: production deploys as a Docker Compose service on Dokploy. `docker-compose.dokploy.yml` removed; `docker-compose.prod.yml` is now the single production compose, Dokploy-ready (`expose: 3000`, no published ports, `env_file: .env`, TZ UTC, `extra_hosts`, optional `with-db` profile; dropped APP_BIND/APP_PORT/APP_IMAGE/ENV_FILE). README "Production deployment (Dokploy)" rewritten around Compose on Dokploy. Compose config validates; lint clean.
 
+- L17 (user): "no debe haber un compose para dokploy, debe ser uno para producción, el punto es que dokploy no necesita nada especial para funcionar, despliega cualquier cosa." → S6 final: one generic production compose (`docker-compose.prod.yml`: published `${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}`, `env_file: .env`, TZ UTC, `extra_hosts`, optional `with-db`), nothing Dokploy-specific; README "Production deployment" is generic with a 3-line Dokploy note.
+
 ## Next step
 
 Feature complete. User: update `.env.example`; push/PR/merge are user decisions.
