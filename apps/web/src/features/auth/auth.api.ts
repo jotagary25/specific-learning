@@ -1,11 +1,19 @@
 import { AuthStatus } from "@english-course/shared";
 import { type LoaderFunctionArgs, redirect } from "react-router";
 import { apiRequest } from "../../shared/api/http.ts";
+import { clearSessionData } from "../../shared/api/session-cache.ts";
 
 export const login = (password: string) =>
   apiRequest("/api/auth/login", AuthStatus, { method: "POST", body: { password } });
 
-export const logout = () => apiRequest("/api/auth/logout", AuthStatus, { method: "POST" });
+/** Logs out and drops the session's cached data, even when the request itself fails. */
+export async function logout() {
+  try {
+    return await apiRequest("/api/auth/logout", AuthStatus, { method: "POST" });
+  } finally {
+    await clearSessionData();
+  }
+}
 
 /** Only same-app paths are allowed as a post-login target (no open redirects). */
 export function safeNext(next: string | null): string {
@@ -35,6 +43,8 @@ export async function requireAuth({ request }: LoaderFunctionArgs) {
     if (!navigator.onLine) return null;
   }
   if (res?.ok) return null;
+  // The session ended: authenticated study data cached for offline use must not outlive it.
+  if (res?.status === 401) await clearSessionData();
   const url = new URL(request.url);
   const here = url.pathname + url.search;
   throw redirect(res?.status === 401 ? loginPath(here) : loginPath(here, "unavailable"));

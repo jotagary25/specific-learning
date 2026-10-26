@@ -5,6 +5,7 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { passwordMatches } from "./password.ts";
 import { createLoginRateLimiter, type LoginRateLimiter } from "./rate-limit.ts";
 import { deriveSessionKey, signSession, verifySession } from "./session.ts";
+import { isTrustedProxyPeer, socketAddress } from "./trusted-proxy.ts";
 
 export const SESSION_COOKIE = "ec_session";
 /** `setting` row holding the session epoch (integer): bumping it revokes every session. */
@@ -35,8 +36,10 @@ export type AuthOptions = {
    */
   cookieSecure?: "auto" | boolean;
   /**
-   * Behind a trusted TLS-terminating proxy, `auto` follows `X-Forwarded-Proto` alone (Secure
-   * when it is missing). Leave off when clients can reach the api directly (the header is spoofable).
+   * Behind a TLS-terminating reverse proxy: `X-Forwarded-Proto` decides `auto` (Secure when it
+   * is missing) and the last `X-Forwarded-For` entry keys the login rate limit. Both headers
+   * are honored only when the socket peer is loopback or private (the proxy); any other peer
+   * falls back to its own address and the request protocol.
    */
   trustProxy?: boolean;
   /**
@@ -47,13 +50,14 @@ export type AuthOptions = {
   sessionTtlMs?: number;
   now?: () => number;
   rateLimiter?: LoginRateLimiter;
-  /** Rate-limit bucket for a request (e.g. the client IP). Defaults to one global bucket. */
-  clientKey?: (c: Context) => string;
 };
+
+/** `unavailable`: the session epoch could not be read, so the cookie cannot be judged. */
+export type SessionCheck = "valid" | "invalid" | "unavailable";
 
 export type Auth = {
   routes: Hono;
-  isAuthenticated: (c: Context) => Promise<boolean>;
+  checkSession: (c: Context) => Promise<SessionCheck>;
 };
 
 /**
@@ -74,12 +78,23 @@ function isLocalHost(hostname: string): boolean {
 const unauthorized = (c: Context) =>
   c.json({ error: "unauthorized", message: "Log in first" }, 401);
 
+/** 503, not 401: the web shows "Server unavailable" instead of sending the user to login. */
+const sessionStoreUnavailable = (c: Context) =>
+  c.json(
+    { error: "session-store-unavailable", message: "Session store unavailable, try again later" },
+    503,
+  );
+
+const logStoreFailure = (action: string, error: unknown) =>
+  console.error(
+    `auth: session store unavailable during ${action}: ${error instanceof Error ? error.message : String(error)}`,
+  );
+
 export function createAuth(options: AuthOptions): Auth {
   const key = deriveSessionKey(options.appSecret, options.password);
   const now = options.now ?? Date.now;
   const ttlMs = options.sessionTtlMs ?? DEFAULT_TTL_MS;
   const limiter = options.rateLimiter ?? createLoginRateLimiter({ now });
-  const clientKey = options.clientKey ?? (() => "global");
   const epochStore = options.epochStore ?? createMemoryEpochStore();
 
   // Write-through cache: read once per process, updated after every successful persist.
@@ -100,10 +115,23 @@ export function createAuth(options: AuthOptions): Auth {
     epochCache = Promise.resolve(next);
   };
 
+  /** Forwarded headers count only with TRUST_PROXY and a loopback/private socket peer. */
+  const fromTrustedProxy = (c: Context) =>
+    options.trustProxy === true && isTrustedProxyPeer(socketAddress(c));
+
+  /** Login rate-limit bucket: the client the proxy vouches for, else the socket peer. */
+  const clientKey = (c: Context) => {
+    // The proxy appends the address it saw, so the last entry is the one it vouches for.
+    const forwarded = fromTrustedProxy(c)
+      ? c.req.header("x-forwarded-for")?.split(",").at(-1)?.trim()
+      : undefined;
+    return forwarded || (socketAddress(c) ?? "unknown");
+  };
+
   const secureFor = (c: Context) => {
     const setting = options.cookieSecure ?? "auto";
     if (setting !== "auto") return setting;
-    if (options.trustProxy) {
+    if (fromTrustedProxy(c)) {
       const forwardedProto = c.req.header("x-forwarded-proto")?.split(",")[0]?.trim();
       // A trusted proxy must say how the client connected; without it, fail closed.
       return forwardedProto ? forwardedProto.toLowerCase() === "https" : true;
@@ -112,9 +140,17 @@ export function createAuth(options: AuthOptions): Auth {
     return url.protocol === "https:" || !isLocalHost(url.hostname);
   };
 
-  const isAuthenticated = async (c: Context) => {
+  const checkSession = async (c: Context): Promise<SessionCheck> => {
     const token = getCookie(c, SESSION_COOKIE);
-    return token !== undefined && verifySession(key, token, now(), await currentEpoch());
+    if (token === undefined) return "invalid";
+    let epoch: number;
+    try {
+      epoch = await currentEpoch();
+    } catch (error) {
+      logStoreFailure("session check", error);
+      return "unavailable";
+    }
+    return verifySession(key, token, now(), epoch) ? "valid" : "invalid";
   };
 
   const routes = new Hono()
@@ -145,26 +181,39 @@ export function createAuth(options: AuthOptions): Auth {
     })
     .post("/logout", async (c) => {
       // Only a valid session may revoke, so anonymous requests cannot log the user out.
-      if (await isAuthenticated(c)) await revokeAllSessions();
+      let revoked = false;
+      if ((await checkSession(c)) === "valid") {
+        try {
+          await revokeAllSessions();
+          revoked = true;
+        } catch (error) {
+          logStoreFailure("logout", error);
+        }
+      }
+      // This browser is logged out either way, even when the revocation could not be saved.
       deleteCookie(c, SESSION_COOKIE, {
         path: "/",
         secure: secureFor(c),
         httpOnly: true,
         sameSite: "Strict",
       });
-      return c.json({ authenticated: false });
+      return c.json({ authenticated: false, revoked });
     })
-    .get("/me", async (c) =>
-      (await isAuthenticated(c)) ? c.json({ authenticated: true }) : unauthorized(c),
-    );
+    .get("/me", async (c) => {
+      const session = await checkSession(c);
+      if (session === "unavailable") return sessionStoreUnavailable(c);
+      return session === "valid" ? c.json({ authenticated: true }) : unauthorized(c);
+    });
 
-  return { routes, isAuthenticated };
+  return { routes, checkSession };
 }
 
 /** Protects every route it wraps; without an auth config it fails closed. */
 export function requireSession(auth: Auth | undefined): MiddlewareHandler {
   return async (c, next) => {
-    if (!(await auth?.isAuthenticated(c))) return unauthorized(c);
+    const session = auth ? await auth.checkSession(c) : "invalid";
+    if (session === "unavailable") return sessionStoreUnavailable(c);
+    if (session !== "valid") return unauthorized(c);
     await next();
   };
 }

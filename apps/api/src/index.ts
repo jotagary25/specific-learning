@@ -1,5 +1,4 @@
 import { serve } from "@hono/node-server";
-import { getConnInfo } from "@hono/node-server/conninfo";
 import { createApp } from "./app.ts";
 import { createAuth } from "./auth/auth.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
@@ -55,18 +54,8 @@ const auth = createAuth({
   trustProxy: config.TRUST_PROXY,
   // Logout bumps the epoch in `setting`, revoking every session (single-user app).
   epochStore: settingsStore,
-  clientKey: (c) => {
-    // The proxy appends the address it saw, so the last entry is the one it vouches for.
-    const forwarded = config.TRUST_PROXY
-      ? c.req.header("x-forwarded-for")?.split(",").at(-1)?.trim()
-      : undefined;
-    if (forwarded) return forwarded;
-    try {
-      return getConnInfo(c).remote.address ?? "unknown";
-    } catch {
-      return "unknown";
-    }
-  },
+  // Login rate limiting keys on the socket peer, or on X-Forwarded-For when TRUST_PROXY is
+  // on and the peer is a loopback/private proxy (see auth/trusted-proxy.ts).
 });
 const settings = createSettings({
   store: settingsStore,

@@ -112,6 +112,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 - Review `review-16e45fe6025b57a6` (base 6fb84c1 → c6b483a: T17 + review fixes, high, 1,930 lines, consent granted): 4 lenses admitted → **approved**, acknowledged, authority burned. Reviewed boundary → `c6b483a`. Advisory (non-blocking) follow-ups: XFF bucket bypass when TRUST_PROXY=true and the app is reachable directly (APP_BIND defaults to 0.0.0.0); service-worker API cache survives logout; session-epoch read failure → 500; logout when DB fails; NetworkFirst stale data on timeout; update-check interval leak; SPA fallback for dotted routes; old token format forces re-login; rate-limit naming; duplicated TTL; .env.example drift.
 - Leftover: lineage `review-265f9b70838eecc2` (scope too large) remains non-terminal; abandoning it needs the maintainer-authorization template (`gentle-ai review abandon`).
 
+- Advisory follow-ups applied: TRUST_PROXY honors XFF/XFP only from loopback/private peers (`auth/trusted-proxy.ts`), prod compose binds `127.0.0.1` by default; logout + 401 clear the `api-study` SW cache and the query cache; epoch store failures → 503 `session-store-unavailable` (not 500), logout always clears the cookie (`revoked` flag). Tests: api 506 (+14 skipped), web 109; lint clean. Parent spot check: live login 200 → logout revoked → old cookie 401.
+
 ## Next step
 
-Optional follow-up on the advisory findings (top: APP_BIND default 127.0.0.1 or TRUST_PROXY peer check; clear SW API cache on logout; handle epoch/logout DB failures). User: set Ollama key + TZ, add README lines to `.env.example`; UI polish from smoke test; push/PR/merge remain user decisions.
+User: set Ollama key + TZ, add README lines to `.env.example`; UI polish from smoke test; remaining advisory suggestions (NetworkFirst staleness, update interval leak, dotted SPA routes); push/PR/merge remain user decisions.

@@ -61,8 +61,8 @@ invalid. Empty values count as unset.
 | `PORT` | no | `3000` | API listen port. `docker-compose.prod.yml` pins it to 3000 inside the container. |
 | `OLLAMA_API_KEY` | no | — | Bootstrap Ollama Cloud key; a key saved in Settings overrides it. |
 | `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show, web search). |
-| `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true`, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
-| `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting uses `X-Forwarded-For`. Only enable it when clients cannot reach the app directly. |
+| `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
+| `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
 | `EDITOR_ENABLED` | no | `true` | `false` disables the in-process daily editor (manual runs still work). |
 | `EDITOR_HOUR` | no | `5` | Local hour (0–23, in `TZ`) of the daily editor run. |
 | `CONTENT_DIR` | no | repo `content/` | Content root (units, authored content, images, eval samples). Relative paths resolve from the working directory. |
@@ -71,7 +71,7 @@ invalid. Empty values count as unset.
 | `API_URL` | no | `http://localhost:3000` | Dev only: where the Vite dev server proxies `/api` and `/content` (`http://api:3000` in compose). |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | dev; prod `with-db` | prod: `english` / — / `english_course` | Credentials for the bundled `postgres:18` service. Keep them in sync with `DATABASE_URL`. |
 | `APP_PORT` | no | `3000` | Prod compose: host port published for the app. |
-| `APP_BIND` | no | `0.0.0.0` | Prod compose: host address to publish on; use `127.0.0.1` behind a local reverse proxy. |
+| `APP_BIND` | no | `127.0.0.1` | Prod compose: host address to publish on. The default only accepts a reverse proxy on the same host; set `0.0.0.0` to expose the app directly (then leave `TRUST_PROXY` off). |
 | `APP_IMAGE` | no | `english-course:latest` | Prod compose: image tag to build/run. |
 | `ENV_FILE` | no | `.env` | Prod compose: env file passed to the app container. |
 
@@ -97,7 +97,7 @@ git clone <this repo> english-course && cd english-course
 cp .env.example .env
 # set DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
 # set APP_PASSWORD, APP_SECRET (openssl rand -hex 32), TZ, and for a reverse proxy:
-#   TRUST_PROXY=true, APP_BIND=127.0.0.1
+#   TRUST_PROXY=true (APP_BIND already defaults to 127.0.0.1)
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml ps    # wait for "healthy"
 ```
@@ -118,8 +118,12 @@ docker compose -f docker-compose.prod.yml --profile with-db up -d --build
 
 ### Reverse proxy and TLS
 
-Put a TLS-terminating proxy in front, publish the app only on `127.0.0.1` (`APP_BIND`), and set
-`TRUST_PROXY=true` so the session cookie gets the `Secure` flag from `X-Forwarded-Proto`. A
+Put a TLS-terminating proxy in front and set `TRUST_PROXY=true` so the session cookie gets the
+`Secure` flag from `X-Forwarded-Proto` and login rate limiting keys on the client address. The
+app is published only on `127.0.0.1` by default (`APP_BIND`), and it honors forwarded headers
+only from loopback or private peers (a host proxy reaches the container from the Docker bridge,
+a proxy container from the compose network), so a client cannot spoof them. To reach the app
+without a proxy, set `APP_BIND=0.0.0.0` and keep `TRUST_PROXY` off. A
 service worker (offline support, install) requires HTTPS on any host other than `localhost`.
 
 - **Caddy**: `english.example.com { reverse_proxy 127.0.0.1:3000 }` (forwarded headers are set automatically).

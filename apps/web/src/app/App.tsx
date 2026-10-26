@@ -2,6 +2,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@ta
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { loginPath } from "../features/auth/auth.api.ts";
 import { isUnauthorized } from "../shared/api/http.ts";
+import { onSessionEnd } from "../shared/api/session-cache.ts";
 import { routes } from "./routes.tsx";
 
 const router = createBrowserRouter(routes);
@@ -21,6 +22,9 @@ const queryClient = new QueryClient({
     queries: { retry: (failureCount, error) => !isUnauthorized(error) && failureCount < 3 },
   },
 });
+
+// Logout or an expired session: no query data from the old session survives in memory.
+onSessionEnd(() => queryClient.clear());
 
 export function App() {
   return (

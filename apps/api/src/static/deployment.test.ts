@@ -25,12 +25,24 @@ const contentDir = resolveContentDir({});
 const prodApp = (auth = createAuth(authOptions)) =>
   createApp({ pingDb: async () => true, contentDir, webDistDir: distDir, auth });
 
-const login = (app: ReturnType<typeof prodApp>, url: string, headers: Record<string, string>) =>
-  app.request(url, {
-    method: "POST",
-    headers: { "content-type": "application/json", ...headers },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
+const login = (
+  app: ReturnType<typeof prodApp>,
+  url: string,
+  headers: Record<string, string>,
+  env?: object,
+) =>
+  app.request(
+    url,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", ...headers },
+      body: JSON.stringify({ password: PASSWORD }),
+    },
+    env,
+  );
+
+/** Node server bindings as `getConnInfo` reads them: the TCP peer of the request. */
+const peer = (remoteAddress: string) => ({ incoming: { socket: { remoteAddress } } });
 
 describe("web build serving (WEB_DIST_DIR set)", () => {
   const app = prodApp();
@@ -118,20 +130,38 @@ describe("without WEB_DIST_DIR (dev)", () => {
 });
 
 describe("Secure session cookie behind a reverse proxy", () => {
-  // The proxy talks to the container over plain http on a single-label host.
+  // The proxy talks to the container over plain http on a single-label host, from the
+  // docker network (a private address).
   const upstream = "http://app:3000/api/auth/login";
+  const proxy = peer("172.18.0.1");
 
-  it("follows X-Forwarded-Proto when TRUST_PROXY is on", async () => {
+  it("follows X-Forwarded-Proto from a private proxy when TRUST_PROXY is on", async () => {
     const app = prodApp(createAuth({ ...authOptions, trustProxy: true }));
 
-    const https = await login(app, upstream, { "x-forwarded-proto": "https" });
+    const https = await login(app, upstream, { "x-forwarded-proto": "https" }, proxy);
     expect(https.headers.get("set-cookie")).toMatch(/Secure/i);
 
-    const http = await login(app, upstream, { "x-forwarded-proto": "http" });
+    const http = await login(app, upstream, { "x-forwarded-proto": "http" }, proxy);
     expect(http.headers.get("set-cookie")).not.toMatch(/Secure/i);
 
-    const chained = await login(app, upstream, { "x-forwarded-proto": "https, http" });
+    const chained = await login(app, upstream, { "x-forwarded-proto": "https, http" }, proxy);
     expect(chained.headers.get("set-cookie")).toMatch(/Secure/i);
+  });
+
+  it("ignores X-Forwarded-Proto from a public peer even when TRUST_PROXY is on", async () => {
+    const app = prodApp(createAuth({ ...authOptions, trustProxy: true }));
+    const direct = peer("203.0.113.9");
+
+    const spoofedHttps = await login(app, upstream, { "x-forwarded-proto": "https" }, direct);
+    expect(spoofedHttps.headers.get("set-cookie")).not.toMatch(/Secure/i);
+
+    const spoofedHttp = await login(
+      app,
+      "https://english.example.com/api/auth/login",
+      { "x-forwarded-proto": "http" },
+      direct,
+    );
+    expect(spoofedHttp.headers.get("set-cookie")).toMatch(/Secure/i);
   });
 
   it("ignores X-Forwarded-Proto when TRUST_PROXY is off", async () => {
@@ -144,14 +174,14 @@ describe("Secure session cookie behind a reverse proxy", () => {
   it("fails closed (Secure) when a trusted proxy sends no X-Forwarded-Proto", async () => {
     const app = prodApp(createAuth({ ...authOptions, trustProxy: true }));
 
-    const local = await login(app, upstream, {});
+    const local = await login(app, upstream, {}, proxy);
     expect(local.headers.get("set-cookie")).toMatch(/Secure/i);
   });
 
   it("keeps an explicit COOKIE_SECURE=false even when the proxy says https", async () => {
     const app = prodApp(createAuth({ ...authOptions, trustProxy: true, cookieSecure: false }));
 
-    const res = await login(app, upstream, { "x-forwarded-proto": "https" });
+    const res = await login(app, upstream, { "x-forwarded-proto": "https" }, proxy);
     expect(res.headers.get("set-cookie")).not.toMatch(/Secure/i);
   });
 });

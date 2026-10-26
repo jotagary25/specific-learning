@@ -25,7 +25,8 @@ const EnvSchema = z.object({
   ),
   /**
    * Trust `X-Forwarded-*` headers from a reverse proxy (TLS termination): the cookie `Secure`
-   * flag follows `X-Forwarded-Proto` and login rate limiting keys on `X-Forwarded-For`.
+   * flag follows `X-Forwarded-Proto` and login rate limiting keys on `X-Forwarded-For`. Only
+   * loopback/private socket peers are believed (see auth/trusted-proxy.ts).
    */
   TRUST_PROXY: z.preprocess(
     emptyToUndefined,

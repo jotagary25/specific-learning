@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../app.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
-import { type AuthOptions, createAuth, SESSION_EPOCH_SETTING } from "./auth.ts";
+import {
+  type AuthOptions,
+  createAuth,
+  SESSION_EPOCH_SETTING,
+  type SessionEpochStore,
+} from "./auth.ts";
 
 const PASSWORD = "correct horse";
 const baseOptions: AuthOptions = { password: PASSWORD, appSecret: "ab".repeat(32) };
@@ -12,16 +17,24 @@ function setup(options: Partial<AuthOptions> = {}) {
   return { app };
 }
 
+/** Node server bindings as `getConnInfo` reads them: the TCP peer of the request. */
+const peer = (remoteAddress: string) => ({ incoming: { socket: { remoteAddress } } });
+
 const login = (
   app: ReturnType<typeof setup>["app"],
   password: string,
   url = "http://localhost/api/auth/login",
+  { headers = {}, env }: { headers?: Record<string, string>; env?: object } = {},
 ) =>
-  app.request(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password }),
-  });
+  app.request(
+    url,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", ...headers },
+      body: JSON.stringify({ password }),
+    },
+    env,
+  );
 
 const cookieOf = (res: Response) => res.headers.get("set-cookie")?.split(";")[0] ?? "";
 
@@ -118,6 +131,7 @@ describe("auth routes", () => {
 
     const out = await app.request("/api/auth/logout", { method: "POST", headers: { cookie } });
     expect(out.status).toBe(200);
+    expect(await out.json()).toEqual({ authenticated: false, revoked: true });
     expect(out.headers.get("set-cookie")).toMatch(/ec_session=;.*Max-Age=0/);
   });
 
@@ -155,6 +169,7 @@ describe("auth routes", () => {
     const out = await app.request("/api/auth/logout", { method: "POST" });
 
     expect(out.status).toBe(200);
+    expect(await out.json()).toEqual({ authenticated: false, revoked: false });
     expect(store.settings.has(SESSION_EPOCH_SETTING)).toBe(false);
     expect((await app.request("/api/auth/me", { headers: { cookie } })).status).toBe(200);
   });
@@ -167,6 +182,137 @@ describe("auth routes", () => {
     clock += 1000;
 
     expect((await app.request("/api/auth/me", { headers: { cookie } })).status).toBe(401);
+  });
+});
+
+describe("login rate limit buckets", () => {
+  const rotate = (i: number) => ({ "x-forwarded-for": `198.51.100.${i}` });
+
+  it("ignores X-Forwarded-For from a public peer even with TRUST_PROXY on", async () => {
+    const { app } = setup({ trustProxy: true });
+    const env = peer("203.0.113.9");
+    for (let i = 0; i < 5; i++) {
+      expect((await login(app, "nope", undefined, { headers: rotate(i), env })).status).toBe(401);
+    }
+
+    const rotated = await login(app, PASSWORD, undefined, { headers: rotate(99), env });
+
+    expect(rotated.status).toBe(429);
+  });
+
+  it("keys on the last X-Forwarded-For entry from a private or loopback proxy", async () => {
+    const { app } = setup({ trustProxy: true });
+    for (const proxy of ["172.18.0.1", "::ffff:127.0.0.1"]) {
+      const env = peer(proxy);
+      const client = { "x-forwarded-for": `spoofed, 198.51.100.${proxy.length}` };
+      for (let i = 0; i < 5; i++) {
+        expect((await login(app, "nope", undefined, { headers: client, env })).status).toBe(401);
+      }
+      expect((await login(app, PASSWORD, undefined, { headers: client, env })).status).toBe(429);
+      const other = await login(app, PASSWORD, undefined, { headers: rotate(7), env });
+      expect(other.status, proxy).toBe(200);
+    }
+  });
+
+  it("keys on the socket address when TRUST_PROXY is off", async () => {
+    const { app } = setup();
+    const headers = { "x-forwarded-for": "198.51.100.1" };
+    for (let i = 0; i < 5; i++) {
+      expect((await login(app, "nope", undefined, { headers, env: peer("10.0.0.2") })).status).toBe(
+        401,
+      );
+    }
+
+    expect((await login(app, PASSWORD, undefined, { headers, env: peer("10.0.0.2") })).status).toBe(
+      429,
+    );
+    expect((await login(app, PASSWORD, undefined, { headers, env: peer("10.0.0.3") })).status).toBe(
+      200,
+    );
+  });
+});
+
+describe("session store failures", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  /** A settings store whose reads and writes can be made to reject. */
+  function flakyStore() {
+    const inner = createMemorySettingsStore();
+    const state = { failGet: false, failPut: false };
+    const store: SessionEpochStore = {
+      getSetting: async (key) => {
+        if (state.failGet) throw new Error("connection refused");
+        return inner.getSetting(key);
+      },
+      putSetting: async (key, value) => {
+        if (state.failPut) throw new Error("connection refused");
+        await inner.putSetting(key, value);
+      },
+    };
+    return { store, state };
+  }
+
+  /** A cookie signed by another process, so the app under test must read the epoch itself. */
+  async function issuedCookie() {
+    return cookieOf(await login(setup().app, PASSWORD));
+  }
+
+  it("answers 503 on protected routes and /me when the epoch cannot be read, without caching it", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const cookie = await issuedCookie();
+    const { store, state } = flakyStore();
+    const { app } = setup({ epochStore: store });
+    state.failGet = true;
+
+    const blocked = await app.request("/api/anything", { headers: { cookie } });
+    expect(blocked.status).toBe(503);
+    expect(await blocked.json()).toMatchObject({ error: "session-store-unavailable" });
+    const me = await app.request("/api/auth/me", { headers: { cookie } });
+    expect(me.status).toBe(503);
+    expect(await me.json()).toMatchObject({ error: "session-store-unavailable" });
+    expect(errors).toHaveBeenCalledTimes(2);
+
+    state.failGet = false;
+    expect((await app.request("/api/auth/me", { headers: { cookie } })).status).toBe(200);
+  });
+
+  it("still answers 401 without a cookie, since no epoch read is needed", async () => {
+    const { store, state } = flakyStore();
+    const { app } = setup({ epochStore: store });
+    state.failGet = true;
+
+    expect((await app.request("/api/anything")).status).toBe(401);
+    expect((await app.request("/api/auth/me")).status).toBe(401);
+  });
+
+  it("clears the cookie on logout when the epoch cannot be read", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const cookie = await issuedCookie();
+    const { store, state } = flakyStore();
+    const { app } = setup({ epochStore: store });
+    state.failGet = true;
+
+    const out = await app.request("/api/auth/logout", { method: "POST", headers: { cookie } });
+
+    expect(out.status).toBe(200);
+    expect(await out.json()).toEqual({ authenticated: false, revoked: false });
+    expect(out.headers.get("set-cookie")).toMatch(/ec_session=;.*Max-Age=0/);
+    expect(errors).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears the cookie on logout when the epoch bump cannot be saved", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { store, state } = flakyStore();
+    const { app } = setup({ epochStore: store });
+    const cookie = cookieOf(await login(app, PASSWORD));
+    state.failPut = true;
+
+    const out = await app.request("/api/auth/logout", { method: "POST", headers: { cookie } });
+
+    expect(out.status).toBe(200);
+    expect(await out.json()).toEqual({ authenticated: false, revoked: false });
+    expect(out.headers.get("set-cookie")).toMatch(/ec_session=;.*Max-Age=0/);
+    expect(errors).toHaveBeenCalledTimes(1);
   });
 });
 
