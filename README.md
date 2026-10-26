@@ -157,8 +157,51 @@ docker compose -f docker-compose.prod.yml ps    # wait for "healthy"
 ```
 
 Migrations and the idempotent content seed run on every start. If the database runs on the same
-host outside Docker, use the host's address reachable from the container (for example the
-Docker bridge IP) rather than `localhost`.
+host outside Docker, `localhost` inside the container is the container itself: use
+`host.docker.internal` (mapped to the host by `extra_hosts` in the compose files), make
+PostgreSQL listen on the Docker bridge (`listen_addresses` in `postgresql.conf`) and allow the
+Docker subnet in `pg_hba.conf` (for example `host english_course english_course 172.16.0.0/12 scram-sha-256`).
+
+### Deploying with Dokploy
+
+The app is ready for [Dokploy](https://dokploy.com): one stateless container, configuration only
+through environment variables, health at `/api/health`, and Traefik (Dokploy's proxy) is trusted
+as a private-network peer. Two ways to deploy it:
+
+- **Application (recommended)**: create an Application from this repository with build type
+  **Dockerfile** (`Dockerfile` at the repo root). In **Environment**, set the variables below.
+  In **Domains**, add your domain pointing to container port **3000** with HTTPS (Let's Encrypt).
+  No host port is needed.
+- **Docker Compose**: create a Compose service using `docker-compose.dokploy.yml`. Dokploy
+  writes the Environment tab to `.env` next to the compose file, and `env_file` passes it to
+  the container. Add the domain in the **Domains** tab (service `app`, port 3000); Dokploy joins
+  the service to `dokploy-network` and adds the Traefik labels.
+
+Environment for Dokploy (see the full table above):
+
+```env
+DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
+APP_USER_EMAIL=you@example.com
+APP_USER_PASSWORD=<8+ characters>
+APP_SECRET=<openssl rand -hex 32, generated on the server>
+TRUST_PROXY=true
+# optional
+OPENROUTER_API_KEY=
+OLLAMA_API_KEY=
+APP_PUBLIC_URL=https://english.example.com
+```
+
+`<db-host>` depends on where PostgreSQL 18 runs:
+
+- **A Dokploy database service**: use its internal host shown in Dokploy (it is reachable on
+  `dokploy-network`).
+- **PostgreSQL installed on the server**: `host.docker.internal` with the Compose deployment
+  (via `extra_hosts`); with an Application, use the Docker bridge gateway address (usually
+  `172.17.0.1`). In both cases allow the Docker subnet in `pg_hba.conf` as described above.
+
+`TRUST_PROXY=true` is safe here: forwarded headers are honored only from loopback or private
+peers, which is how Traefik reaches the container. Keep `APP_SECRET` stable: changing it signs
+everyone out and makes saved AI keys unreadable.
 
 ### Without a PostgreSQL server
 

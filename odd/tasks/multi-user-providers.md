@@ -27,7 +27,7 @@ Branch: `feat/multi-user-providers` (from `feat/english-course-mvp` @ `a4dde70`)
 | T1 | S1, S2 | delegated writer (context backstop: parent session is very long) | [x] | see Log |
 | T2 | S3, S5 | delegated writer (context backstop) | [x] | see Log |
 | T3 | S4 | delegated writer (context backstop) | [x] | see Log |
-| T4 | S6 | inline or delegated | [ ] | |
+| T4 | S6 | inline | [x] | see Log |
 
 Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in its own commit for native review. Do not commit while a committed-only review is open.
 
@@ -50,6 +50,9 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L12 (T3 evidence): OpenRouter adapter (`shared/llm/openrouter.ts`: SSE with comments, tool-call fragment accumulation by index, reasoning deltas, usage `costUsd`, truncation error; errors 401/402(`payment_required`)/403/408/429/5xx; chatJson strict json_schema + `provider.require_parameters`, json_object/plain fallbacks; models catalog cached 10 min; key test via `GET /key`). Per-user provider `ai.provider` (ollama|openrouter), per-provider keys + per-function configs, env fallbacks `OPENROUTER_API_KEY`/`OPENROUTER_BASE_URL`/`APP_PUBLIC_URL`; defaults `google/gemma-4-31b-it` (fast) and `deepseek/deepseek-v4-pro` (quality), both with tools + structured_outputs in the live catalog; Settings provider switch + prices per 1M; eval shows real cost. Tests: shared 224, importer 40, api 570 (+32 skipped), web 116; test:db 32; live: provider switch, not_configured without key, bad provider 400. Risk: items 2, 3.
 
+- L13 (T3 review): `review-761a1e9b11b52faa` (risk, resilience, reliability) approved + burned. Advisories fixed in `8dfa15e` with RED→GREEN: env AI keys admin-only (`mayUseEnvKeys`), default provider prefers the user's stored key, strict-schema fallback only on 400s naming the schema (not 403/other 400s), per-provider row keys in Settings. Assess: medium, under_budget. Not fixed (advisory): none blocking.
+- L14 (T4, inline): `docker-compose.dokploy.yml` (expose 3000, env_file, TZ UTC, extra_hosts host-gateway), `extra_hosts` in prod compose, README "Deploying with Dokploy" (Application/Dockerfile recommended, Compose option, env block, DB host cases, pg_hba), docs/spec.md stale lines updated. Both compose files validate; lint clean.
+
 ## Next step
 
-Native review of T3 commit alone, then T4, then one verifier for T2–T4.
+One independent verifier for T2–T4 (high-risk items 1, 3, 4, 5), then close.

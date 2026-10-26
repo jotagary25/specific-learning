@@ -126,11 +126,11 @@ Each book block has one **real-world story told in chapters**, one chapter per u
 
 #### 3.4.1 AI editor pipeline (daily job)
 
-Runs daily at 05:00 (server time, configurable) and selects **one article per day**.
+Runs per user at their local `editorHour` (Settings; default `EDITOR_HOUR`, 05) via a periodic check, and selects **one article per user per day** from a shared pool. Annotations are stored per user (`daily_article`).
 
 | Step | Detail |
 |------|--------|
-| 1. Gather candidates | **The Conversation** RSS feeds (technology, science, politics/world sections; configurable list). Plus **Ollama `web_search`** queries on rotating topics, with full text via **`web_fetch`**. |
+| 1. Gather candidates | **The Conversation** Atom feeds (technology, environment, politics, world). Other search sources can be added later behind the `NewsSource` port. |
 | 2. Filter | Published ≤ 7 days ago; 500–1,200 words; not used before; extractable full text. |
 | 3. Select (`select_article`) | Topic rotation (tech → science → geopolitics), estimated B1–B2 difficulty, presence of current-unit grammar, novelty, and interest. |
 | 4. Annotate (`annotate_article`) | Glossary (10–20 items: word, lemma, Spanish gloss, example), grammar spots for the current unit (sentence spans + explanation), 3 inference questions, a headline-prediction prompt, and a writing-opinion prompt. |
@@ -304,7 +304,7 @@ apps/api/src/
    ├─ llm/       port: LlmClient { chat, chatJson, listModels, modelCapabilities }
    │             adapter: ollama (native API)
    ├─ news/      port: NewsSource { candidates, fetchFullText }
-   │             adapters: theconversation-rss, ollama-websearch
+   │             adapters: theconversation
    └─ db/        drizzle schema, client, migrations
 ```
 
@@ -352,7 +352,6 @@ apps/api/src/
 | Effort | `think`: `true`/`false`/`null` or a level string from the model's `thinking.values` (e.g., gpt-oss `low|medium|high`); unsupported values fall back to the default |
 | Capabilities | `POST https://ollama.com/api/show` → `thinking` object (values, default) |
 | Models | `GET https://ollama.com/api/tags` |
-| Web search | `POST https://ollama.com/api/web_search` `{query, max_results ≤10}` → `results[{title,url,content}]` |
 | Web fetch | `POST https://ollama.com/api/web_fetch` `{url}` → `{title, content, links}` |
 | OpenAI compat | `https://ollama.com/v1` exists (`tool_choice` unsupported); **not used**, the native API is preferred for `think` and `format` |
 | Security | Docs require keeping the key out of browser code → **backend proxy only** |
@@ -366,7 +365,7 @@ Reasoning output (`message.thinking`) is discarded, never shown or stored.
 
 - **Docker Compose** services: `web` (static build served by nginx or by the api), `api` (Node), `db` (`postgres:18`, **local/dev only**).
 - **Production:** the user's existing PostgreSQL 18 server via `DATABASE_URL`; the compose file has a profile/override that omits `db`.
-- **Env:** `DATABASE_URL`, `APP_SECRET` (32-byte key for encryption), `APP_USER_EMAIL` + `APP_USER_PASSWORD` (admin user bootstrapped on startup; see README "Users"), `TZ`, optional `OLLAMA_API_KEY` (bootstrap; the UI value overrides it).
+- **Env:** `DATABASE_URL`, `APP_SECRET` (32-byte key for encryption), `APP_USER_EMAIL` + `APP_USER_PASSWORD` (admin user bootstrapped on startup; see README "Users"), optional `OLLAMA_API_KEY` / `OPENROUTER_API_KEY` (admin-only fallbacks; users save their own keys). The app runs in UTC; each user picks a time zone in Settings.
 - Migrations run on api start (Drizzle). The content seed is idempotent.
 - PWA: manifest, icons, service worker (app shell cache; API is network-first).
 

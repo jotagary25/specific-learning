@@ -20,6 +20,9 @@ services:
       # Loopback only by default: reach it through a reverse proxy on this host. Set
       # APP_BIND=0.0.0.0 to expose it directly (and keep TRUST_PROXY off then).
       - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    extra_hosts:
+      # Lets DATABASE_URL use host.docker.internal for a PostgreSQL installed on this host.
+      - "host.docker.internal:host-gateway"
     depends_on:
       db:
         condition: service_healthy
