@@ -7,17 +7,19 @@ import styles from "./LoginPage.module.css";
 
 function errorText(error: unknown): string {
   if (error instanceof HttpError) {
-    if (error.status === 401) return "Wrong password.";
+    if (error.status === 401) return "Wrong email or password.";
     if (error.status === 429) return "Too many attempts. Wait a few minutes and try again.";
   }
   return "Could not log in. Is the server running?";
 }
 
 export function LoginPage() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const emailId = useId();
   const passwordId = useId();
   const errorId = useId();
 
@@ -34,7 +36,7 @@ export function LoginPage() {
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    if (password) mutation.mutate(password);
+    if (email && password) mutation.mutate({ email: email.trim(), password });
   };
 
   return (
@@ -51,6 +53,18 @@ export function LoginPage() {
             </button>
           </div>
         )}
+        <label htmlFor={emailId} className={styles.label}>
+          Email
+        </label>
+        <input
+          id={emailId}
+          className={styles.input}
+          type="email"
+          autoComplete="username"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+        />
         <label htmlFor={passwordId} className={styles.label}>
           Password
         </label>

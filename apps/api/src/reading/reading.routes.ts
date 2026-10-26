@@ -12,6 +12,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { AppEnv } from "../auth/auth.ts";
 import { type Reading, ReadingError } from "./reading.service.ts";
 
 const ERROR_STATUS: Record<ReadingError["code"], ContentfulStatusCode> = {
@@ -46,61 +47,92 @@ function index(c: Context, name: string): number {
 
 /** `/api/reading`: daily article, 6-step session, next-day recall, history and the editor. */
 export function readingRoutes(reading: Reading) {
-  return new Hono()
+  return new Hono<AppEnv>()
     .onError(handleError)
-    .get("/today", async (c) => c.json(await reading.today()))
-    .post("/editor/run", async (c) => c.json(await reading.runEditor()))
-    .get("/recall", async (c) => c.json(await reading.recall()))
+    .get("/today", async (c) => c.json(await reading.today(c.get("user").id)))
+    .post("/editor/run", async (c) => c.json(await reading.runEditor(c.get("user").id)))
+    .get("/recall", async (c) => c.json(await reading.recall(c.get("user").id)))
     .post("/recall/:qid", async (c) => {
       const body = await parseBody(c, AnswerRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.recallAnswer(index(c, "qid"), body.data.answer));
+      return c.json(
+        await reading.recallAnswer(c.get("user").id, index(c, "qid"), body.data.answer),
+      );
     })
-    .get("/articles", async (c) => c.json(await reading.list()))
-    .get("/articles/:id", async (c) => c.json(await reading.detail(c.req.param("id"))))
-    .post("/articles/:id/annotate", async (c) => c.json(await reading.annotate(c.req.param("id"))))
+    .get("/articles", async (c) => c.json(await reading.list(c.get("user").id)))
+    .get("/articles/:id", async (c) =>
+      c.json(await reading.detail(c.get("user").id, c.req.param("id"))),
+    )
+    .post("/articles/:id/annotate", async (c) =>
+      c.json(await reading.annotate(c.get("user").id, c.req.param("id"))),
+    )
     .post("/articles/:id/prediction", async (c) => {
       const body = await parseBody(c, PredictionRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.prediction(c.req.param("id"), body.data.prediction));
+      return c.json(
+        await reading.prediction(c.get("user").id, c.req.param("id"), body.data.prediction),
+      );
     })
     .post("/articles/:id/step", async (c) => {
       const body = await parseBody(c, StepRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.step(c.req.param("id"), body.data.step));
+      return c.json(await reading.step(c.get("user").id, c.req.param("id"), body.data.step));
     })
     .post("/articles/:id/gloss", async (c) => {
       const body = await parseBody(c, GlossRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.gloss(c.req.param("id"), body.data.word, body.data.sentence));
+      return c.json(
+        await reading.gloss(
+          c.get("user").id,
+          c.req.param("id"),
+          body.data.word,
+          body.data.sentence,
+        ),
+      );
     })
     .post("/articles/:id/save-word", async (c) => {
       const body = await parseBody(c, SaveWordRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.saveWord(c.req.param("id"), body.data.word, body.data.sentence));
+      return c.json(
+        await reading.saveWord(
+          c.get("user").id,
+          c.req.param("id"),
+          body.data.word,
+          body.data.sentence,
+        ),
+      );
     })
     .post("/articles/:id/questions/:qid", async (c) => {
       const body = await parseBody(c, AnswerRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.answer(c.req.param("id"), index(c, "qid"), body.data.answer));
+      return c.json(
+        await reading.answer(
+          c.get("user").id,
+          c.req.param("id"),
+          index(c, "qid"),
+          body.data.answer,
+        ),
+      );
     })
     .post("/articles/:id/spots", async (c) => {
       const body = await parseBody(c, SpotRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.spot(c.req.param("id"), body.data));
+      return c.json(await reading.spot(c.get("user").id, c.req.param("id"), body.data));
     })
     .post("/articles/:id/spots/reveal", async (c) =>
-      c.json(await reading.revealSpots(c.req.param("id"))),
+      c.json(await reading.revealSpots(c.get("user").id, c.req.param("id"))),
     )
     .post("/articles/:id/retell", async (c) => {
       const body = await parseBody(c, RetellRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.retell(c.req.param("id"), body.data.text));
+      return c.json(await reading.retell(c.get("user").id, c.req.param("id"), body.data.text));
     })
     .post("/articles/:id/opinion", async (c) => {
       const body = await parseBody(c, OpinionRequest);
       if (!body.ok) return body.response;
-      return c.json(await reading.opinion(c.req.param("id"), body.data.opinion));
+      return c.json(await reading.opinion(c.get("user").id, c.req.param("id"), body.data.opinion));
     })
-    .post("/articles/:id/complete", async (c) => c.json(await reading.complete(c.req.param("id"))));
+    .post("/articles/:id/complete", async (c) =>
+      c.json(await reading.complete(c.get("user").id, c.req.param("id"))),
+    );
 }

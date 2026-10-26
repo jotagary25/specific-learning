@@ -8,6 +8,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { AppEnv } from "../auth/auth.ts";
 import { type Tutor, TutorError } from "./tutor.service.ts";
 
 const ERROR_STATUS: Record<TutorError["code"], ContentfulStatusCode> = {
@@ -34,20 +35,22 @@ async function parseBody<S extends z.ZodType>(c: Context, schema: S) {
 
 /** `/api/tutor`: conversations and the streamed (SSE) tutor turn. */
 export function tutorRoutes(tutor: Tutor) {
-  return new Hono()
+  return new Hono<AppEnv>()
     .onError(handleError)
-    .get("/conversations", async (c) => c.json(await tutor.list()))
+    .get("/conversations", async (c) => c.json(await tutor.list(c.get("user").id)))
     .post("/conversations", async (c) => {
       const body = await parseBody(c, CreateConversationRequest);
       if (!body.ok) return body.response;
-      return c.json(await tutor.create(body.data.context), 201);
+      return c.json(await tutor.create(c.get("user").id, body.data.context), 201);
     })
-    .get("/conversations/:id", async (c) => c.json(await tutor.get(c.req.param("id"))))
+    .get("/conversations/:id", async (c) =>
+      c.json(await tutor.get(c.get("user").id, c.req.param("id"))),
+    )
     .post("/conversations/:id/messages", async (c) => {
       const body = await parseBody(c, PostMessageRequest);
       if (!body.ok) return body.response;
       // 404 / 503 are answered as JSON before the stream opens.
-      const turn = await tutor.startTurn(c.req.param("id"), body.data.content);
+      const turn = await tutor.startTurn(c.get("user").id, c.req.param("id"), body.data.content);
       return streamSSE(c, async (stream) => {
         const controller = new AbortController();
         stream.onAbort(() => controller.abort());

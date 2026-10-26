@@ -1,4 +1,5 @@
-// In-memory TutorStore for tests.
+// In-memory TutorStore for tests. Single-learner fake: user ids are accepted and ignored
+// (isolation is covered by the DB integration test).
 import {
   type ConversationRecord,
   type MessageRecord,
@@ -25,15 +26,15 @@ export function createMemoryTutorStore(): MemoryTutorStore {
     conversations: [],
     messages: [],
     doubts: [],
-    async createConversation(context) {
+    async createConversation(_userId, context) {
       const record = { id: nextId(), context, createdAt: tick() };
       store.conversations.push(record);
       return record;
     },
-    async getConversation(id) {
+    async getConversation(_userId, id) {
       return store.conversations.find((c) => c.id === id);
     },
-    async listConversations(limit) {
+    async listConversations(_userId, limit) {
       return [...store.conversations]
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
         .slice(0, limit)
@@ -44,15 +45,15 @@ export function createMemoryTutorStore(): MemoryTutorStore {
             null,
         }));
     },
-    async listMessages(conversationId) {
+    async listMessages(_userId, conversationId) {
       return store.messages.filter((m) => m.conversationId === conversationId);
     },
-    async insertMessage(message) {
+    async insertMessage(_userId, message) {
       const record = { ...message, toolName: toolNameOf(message), id: nextId(), createdAt: tick() };
       store.messages.push(record);
       return record;
     },
-    async insertDoubt(text, context, explanation) {
+    async insertDoubt(_userId, text, context, explanation) {
       const record = { id: nextId(), text, context, explanation: explanation ?? null };
       store.doubts.push(record);
       return { id: record.id };

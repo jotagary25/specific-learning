@@ -19,7 +19,7 @@ export type TodayState = Pick<PlannerSnapshot, "srs" | "reading" | "recallPendin
 };
 
 export interface TodaySources {
-  state(now: Date): Promise<TodayState>;
+  state(userId: string, now: Date): Promise<TodayState>;
 }
 
 export type TodayDeps = {
@@ -77,10 +77,15 @@ export function createToday(deps: TodayDeps) {
   const { store, sources } = deps;
   const now = deps.now ?? (() => new Date());
 
-  async function snapshot(at: Date, mode: TodayMode | undefined, sessionsDoneToday: number) {
+  async function snapshot(
+    userId: string,
+    at: Date,
+    mode: TodayMode | undefined,
+    sessionsDoneToday: number,
+  ) {
     const [state, lastWriting] = await Promise.all([
-      sources.state(at),
-      store.lastWritingActivity(),
+      sources.state(userId, at),
+      store.lastWritingActivity(userId),
     ]);
     const chosen = mode ?? suggestMode(at, sessionsDoneToday);
     const planner: PlannerSnapshot = {
@@ -103,14 +108,14 @@ export function createToday(deps: TodayDeps) {
     s.endedAt === null && at.getTime() - s.startedAt.getTime() < ACTIVE_WINDOW_MIN * MINUTE;
 
   return {
-    async overview(mode?: TodayMode): Promise<TodayOverview> {
+    async overview(userId: string, mode?: TodayMode): Promise<TodayOverview> {
       const at = now();
       const [today, parking] = await Promise.all([
-        store.listSessionsSince(startOfLocalDay(at)),
-        store.listParking(),
+        store.listSessionsSince(userId, startOfLocalDay(at)),
+        store.listParking(userId),
       ]);
       const done = today.filter((s) => s.endedAt !== null).length;
-      const { plan, teaser } = await snapshot(at, mode, done);
+      const { plan, teaser } = await snapshot(userId, at, mode, done);
       const active = today.filter((s) => isActive(s, at)).at(-1);
       return {
         now: at.toISOString(),
@@ -126,22 +131,22 @@ export function createToday(deps: TodayDeps) {
     },
 
     /** Starts a session with a fresh plan; sessions left open earlier are closed silently. */
-    async startSession(mode: TodayMode): Promise<StudySessionView> {
+    async startSession(userId: string, mode: TodayMode): Promise<StudySessionView> {
       const at = now();
-      for (const open of await store.listOpenSessions()) {
+      for (const open of await store.listOpenSessions(userId)) {
         const planned = open.startedAt.getTime() + open.budgetMin * MINUTE;
-        await store.endSession(open.id, {
+        await store.endSession(userId, open.id, {
           endedAt: new Date(Math.min(at.getTime(), planned)),
           bonusMin: open.bonusMin,
           blocksDone: null,
           endReason: "superseded",
         });
       }
-      const done = (await store.listSessionsSince(startOfLocalDay(at))).filter(
+      const done = (await store.listSessionsSince(userId, startOfLocalDay(at))).filter(
         (s) => s.endedAt !== null,
       ).length;
-      const { plan } = await snapshot(at, mode, done);
-      const created = await store.createSession({
+      const { plan } = await snapshot(userId, at, mode, done);
+      const created = await store.createSession(userId, {
         mode,
         budgetMin: plan.budgetMin,
         plan,
@@ -151,9 +156,13 @@ export function createToday(deps: TodayDeps) {
     },
 
     /** Ends an open session and writes one `session_completed` event. */
-    async endSession(id: string, request: EndSessionRequest): Promise<StudySessionView> {
+    async endSession(
+      userId: string,
+      id: string,
+      request: EndSessionRequest,
+    ): Promise<StudySessionView> {
       const at = now();
-      const found = await store.getSession(id);
+      const found = await store.getSession(userId, id);
       if (!found) throw new TodayError("not_found", "Session not found");
       if (found.endedAt) throw new TodayError("already_ended", "This session has already ended");
       const bonusMin = request.bonusMinutes ?? 0;
@@ -170,6 +179,7 @@ export function createToday(deps: TodayDeps) {
       const minutes = Math.min(Math.max(0, elapsed), found.budgetMin + bonusMin);
       const blocksDone = Math.min(request.blocksDone ?? 0, found.plan.blocks.length);
       const ended = await store.endSession(
+        userId,
         id,
         { endedAt: at, bonusMin, blocksDone, endReason: request.reason },
         {
@@ -190,25 +200,26 @@ export function createToday(deps: TodayDeps) {
       return sessionView(ended);
     },
 
-    async listParking(): Promise<ParkingListResponse> {
-      return { items: (await store.listParking()).map(parkingView) };
+    async listParking(userId: string): Promise<ParkingListResponse> {
+      return { items: (await store.listParking(userId)).map(parkingView) };
     },
 
-    async addParking(text: string): Promise<ParkingItemView> {
-      return parkingView(await store.createParking(text));
+    async addParking(userId: string, text: string): Promise<ParkingItemView> {
+      return parkingView(await store.createParking(userId, text));
     },
 
     async updateParking(
+      userId: string,
       id: string,
       patch: { text?: string; done?: boolean },
     ): Promise<ParkingItemView> {
-      const updated = await store.updateParking(id, patch);
+      const updated = await store.updateParking(userId, id, patch);
       if (!updated) throw new TodayError("not_found", "Parking item not found");
       return parkingView(updated);
     },
 
-    async removeParking(id: string): Promise<{ deleted: true }> {
-      if (!(await store.deleteParking(id))) {
+    async removeParking(userId: string, id: string): Promise<{ deleted: true }> {
+      if (!(await store.deleteParking(userId, id))) {
         throw new TodayError("not_found", "Parking item not found");
       }
       return { deleted: true };

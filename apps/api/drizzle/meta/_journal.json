@@ -15,6 +15,13 @@
       "when": 1792981426511,
       "tag": "0001_schema_gaps",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793021076261,
+      "tag": "0002_users_and_isolation",
+      "breakpoints": true
     }
   ]
 }

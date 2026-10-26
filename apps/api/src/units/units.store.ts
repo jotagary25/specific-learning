@@ -23,6 +23,7 @@ import {
   timelineItem,
   type UnitStatus,
   unit,
+  unitProgress,
 } from "../shared/db/schema/index.ts";
 
 export type BlockRecord = { id: number; title: string };
@@ -112,33 +113,38 @@ export type UnitContent = {
   timeline: TimelineRecord[];
 };
 
-/** Persistence port of the Units feature: book content, learner attempts, completion side effects. */
+/**
+ * Persistence port of the Units feature: shared book content plus one learner's attempts,
+ * progress and completion side effects. Unit records carry the given user's progress.
+ */
 export interface UnitsStore {
   listBlocks(): Promise<BlockRecord[]>;
-  listUnits(): Promise<UnitRecord[]>;
+  listUnits(userId: string): Promise<UnitRecord[]>;
   /** Every exercise item with its unit (no content), for per-unit scores. */
   listItemRefs(): Promise<ItemRef[]>;
-  getUnitContent(unitId: number): Promise<UnitContent | undefined>;
-  /** Attempts in creation order; all units when `unitId` is omitted. */
-  listAttempts(unitId?: number): Promise<AttemptRecord[]>;
-  insertAttempt(value: NewAttempt): Promise<void>;
+  getUnitContent(userId: string, unitId: number): Promise<UnitContent | undefined>;
+  /** The user's attempts in creation order; all units when `unitId` is omitted. */
+  listAttempts(userId: string, unitId?: number): Promise<AttemptRecord[]>;
+  insertAttempt(userId: string, value: NewAttempt): Promise<void>;
   /**
    * Raises `hint_level` of the item's latest attempt to `level` (never lowers it). Returns false
    * when the item has no attempt yet: hints before the first attempt are not stored.
    */
-  recordHintLevel(itemId: string, level: number): Promise<boolean>;
+  recordHintLevel(userId: string, itemId: string, level: number): Promise<boolean>;
   /** `new` → `in_progress`; other states are kept. */
-  markInProgress(unitId: number): Promise<void>;
+  markInProgress(userId: string, unitId: number): Promise<void>;
   /**
    * Marks the unit completed, writes a `unit_completed` event and the can-do statements, in one
    * transaction, only when it was not completed before. Returns whether this call completed it.
    */
   completeUnit(
+    userId: string,
     unitId: number,
     payload: Record<string, unknown>,
     canDoEs: string[],
   ): Promise<boolean>;
   insertDoubt(
+    userId: string,
     text: string,
     context: Record<string, unknown>,
     explanation: string | null,
@@ -147,7 +153,10 @@ export interface UnitsStore {
 
 type TimelineShape = { expected: TimelineExpected; tolerance: number; explanationEs: string };
 
-function toUnitRecord(row: typeof unit.$inferSelect): UnitRecord {
+type UnitRow = typeof unit.$inferSelect;
+type ProgressRow = Pick<typeof unitProgress.$inferSelect, "status" | "priority" | "completedAt">;
+
+function toUnitRecord(row: UnitRow, progress: ProgressRow | null): UnitRecord {
   const extras = row.extras as unknown as UnitExtras;
   return {
     id: row.id,
@@ -156,20 +165,39 @@ function toUnitRecord(row: typeof unit.$inferSelect): UnitRecord {
     subtitle: row.subtitle,
     theory: row.theory,
     extras: extras && "puzzle" in extras ? extras : null,
-    status: row.status,
-    priority: row.priority,
-    completedAt: row.completedAt,
+    // No progress row yet: the unit is new for this user.
+    status: progress?.status ?? "new",
+    priority: progress?.priority ?? 0,
+    completedAt: progress?.completedAt ?? null,
   };
 }
 
 export function createDrizzleUnitsStore(db: Db): UnitsStore {
+  /** Units with the user's progress (left join: missing progress reads as `new`). */
+  const unitsWithProgress = (userId: string) =>
+    db
+      .select({
+        unit,
+        progress: {
+          status: unitProgress.status,
+          priority: unitProgress.priority,
+          completedAt: unitProgress.completedAt,
+        },
+      })
+      .from(unit)
+      .leftJoin(
+        unitProgress,
+        and(eq(unitProgress.unitId, unit.id), eq(unitProgress.userId, userId)),
+      );
+
   return {
     async listBlocks() {
       return db.select({ id: block.id, title: block.title }).from(block).orderBy(asc(block.id));
     },
 
-    async listUnits() {
-      return (await db.select().from(unit).orderBy(asc(unit.id))).map(toUnitRecord);
+    async listUnits(userId) {
+      const rows = await unitsWithProgress(userId).orderBy(asc(unit.id));
+      return rows.map((row) => toUnitRecord(row.unit, row.progress));
     },
 
     async listItemRefs() {
@@ -179,9 +207,10 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
         .innerJoin(exercise, eq(exercise.id, exerciseItem.exerciseId));
     },
 
-    async getUnitContent(unitId) {
-      const [row] = await db.select().from(unit).where(eq(unit.id, unitId)).limit(1);
-      if (!row) return undefined;
+    async getUnitContent(userId, unitId) {
+      const [found] = await unitsWithProgress(userId).where(eq(unit.id, unitId)).limit(1);
+      if (!found) return undefined;
+      const row = found.unit;
       const [blockRow] = await db
         .select({ id: block.id, title: block.title })
         .from(block)
@@ -217,7 +246,7 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
         .orderBy(asc(timelineItem.position));
 
       return {
-        unit: toUnitRecord(row),
+        unit: toUnitRecord(row, found.progress),
         block: blockRow ?? { id: row.blockId, title: "" },
         exercises: exercises.map(({ updatedAt: _u, ...rest }) => rest),
         items: items.map(({ updatedAt: _u, ...rest }) => rest),
@@ -239,7 +268,7 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
       };
     },
 
-    async listAttempts(unitId) {
+    async listAttempts(userId, unitId) {
       const rows = await db
         .select({
           itemId: attempt.itemId,
@@ -255,14 +284,20 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
         .from(attempt)
         .innerJoin(exerciseItem, eq(exerciseItem.id, attempt.itemId))
         .innerJoin(exercise, eq(exercise.id, exerciseItem.exerciseId))
-        .where(unitId === undefined ? undefined : eq(exercise.unitId, unitId))
+        .where(
+          and(
+            eq(attempt.userId, userId),
+            unitId === undefined ? undefined : eq(exercise.unitId, unitId),
+          ),
+        )
         // uuidv7 ids are time-ordered: a stable tie-breaker for equal timestamps.
         .orderBy(asc(attempt.createdAt), asc(attempt.id));
       return rows;
     },
 
-    async insertAttempt(value) {
+    async insertAttempt(userId, value) {
       await db.insert(attempt).values({
+        userId,
         itemId: value.itemId,
         answer: value.inputs,
         result: value.result,
@@ -274,11 +309,11 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
       });
     },
 
-    async recordHintLevel(itemId, level) {
+    async recordHintLevel(userId, itemId, level) {
       const latest = db
         .select({ id: attempt.id })
         .from(attempt)
-        .where(eq(attempt.itemId, itemId))
+        .where(and(eq(attempt.userId, userId), eq(attempt.itemId, itemId)))
         .orderBy(desc(attempt.createdAt), desc(attempt.id))
         .limit(1);
       const rows = await db
@@ -289,33 +324,43 @@ export function createDrizzleUnitsStore(db: Db): UnitsStore {
       return rows.length > 0;
     },
 
-    async markInProgress(unitId) {
+    async markInProgress(userId, unitId) {
       await db
-        .update(unit)
-        .set({ status: "in_progress", updatedAt: sql`now()` })
-        .where(and(eq(unit.id, unitId), eq(unit.status, "new")));
+        .insert(unitProgress)
+        .values({ userId, unitId, status: "in_progress" })
+        .onConflictDoUpdate({
+          target: [unitProgress.userId, unitProgress.unitId],
+          set: { status: "in_progress", updatedAt: sql`now()` },
+          setWhere: eq(unitProgress.status, "new"),
+        });
     },
 
-    async completeUnit(unitId, payload, canDoEs) {
+    async completeUnit(userId, unitId, payload, canDoEs) {
       return db.transaction(async (tx) => {
-        const updated = await tx
-          .update(unit)
-          .set({ status: "completed", completedAt: sql`now()`, updatedAt: sql`now()` })
-          .where(and(eq(unit.id, unitId), isNull(unit.completedAt)))
-          .returning({ id: unit.id });
-        if (updated.length === 0) return false;
-        await tx.insert(event).values({ type: "unit_completed", payload: { unitId, ...payload } });
+        const completed = await tx
+          .insert(unitProgress)
+          .values({ userId, unitId, status: "completed", completedAt: sql`now()` })
+          .onConflictDoUpdate({
+            target: [unitProgress.userId, unitProgress.unitId],
+            set: { status: "completed", completedAt: sql`now()`, updatedAt: sql`now()` },
+            setWhere: isNull(unitProgress.completedAt),
+          })
+          .returning({ unitId: unitProgress.unitId });
+        if (completed.length === 0) return false;
+        await tx
+          .insert(event)
+          .values({ userId, type: "unit_completed", payload: { unitId, ...payload } });
         if (canDoEs.length > 0) {
           await tx
             .insert(canDo)
-            .values(canDoEs.map((text) => ({ text, source: "suggested" as const })));
+            .values(canDoEs.map((text) => ({ userId, text, source: "suggested" as const })));
         }
         return true;
       });
     },
 
-    async insertDoubt(text, context, explanation) {
-      await db.insert(doubt).values({ text, context, explanation });
+    async insertDoubt(userId, text, context, explanation) {
+      await db.insert(doubt).values({ userId, text, context, explanation });
     },
   };
 }

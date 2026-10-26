@@ -58,8 +58,8 @@ export function createProgress(deps: ProgressDeps) {
   const { store } = deps;
   const now = deps.now ?? (() => new Date());
 
-  async function seenMonths(): Promise<Set<string>> {
-    const events = await store.listEvents({ types: [MIRROR_VIEWED, MIRROR_REFLECTION] });
+  async function seenMonths(userId: string): Promise<Set<string>> {
+    const events = await store.listEvents(userId, { types: [MIRROR_VIEWED, MIRROR_REFLECTION] });
     return new Set(events.flatMap((e) => monthOfEvent(e) ?? []));
   }
 
@@ -70,14 +70,14 @@ export function createProgress(deps: ProgressDeps) {
   }
 
   return {
-    async summary(): Promise<ProgressSummary> {
+    async summary(userId: string): Promise<ProgressSummary> {
       const at = now();
       const [units, cards, submissions, readings, sessionEvents] = await Promise.all([
-        store.listUnits(),
-        store.listWordCards(),
-        store.listSubmissions(),
-        store.listReadings(),
-        store.listEvents({
+        store.listUnits(userId),
+        store.listWordCards(userId),
+        store.listSubmissions(userId),
+        store.listReadings(userId),
+        store.listEvents(userId, {
           types: ["session_completed"],
           from: new Date(at.getTime() - 30 * DAY_MS),
         }),
@@ -86,7 +86,10 @@ export function createProgress(deps: ProgressDeps) {
     },
 
     /** `from`/`to` are inclusive local days (YYYY-MM-DD). */
-    async timeline(range: { from?: string; to?: string } = {}): Promise<TimelineResponse> {
+    async timeline(
+      userId: string,
+      range: { from?: string; to?: string } = {},
+    ): Promise<TimelineResponse> {
       const to = range.to ?? localDate(now());
       const from = range.from ?? addDays(to, -(DEFAULT_TIMELINE_DAYS - 1));
       if (from > to) throw new ProgressError("invalid_range", "from must not be after to");
@@ -99,33 +102,33 @@ export function createProgress(deps: ProgressDeps) {
       const start = startOfDay(from);
       const end = startOfDay(addDays(to, 1));
       const [events, canDos, units] = await Promise.all([
-        store.listEvents({ from: start, to: end }),
-        store.listCanDo(),
-        store.listUnits(),
+        store.listEvents(userId, { from: start, to: end }),
+        store.listCanDo(userId),
+        store.listUnits(userId),
       ]);
       return { from, to, weeks: buildTimeline({ events, canDos, units, from: start, to: end }) };
     },
 
-    async errors(): Promise<ErrorsResponse> {
+    async errors(userId: string): Promise<ErrorsResponse> {
       const [submissions, errors, units] = await Promise.all([
-        store.listSubmissions(),
-        store.listErrors(),
-        store.listUnits(),
+        store.listSubmissions(userId),
+        store.listErrors(userId),
+        store.listUnits(userId),
       ]);
       return classifyErrors({ submissions, errors, units });
     },
 
-    async mirror(month: string): Promise<MirrorResponse> {
+    async mirror(userId: string, month: string): Promise<MirrorResponse> {
       ensurePastMonth(month);
       const at = now();
       const { end } = monthRange(month);
       const [readings, cards, submissions, errors, units, mirrorEvents] = await Promise.all([
-        store.listReadings(),
-        store.listWordCards(),
-        store.listSubmissions(),
-        store.listErrors(),
-        store.listUnits(),
-        store.listEvents({ types: [MIRROR_VIEWED, MIRROR_REFLECTION] }),
+        store.listReadings(userId),
+        store.listWordCards(userId),
+        store.listSubmissions(userId),
+        store.listErrors(userId),
+        store.listUnits(userId),
+        store.listEvents(userId, { types: [MIRROR_VIEWED, MIRROR_REFLECTION] }),
       ]);
       const reading = pickMirrorReading(readings, month);
       const text = reading ? await store.getArticleText(reading.articleId) : undefined;
@@ -148,33 +151,34 @@ export function createProgress(deps: ProgressDeps) {
     },
 
     /** Marks a month's mirror as seen (once). */
-    async markMirrorSeen(month: string): Promise<MirrorSeenResponse> {
+    async markMirrorSeen(userId: string, month: string): Promise<MirrorSeenResponse> {
       ensurePastMonth(month);
-      if (!(await seenMonths()).has(month)) await store.insertEvent(MIRROR_VIEWED, { month });
+      if (!(await seenMonths(userId)).has(month))
+        await store.insertEvent(userId, MIRROR_VIEWED, { month });
       return { month, seen: true };
     },
 
     /** Stores the learner's reflection as a `mirror_reflection` event; the latest one wins. */
-    async saveReflection(month: string, text: string): Promise<MirrorReflection> {
+    async saveReflection(userId: string, month: string, text: string): Promise<MirrorReflection> {
       ensurePastMonth(month);
-      const saved = await store.insertEvent(MIRROR_REFLECTION, { month, text });
+      const saved = await store.insertEvent(userId, MIRROR_REFLECTION, { month, text });
       return { month, text, savedAt: saved.createdAt.toISOString() };
     },
 
-    async mirrorDue(): Promise<MirrorDueResponse> {
+    async mirrorDue(userId: string): Promise<MirrorDueResponse> {
       const [first, seen] = await Promise.all([
-        store.firstEventAt([MIRROR_VIEWED, MIRROR_REFLECTION]),
-        seenMonths(),
+        store.firstEventAt(userId, [MIRROR_VIEWED, MIRROR_REFLECTION]),
+        seenMonths(userId),
       ]);
       return mirrorDue(now(), first, seen);
     },
 
-    async listCanDo(): Promise<CanDoListResponse> {
-      return { entries: (await store.listCanDo()).map(canDoView) };
+    async listCanDo(userId: string): Promise<CanDoListResponse> {
+      return { entries: (await store.listCanDo(userId)).map(canDoView) };
     },
 
-    async addCanDo(text: string): Promise<CanDoEntry> {
-      return canDoView(await store.insertCanDo(text));
+    async addCanDo(userId: string, text: string): Promise<CanDoEntry> {
+      return canDoView(await store.insertCanDo(userId, text));
     },
   };
 }

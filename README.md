@@ -1,6 +1,6 @@
 # English Course
 
-A self-hosted, single-user English course that installs on your phone as a PWA. It is built
+A self-hosted English course that installs on your phone as a PWA. It is built
 around one learner's methodology: short 25-minute sessions planned for you every day, grammar
 units from an intermediate grammar book (puzzle → theory → timeline → exercises with automatic
 checking), a daily real-world article read through a 6-step active-reading flow, spaced-repetition
@@ -19,11 +19,11 @@ instead of in containers: Node.js 24 and pnpm 11 (`corepack enable`).
 ```sh
 cp .env.example .env
 openssl rand -hex 32   # paste as APP_SECRET
-openssl rand -hex 16   # a strong APP_PASSWORD (or choose your own)
+openssl rand -hex 16   # a strong APP_USER_PASSWORD (or choose your own, 12+ characters)
 ```
 
-Edit `.env`: set `APP_SECRET`, `APP_PASSWORD`, a real `POSTGRES_PASSWORD` (and the same password
-inside `DATABASE_URL`), and `TZ` to your timezone, then:
+Edit `.env`: set `APP_SECRET`, `APP_USER_EMAIL`, `APP_USER_PASSWORD`, a real `POSTGRES_PASSWORD`
+(and the same password inside `DATABASE_URL`), and `TZ` to your timezone, then:
 
 ```sh
 docker compose up
@@ -36,7 +36,8 @@ docker compose up
 
 First run:
 
-1. **Log in** with `APP_PASSWORD`. Migrations and the content seed (units 1–6) run when the api starts.
+1. **Log in** with `APP_USER_EMAIL` and `APP_USER_PASSWORD`. Migrations, the content seed
+   (units 1–6) and the admin account run when the api starts.
 2. **Settings → Ollama API key**: paste a key from https://ollama.com/settings/keys. It is
    encrypted at rest with `APP_SECRET` and never reaches the browser. (`OLLAMA_API_KEY` in `.env`
    works as a bootstrap; a key saved in Settings wins.)
@@ -55,16 +56,17 @@ invalid. Empty values count as unset.
 | Name | Required | Default | Description |
 |------|----------|---------|-------------|
 | `DATABASE_URL` | yes | — | PostgreSQL 18 URL, `postgres://user:pass@host:5432/db`. |
-| `APP_PASSWORD` | yes | — | The single user's login password. |
-| `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs you out and makes the stored Ollama key unreadable (save it again). |
+| `APP_USER_EMAIL` | yes | — | Email of the admin account, used to log in (case-insensitive). See [Users](#users). |
+| `APP_USER_PASSWORD` | yes | — | Admin password, at least 12 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
+| `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored Ollama keys unreadable (save them again). |
 | `TZ` | no | system (`UTC` in the image) | IANA timezone, e.g. `America/Santiago`. Drives the Today plan, day boundaries and the editor hour. |
 | `PORT` | no | `3000` | API listen port. `docker-compose.prod.yml` pins it to 3000 inside the container. |
-| `OLLAMA_API_KEY` | no | — | Bootstrap Ollama Cloud key; a key saved in Settings overrides it. |
+| `OLLAMA_API_KEY` | no | — | Instance Ollama Cloud key, the fallback for every user; a key a user saves in Settings overrides it for that user. |
 | `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show, web search). |
 | `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
-| `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
+| `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting (per account and client) uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
 | `EDITOR_ENABLED` | no | `true` | `false` disables the in-process daily editor (manual runs still work). |
-| `EDITOR_HOUR` | no | `5` | Local hour (0–23, in `TZ`) of the daily editor run. |
+| `EDITOR_HOUR` | no | `5` | Local hour (0–23, in `TZ`) of the daily editor run, for every user. |
 | `CONTENT_DIR` | no | repo `content/` | Content root (units, authored content, images, eval samples). Relative paths resolve from the working directory. |
 | `WEB_DIST_DIR` | no | unset (`/app/apps/web/dist` in the image) | When set, the api also serves the built web app with SPA fallback. Leave unset in development. |
 | `DATABASE_URL_TEST` | no | `DATABASE_URL` with `_test` appended to the db name | Database for `pnpm --filter @english-course/api test:db` (created if missing; name must end in `_test`). |
@@ -74,6 +76,23 @@ invalid. Empty values count as unset.
 | `APP_BIND` | no | `127.0.0.1` | Prod compose: host address to publish on. The default only accepts a reverse proxy on the same host; set `0.0.0.0` to expose the app directly (then leave `TRUST_PROXY` off). |
 | `APP_IMAGE` | no | `english-course:latest` | Prod compose: image tag to build/run. |
 | `ENV_FILE` | no | `.env` | Prod compose: env file passed to the app container. |
+
+## Users
+
+The app is multi-user ready: every piece of learner data (attempts, cards, readings, writing,
+sessions, settings and AI keys…) belongs to one account, and every query is scoped to the
+signed-in user. Book content, the story, the timeline exercises and the article pool are shared.
+
+- **The admin comes from `.env`.** On every start the api makes `APP_USER_EMAIL` /
+  `APP_USER_PASSWORD` the admin: it creates the account on the first start, updates the
+  password when it changed, and when you change `APP_USER_EMAIL` it moves the existing admin to
+  the new email instead of creating a second admin (your data stays). A changed email or
+  password ends that account's sessions.
+- **No other users yet.** There is no sign-up page or command to add users; the `app_user` table
+  and the `learner` role are ready for it.
+- **Sessions are per user.** Logging out (or a password change) ends only that user's sessions.
+  Login attempts are limited per email and client address (5 per 15 minutes), and a wrong email
+  or password get the same answer.
 
 ## Production deployment
 
@@ -96,7 +115,7 @@ Then, on the server:
 git clone <this repo> english-course && cd english-course
 cp .env.example .env
 # set DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
-# set APP_PASSWORD, APP_SECRET (openssl rand -hex 32), TZ, and for a reverse proxy:
+# set APP_USER_EMAIL, APP_USER_PASSWORD, APP_SECRET (openssl rand -hex 32), TZ, and for a reverse proxy:
 #   TRUST_PROXY=true (APP_BIND already defaults to 127.0.0.1)
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml ps    # wait for "healthy"

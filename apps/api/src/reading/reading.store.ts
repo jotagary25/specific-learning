@@ -9,9 +9,17 @@ import type {
   RecallQuestionsOutput,
   SpotAttemptView,
 } from "@english-course/shared";
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Db } from "../shared/db/client.ts";
-import { article, event, readingSession, srsCard, unit } from "../shared/db/schema/index.ts";
+import {
+  article,
+  dailyArticle,
+  event,
+  readingSession,
+  srsCard,
+  unit,
+  unitProgress,
+} from "../shared/db/schema/index.ts";
 
 export type ArticleRecord = {
   id: string;
@@ -25,7 +33,7 @@ export type ArticleRecord = {
   text: string;
   topic: string | null;
   estLevel: CefrLevel | null;
-  /** YYYY-MM-DD, the day it was the daily article. */
+  /** YYYY-MM-DD, the day it was this user's daily article (`daily_article`). */
   selectedFor: string | null;
   annotations: ArticleAnnotations | null;
 };
@@ -63,32 +71,48 @@ export type WordCardInput = {
   ref: Record<string, unknown>;
 };
 
-/** Persistence port of the Reading feature. */
+/**
+ * Persistence port of the Reading feature. Articles are a shared pool; which article a user
+ * reads on a day (`daily_article`), sessions, word cards and events belong to one user.
+ */
 export interface ReadingStore {
-  getArticleForDate(date: string): Promise<ArticleRecord | undefined>;
-  getArticle(id: string): Promise<ArticleRecord | undefined>;
-  /** Daily articles (selected_for set), newest day first, with whether the session completed. */
-  listDailyArticles(): Promise<Array<ArticleRecord & { completed: boolean }>>;
-  /** Daily articles before `date`, newest first. */
-  recentArticles(beforeDate: string, limit: number): Promise<ArticleRecord[]>;
-  /** The subset of `urls` already stored. */
-  usedUrls(urls: string[]): Promise<Set<string>>;
-  /** Inserts the daily article; when the day already has one, returns it with `created: false`. */
-  insertArticle(value: NewArticle): Promise<{ article: ArticleRecord; created: boolean }>;
+  getArticleForDate(userId: string, date: string): Promise<ArticleRecord | undefined>;
+  /** One of the user's daily articles; articles never assigned to the user are not found. */
+  getArticle(userId: string, id: string): Promise<ArticleRecord | undefined>;
+  /** The user's daily articles, newest day first, with whether their session completed. */
+  listDailyArticles(userId: string): Promise<Array<ArticleRecord & { completed: boolean }>>;
+  /** The user's daily articles before `date`, newest first. */
+  recentArticles(userId: string, beforeDate: string, limit: number): Promise<ArticleRecord[]>;
+  /** The subset of `urls` the user already had as a daily article. */
+  usedUrls(userId: string, urls: string[]): Promise<Set<string>>;
+  /**
+   * Stores the article in the shared pool (reusing it when the URL is already there, keeping
+   * existing annotations) and makes it the user's article for `value.selectedFor`. When the
+   * user's day already has one, returns it with `created: false`.
+   */
+  insertArticle(
+    userId: string,
+    value: NewArticle & { selectedFor: string },
+  ): Promise<{ article: ArticleRecord; created: boolean }>;
+  /** Shared pool: annotations belong to the article. */
   setAnnotations(id: string, annotations: ArticleAnnotations): Promise<void>;
-  /** The learner's lowest not-completed unit (the last unit once all are done). */
-  currentUnit(): Promise<FocusUnit | null>;
-  /** Words already saved from any article (lower case). */
-  knownWords(): Promise<string[]>;
-  /** Words saved from one article (lower case). */
-  savedWords(articleId: string): Promise<string[]>;
-  getSession(articleId: string): Promise<SessionRecord | undefined>;
-  saveSession(session: SessionRecord): Promise<SessionRecord>;
-  findWordCard(articleId: string, word: string): Promise<string | undefined>;
-  insertWordCard(value: WordCardInput): Promise<string>;
+  /** The user's lowest not-completed unit (the last unit once all are done). */
+  currentUnit(userId: string): Promise<FocusUnit | null>;
+  /** Words the user already saved from any article (lower case). */
+  knownWords(userId: string): Promise<string[]>;
+  /** Words the user saved from one article (lower case). */
+  savedWords(userId: string, articleId: string): Promise<string[]>;
+  getSession(userId: string, articleId: string): Promise<SessionRecord | undefined>;
+  saveSession(userId: string, session: SessionRecord): Promise<SessionRecord>;
+  findWordCard(userId: string, articleId: string, word: string): Promise<string | undefined>;
+  insertWordCard(userId: string, value: WordCardInput): Promise<string>;
   /** Sets completed_at and writes the event in one transaction, only once. */
-  completeSession(sessionId: string, payload: Record<string, unknown>): Promise<boolean>;
-  insertEvent(type: string, payload: Record<string, unknown>): Promise<void>;
+  completeSession(
+    userId: string,
+    sessionId: string,
+    payload: Record<string, unknown>,
+  ): Promise<boolean>;
+  insertEvent(userId: string, type: string, payload: Record<string, unknown>): Promise<void>;
 }
 
 export const emptySession = (articleId: string): SessionRecord => ({
@@ -112,7 +136,7 @@ export function unitFocus(row: { id: number; title: string; subtitle: string }):
   };
 }
 
-function toArticle(row: typeof article.$inferSelect): ArticleRecord {
+function toArticle(row: typeof article.$inferSelect, selectedFor: string | null): ArticleRecord {
   return {
     id: row.id,
     source: row.source,
@@ -125,7 +149,7 @@ function toArticle(row: typeof article.$inferSelect): ArticleRecord {
     text: row.text,
     topic: row.topic,
     estLevel: (row.estLevel as CefrLevel | null) ?? null,
-    selectedFor: row.selectedFor,
+    selectedFor,
     annotations: (row.annotations as ArticleAnnotations | null) ?? null,
   };
 }
@@ -143,81 +167,120 @@ function toSession(row: typeof readingSession.$inferSelect): SessionRecord {
 }
 
 const wordOfRef = sql<string>`lower(${srsCard.ref}->>'word')`;
+const UUID = /^[0-9a-f-]{36}$/i;
 
 export function createDrizzleReadingStore(db: Db): ReadingStore {
-  async function getArticleForDate(date: string) {
-    const [row] = await db.select().from(article).where(eq(article.selectedFor, date)).limit(1);
-    return row ? toArticle(row) : undefined;
+  /** Daily-article rows with their article; callers add the user filter in `where`. */
+  const dailyOf = () =>
+    db
+      .select({ article, date: dailyArticle.date })
+      .from(dailyArticle)
+      .innerJoin(article, eq(article.id, dailyArticle.articleId))
+      .$dynamic();
+
+  async function getArticleForDate(userId: string, date: string) {
+    const [row] = await dailyOf()
+      .where(and(eq(dailyArticle.userId, userId), eq(dailyArticle.date, date)))
+      .limit(1);
+    return row ? toArticle(row.article, row.date) : undefined;
   }
+
+  const ownWordCards = (userId: string) =>
+    and(eq(srsCard.userId, userId), eq(srsCard.source, "word"));
 
   return {
     getArticleForDate,
 
-    async getArticle(id) {
-      if (!/^[0-9a-f-]{36}$/i.test(id)) return undefined;
-      const [row] = await db.select().from(article).where(eq(article.id, id)).limit(1);
-      return row ? toArticle(row) : undefined;
+    async getArticle(userId, id) {
+      if (!UUID.test(id)) return undefined;
+      const [row] = await dailyOf()
+        .where(and(eq(dailyArticle.userId, userId), eq(dailyArticle.articleId, id)))
+        .orderBy(asc(dailyArticle.date))
+        .limit(1);
+      return row ? toArticle(row.article, row.date) : undefined;
     },
 
-    async listDailyArticles() {
+    async listDailyArticles(userId) {
       const rows = await db
-        .select({ article, completedAt: readingSession.completedAt })
-        .from(article)
-        .leftJoin(readingSession, eq(readingSession.articleId, article.id))
-        .where(isNotNull(article.selectedFor))
-        .orderBy(desc(article.selectedFor));
+        .select({ article, date: dailyArticle.date, completedAt: readingSession.completedAt })
+        .from(dailyArticle)
+        .innerJoin(article, eq(article.id, dailyArticle.articleId))
+        .leftJoin(
+          readingSession,
+          and(eq(readingSession.articleId, article.id), eq(readingSession.userId, userId)),
+        )
+        .where(eq(dailyArticle.userId, userId))
+        .orderBy(desc(dailyArticle.date));
       const byId = new Map<string, ArticleRecord & { completed: boolean }>();
       for (const row of rows) {
         const existing = byId.get(row.article.id);
         const completed = row.completedAt !== null;
         if (existing) existing.completed ||= completed;
-        else byId.set(row.article.id, { ...toArticle(row.article), completed });
+        else byId.set(row.article.id, { ...toArticle(row.article, row.date), completed });
       }
       return [...byId.values()];
     },
 
-    async recentArticles(beforeDate, limit) {
-      const rows = await db
-        .select()
-        .from(article)
-        .where(and(isNotNull(article.selectedFor), sql`${article.selectedFor} < ${beforeDate}`))
-        .orderBy(desc(article.selectedFor))
+    async recentArticles(userId, beforeDate, limit) {
+      const rows = await dailyOf()
+        .where(and(eq(dailyArticle.userId, userId), lt(dailyArticle.date, beforeDate)))
+        .orderBy(desc(dailyArticle.date))
         .limit(limit);
-      return rows.map(toArticle);
+      return rows.map((row) => toArticle(row.article, row.date));
     },
 
-    async usedUrls(urls) {
+    async usedUrls(userId, urls) {
       if (urls.length === 0) return new Set();
       const rows = await db
         .select({ url: article.url })
-        .from(article)
-        .where(inArray(article.url, urls));
+        .from(dailyArticle)
+        .innerJoin(article, eq(article.id, dailyArticle.articleId))
+        .where(and(eq(dailyArticle.userId, userId), inArray(article.url, urls)));
       return new Set(rows.map((r) => r.url));
     },
 
-    async insertArticle(value) {
-      const [row] = await db
-        .insert(article)
-        .values({
-          source: value.source,
-          url: value.url,
-          title: value.title,
-          authors: value.authors,
-          outlet: value.outlet,
-          license: value.license,
-          publishedAt: value.publishedAt,
-          text: value.text,
-          topic: value.topic,
-          estLevel: value.estLevel,
-          selectedFor: value.selectedFor,
-          annotations: value.annotations as Record<string, unknown> | null,
-        })
-        .onConflictDoNothing()
-        .returning();
-      if (row) return { article: toArticle(row), created: true };
-      const existing = value.selectedFor ? await getArticleForDate(value.selectedFor) : undefined;
-      if (!existing) throw new Error(`article ${value.url} already stored`);
-      return { article: existing, created: false };
+    async insertArticle(userId, value) {
+      return db.transaction(async (tx) => {
+        const annotations = value.annotations as Record<string, unknown> | null;
+        // Shared pool, one row per URL: a second user picking it reuses the row and keeps the
+        // annotations it already has.
+        const [stored] = await tx
+          .insert(article)
+          .values({
+            source: value.source,
+            url: value.url,
+            title: value.title,
+            authors: value.authors,
+            outlet: value.outlet,
+            license: value.license,
+            publishedAt: value.publishedAt,
+            text: value.text,
+            topic: value.topic,
+            estLevel: value.estLevel,
+            annotations,
+          })
+          .onConflictDoUpdate({
+            target: article.url,
+            set: { annotations: sql`coalesce(${article.annotations}, excluded.annotations)` },
+          })
+          .returning();
+        if (!stored) throw new Error(`article ${value.url} upsert returned no row`);
+        const linked = await tx
+          .insert(dailyArticle)
+          .values({ userId, date: value.selectedFor, articleId: stored.id })
+          .onConflictDoNothing()
+          .returning({ articleId: dailyArticle.articleId });
+        if (linked.length > 0) {
+          return { article: toArticle(stored, value.selectedFor), created: true };
+        }
+        const [existing] = await tx
+          .select({ article, date: dailyArticle.date })
+          .from(dailyArticle)
+          .innerJoin(article, eq(article.id, dailyArticle.articleId))
+          .where(and(eq(dailyArticle.userId, userId), eq(dailyArticle.date, value.selectedFor)));
+        if (!existing) throw new Error(`daily article for ${value.selectedFor} vanished`);
+        return { article: toArticle(existing.article, existing.date), created: false };
+      });
     },
 
     async setAnnotations(id, annotations) {
@@ -227,12 +290,16 @@ export function createDrizzleReadingStore(db: Db): ReadingStore {
         .where(eq(article.id, id));
     },
 
-    async currentUnit() {
+    async currentUnit(userId) {
       const columns = { id: unit.id, title: unit.title, subtitle: unit.subtitle };
       const [open] = await db
         .select(columns)
         .from(unit)
-        .where(isNull(unit.completedAt))
+        .leftJoin(
+          unitProgress,
+          and(eq(unitProgress.unitId, unit.id), eq(unitProgress.userId, userId)),
+        )
+        .where(isNull(unitProgress.completedAt))
         .orderBy(asc(unit.id))
         .limit(1);
       if (open) return unitFocus(open);
@@ -240,34 +307,34 @@ export function createDrizzleReadingStore(db: Db): ReadingStore {
       return last ? unitFocus(last) : null;
     },
 
-    async knownWords() {
+    async knownWords(userId) {
       const rows = await db
         .selectDistinct({ word: wordOfRef })
         .from(srsCard)
-        .where(eq(srsCard.source, "word"));
+        .where(ownWordCards(userId));
       return rows.map((r) => r.word).filter(Boolean);
     },
 
-    async savedWords(articleId) {
+    async savedWords(userId, articleId) {
       const rows = await db
         .select({ word: wordOfRef })
         .from(srsCard)
-        .where(and(eq(srsCard.source, "word"), sql`${srsCard.ref}->>'articleId' = ${articleId}`))
+        .where(and(ownWordCards(userId), sql`${srsCard.ref}->>'articleId' = ${articleId}`))
         .orderBy(asc(srsCard.createdAt));
       return rows.map((r) => r.word).filter(Boolean);
     },
 
-    async getSession(articleId) {
+    async getSession(userId, articleId) {
       const [row] = await db
         .select()
         .from(readingSession)
-        .where(eq(readingSession.articleId, articleId))
+        .where(and(eq(readingSession.userId, userId), eq(readingSession.articleId, articleId)))
         .orderBy(asc(readingSession.startedAt))
         .limit(1);
       return row ? toSession(row) : undefined;
     },
 
-    async saveSession(session) {
+    async saveSession(userId, session) {
       const values = {
         prediction: session.prediction,
         opinion: session.opinion,
@@ -275,24 +342,27 @@ export function createDrizzleReadingStore(db: Db): ReadingStore {
         spots: session.spots as unknown as Record<string, unknown>[],
       };
       if (session.id) {
-        await db.update(readingSession).set(values).where(eq(readingSession.id, session.id));
+        await db
+          .update(readingSession)
+          .set(values)
+          .where(and(eq(readingSession.id, session.id), eq(readingSession.userId, userId)));
         return session;
       }
       const [row] = await db
         .insert(readingSession)
-        .values({ articleId: session.articleId, ...values })
+        .values({ userId, articleId: session.articleId, ...values })
         .returning();
       if (!row) throw new Error("reading session insert returned no row");
       return toSession(row);
     },
 
-    async findWordCard(articleId, word) {
+    async findWordCard(userId, articleId, word) {
       const [row] = await db
         .select({ id: srsCard.id })
         .from(srsCard)
         .where(
           and(
-            eq(srsCard.source, "word"),
+            ownWordCards(userId),
             sql`${srsCard.ref}->>'articleId' = ${articleId}`,
             sql`${wordOfRef} = ${word.toLowerCase()}`,
           ),
@@ -301,10 +371,11 @@ export function createDrizzleReadingStore(db: Db): ReadingStore {
       return row?.id;
     },
 
-    async insertWordCard(value) {
+    async insertWordCard(userId, value) {
       const [row] = await db
         .insert(srsCard)
         .values({
+          userId,
           source: "word",
           front: value.front,
           back: value.back,
@@ -318,21 +389,27 @@ export function createDrizzleReadingStore(db: Db): ReadingStore {
       return row.id;
     },
 
-    async completeSession(sessionId, payload) {
+    async completeSession(userId, sessionId, payload) {
       return db.transaction(async (tx) => {
         const updated = await tx
           .update(readingSession)
           .set({ completedAt: sql`now()` })
-          .where(and(eq(readingSession.id, sessionId), isNull(readingSession.completedAt)))
+          .where(
+            and(
+              eq(readingSession.id, sessionId),
+              eq(readingSession.userId, userId),
+              isNull(readingSession.completedAt),
+            ),
+          )
           .returning({ id: readingSession.id });
         if (updated.length === 0) return false;
-        await tx.insert(event).values({ type: "reading_completed", payload });
+        await tx.insert(event).values({ userId, type: "reading_completed", payload });
         return true;
       });
     },
 
-    async insertEvent(type, payload) {
-      await db.insert(event).values({ type, payload });
+    async insertEvent(userId, type, payload) {
+      await db.insert(event).values({ userId, type, payload });
     },
   };
 }

@@ -1,4 +1,5 @@
-// In-memory ReadingStore for tests.
+// In-memory ReadingStore for tests. Single-learner fake: user ids are accepted and ignored
+// (isolation is covered by the DB integration test).
 
 import { randomUUID } from "node:crypto";
 import type { ArticleAnnotations, FocusUnit } from "@english-course/shared";
@@ -41,30 +42,30 @@ export function createMemoryReadingStore(
     events,
     unit,
 
-    async getArticleForDate(date) {
+    async getArticleForDate(_userId, date) {
       return clone(articles.find((a) => a.selectedFor === date));
     },
-    async getArticle(id) {
+    async getArticle(_userId, id) {
       return clone(articles.find((a) => a.id === id));
     },
-    async listDailyArticles() {
+    async listDailyArticles(_userId) {
       const done = completedIds();
       return articles
         .filter((a) => a.selectedFor)
         .sort((a, b) => String(b.selectedFor).localeCompare(String(a.selectedFor)))
         .map((a) => ({ ...clone(a), completed: done.has(a.id) }));
     },
-    async recentArticles(beforeDate, limit) {
+    async recentArticles(_userId, beforeDate, limit) {
       return articles
         .filter((a) => a.selectedFor && a.selectedFor < beforeDate)
         .sort((a, b) => String(b.selectedFor).localeCompare(String(a.selectedFor)))
         .slice(0, limit)
         .map(clone);
     },
-    async usedUrls(urls) {
+    async usedUrls(_userId, urls) {
       return new Set(urls.filter((url) => articles.some((a) => a.url === url)));
     },
-    async insertArticle(value) {
+    async insertArticle(_userId, value) {
       const existing = articles.find((a) => a.selectedFor && a.selectedFor === value.selectedFor);
       if (existing) return { article: clone(existing), created: false };
       const record = { ...clone(value), id: randomUUID() };
@@ -75,19 +76,19 @@ export function createMemoryReadingStore(
       const found = articles.find((a) => a.id === id);
       if (found) found.annotations = clone(annotations);
     },
-    async currentUnit() {
+    async currentUnit(_userId) {
       return store.unit;
     },
-    async knownWords() {
+    async knownWords(_userId) {
       return [...new Set(cards.map((c) => c.word))];
     },
-    async savedWords(articleId) {
+    async savedWords(_userId, articleId) {
       return cards.filter((c) => c.articleId === articleId).map((c) => c.word);
     },
-    async getSession(articleId) {
+    async getSession(_userId, articleId) {
       return clone(sessions.find((s) => s.articleId === articleId));
     },
-    async saveSession(session) {
+    async saveSession(_userId, session) {
       if (session.id) {
         const index = sessions.findIndex((s) => s.id === session.id);
         sessions[index] = clone(session);
@@ -97,22 +98,22 @@ export function createMemoryReadingStore(
       sessions.push(record);
       return clone(record);
     },
-    async findWordCard(articleId, word) {
+    async findWordCard(_userId, articleId, word) {
       return cards.find((c) => c.articleId === articleId && c.word === word.toLowerCase())?.id;
     },
-    async insertWordCard(value) {
+    async insertWordCard(_userId, value) {
       const id = randomUUID();
       cards.push({ ...clone(value), id, word: value.word.toLowerCase() });
       return id;
     },
-    async completeSession(sessionId, payload) {
+    async completeSession(_userId, sessionId, payload) {
       const session = sessions.find((s) => s.id === sessionId);
       if (!session || session.completedAt) return false;
       session.completedAt = new Date();
       events.push({ type: "reading_completed", payload });
       return true;
     },
-    async insertEvent(type, payload) {
+    async insertEvent(_userId, type, payload) {
       events.push({ type, payload });
     },
   };

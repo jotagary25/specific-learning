@@ -9,6 +9,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { userIdColumn } from "./users.ts";
 
 export type SrsCardSource = "word" | "own_error" | "unit_item";
 
@@ -23,6 +24,7 @@ export const srsCard = pgTable(
   "srs_card",
   {
     id: uuid("id").primaryKey().default(sql`uuidv7()`),
+    userId: userIdColumn(),
     source: text("source").$type<SrsCardSource>().notNull(),
     front: text("front").notNull(),
     back: text("back").notNull(),
@@ -34,7 +36,7 @@ export const srsCard = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("srs_card_due_idx").on(t.due)],
+  (t) => [index("srs_card_user_id_due_idx").on(t.userId, t.due)],
 );
 
 /** One review of a card. Rating follows FSRS: 1 Again, 2 Hard, 3 Good, 4 Easy. */
@@ -42,6 +44,7 @@ export const srsReview = pgTable(
   "srs_review",
   {
     id: uuid("id").primaryKey().default(sql`uuidv7()`),
+    userId: userIdColumn(),
     cardId: uuid("card_id")
       .notNull()
       .references(() => srsCard.id, { onDelete: "cascade" }),
@@ -50,5 +53,8 @@ export const srsReview = pgTable(
     answer: text("answer"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("srs_review_card_id_reviewed_at_idx").on(t.cardId, t.reviewedAt)],
+  (t) => [
+    index("srs_review_card_id_reviewed_at_idx").on(t.cardId, t.reviewedAt),
+    index("srs_review_user_id_reviewed_at_idx").on(t.userId, t.reviewedAt),
+  ],
 );

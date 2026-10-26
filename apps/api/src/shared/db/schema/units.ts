@@ -12,12 +12,14 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   real,
   smallint,
   text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { userIdColumn } from "./users.ts";
 
 /** Unit learning state (spec §3.2). `locked` is reserved; the MVP opens every seeded unit. */
 export type UnitStatus = "locked" | "new" | "in_progress" | "completed" | "needs_review";
@@ -35,8 +37,8 @@ export const block = pgTable("block", {
 });
 
 /**
- * Book unit. Content columns are seeded (id = book unit number); `status`, `priority`,
- * `completed_at` and `extras` belong to the learner/authored side and are never overwritten by the seed.
+ * Book unit (shared content). Content columns are seeded (id = book unit number); `extras` is
+ * authored. Learner progress lives in `unit_progress`.
  */
 export const unit = pgTable(
   "unit",
@@ -49,12 +51,28 @@ export const unit = pgTable(
     subtitle: text("subtitle").notNull(),
     theory: jsonb("theory").$type<TheorySection[]>().notNull(),
     extras: jsonb("extras").$type<UnitExtras>().notNull().default({}),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("unit_block_id_idx").on(t.blockId)],
+);
+
+/**
+ * One learner's state of a unit. A missing row reads as `new` with priority 0. `priority` is
+ * raised by writing errors that point at the unit.
+ */
+export const unitProgress = pgTable(
+  "unit_progress",
+  {
+    userId: userIdColumn(),
+    unitId: integer("unit_id")
+      .notNull()
+      .references(() => unit.id, { onDelete: "cascade" }),
     status: text("status").$type<UnitStatus>().notNull().default("new"),
     priority: integer("priority").notNull().default(0),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("unit_block_id_idx").on(t.blockId)],
+  (t) => [primaryKey({ columns: [t.userId, t.unitId] })],
 );
 
 /** Book exercise, id = book code ("1.1"). Content: seeded. */
@@ -108,6 +126,7 @@ export const attempt = pgTable(
   "attempt",
   {
     id: uuid("id").primaryKey().default(sql`uuidv7()`),
+    userId: userIdColumn(),
     itemId: text("item_id")
       .notNull()
       .references(() => exerciseItem.id, { onDelete: "cascade" }),
@@ -122,7 +141,10 @@ export const attempt = pgTable(
     hintLevel: smallint("hint_level").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("attempt_item_id_created_at_idx").on(t.itemId, t.createdAt)],
+  (t) => [
+    index("attempt_user_id_item_id_created_at_idx").on(t.userId, t.itemId, t.createdAt),
+    index("attempt_item_id_idx").on(t.itemId),
+  ],
 );
 
 /** Authored timeline-drag item for tense units. Shape of `expected_shape` refined by T09. */

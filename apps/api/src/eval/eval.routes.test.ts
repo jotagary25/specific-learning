@@ -8,7 +8,7 @@ import {
 } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
-import { createAuth } from "../auth/auth.ts";
+import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import { resolveContentDir } from "../content/content-dir.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
@@ -18,7 +18,6 @@ import { type Reply, scriptedLlm } from "./eval.test-support.ts";
 import { correctedText, loadEvalFixtures } from "./fixtures.ts";
 
 const APP_SECRET = "cd".repeat(32);
-const PASSWORD = "pw";
 
 /** Valid replies chosen by the requested JSON schema. */
 const reply: Reply = (req) => {
@@ -62,14 +61,9 @@ async function setup(opts: { apiKey?: string } = {}) {
     ai: settings,
     fixtures: () => loadEvalFixtures(resolveContentDir({})),
   });
-  const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
+  const { auth } = await createTestAuth();
   const app = createApp({ pingDb: async () => true, auth, settings, evals });
-  const login = await app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
-  const cookie = login.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api${path}`, {
       method: init.method ?? "GET",

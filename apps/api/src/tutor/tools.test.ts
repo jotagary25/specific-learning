@@ -6,7 +6,11 @@ import { createMemoryVocabularyStore } from "../vocabulary/vocabulary.memory-sto
 import { createVocabulary } from "../vocabulary/vocabulary.service.ts";
 import { createTutorTools, htmlToText, MAX_TOOL_RESULT_CHARS, truncate } from "./tools.ts";
 
+/** Memory fakes ignore the user; services still need one. */
+const USER = "test-user";
+
 const ctx = (context: TutorContext = { kind: "free", ref: "" }) => ({
+  userId: USER,
   conversationId: "c-1",
   context,
 });
@@ -29,7 +33,7 @@ describe("get_item", () => {
     expect(lockedBody.item).toContain("[blank 1]");
 
     // Attempt every graded item of exercise 1.1 (right or wrong does not matter for the gate).
-    const content = await store.getUnitContent(1);
+    const content = await store.getUnitContent(USER, 1);
     const graded = (content?.items ?? []).filter(
       (i) => i.exerciseId === "1.1" && !i.isExample && i.answer,
     );
@@ -37,6 +41,7 @@ describe("get_item", () => {
     for (const item of graded) {
       const blanks = item.lines.flat().filter((s) => s.type === "blank").length;
       await units.attempt(
+        USER,
         1,
         item.id,
         Array.from({ length: Math.max(1, blanks) }, () => "x"),
@@ -85,12 +90,12 @@ describe("write tools", () => {
       wordCards: cards,
       vocabulary: createVocabulary({ store: cards }),
       today: {
-        addParking: async (text) => {
+        addParking: async (_userId, text) => {
           parked.push(text);
           return { id: "p-1", text, done: false, createdAt: "2026-10-25T09:00:00.000Z" };
         },
       },
-      saveDoubt: async (text, context, explanation) => {
+      saveDoubt: async (_userId, text, context, explanation) => {
         doubts.push({ text, context, explanation });
         return { id: "d-1" };
       },
@@ -107,7 +112,7 @@ describe("write tools", () => {
     expect(JSON.parse((await tools.run("create_vocab_card", card, ctx())).content)).toMatchObject({
       created: false,
     });
-    const [saved] = await cards.listCards({});
+    const [saved] = await cards.listCards(USER, {});
     expect(saved).toMatchObject({
       source: "word",
       front: "Rollout\nThe rollout took a week.",

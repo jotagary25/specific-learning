@@ -10,6 +10,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { AppEnv } from "../auth/auth.ts";
 import { type Writing, WritingError } from "./writing.service.ts";
 
 const ERROR_STATUS: Record<WritingError["code"], ContentfulStatusCode> = {
@@ -49,46 +50,50 @@ function missionId(c: Context): string {
  * (draft → submit → recheck → rewrite → complete) and practice from recent errors.
  */
 export function writingRoutes(writing: Writing) {
-  return new Hono()
+  return new Hono<AppEnv>()
     .onError(handleError)
-    .get("/missions/current", async (c) => c.json(await writing.current()))
-    .get("/missions", async (c) => c.json(await writing.history()))
-    .post("/missions/generate", async (c) => c.json(await writing.generate()))
+    .get("/missions/current", async (c) => c.json(await writing.current(c.get("user").id)))
+    .get("/missions", async (c) => c.json(await writing.history(c.get("user").id)))
+    .post("/missions/generate", async (c) => c.json(await writing.generate(c.get("user").id)))
     .put("/missions/:id/draft", async (c) => {
       const id = missionId(c);
       const body = await parseBody(c, DraftRequest);
       if (!body.ok) return body.response;
-      return c.json(await writing.saveDraft(id, body.data.text));
+      return c.json(await writing.saveDraft(c.get("user").id, id, body.data.text));
     })
     .post("/missions/:id/submit", async (c) => {
       const id = missionId(c);
       const body = await parseBody(c, SubmitRequest);
       if (!body.ok) return body.response;
-      return c.json(await writing.submit(id, body.data.text));
+      return c.json(await writing.submit(c.get("user").id, id, body.data.text));
     })
     .post("/missions/:id/recheck", async (c) => {
       const id = missionId(c);
       const body = await parseBody(c, RecheckRequest);
       if (!body.ok) return body.response;
-      return c.json(await writing.recheck(id, body.data.text));
+      return c.json(await writing.recheck(c.get("user").id, id, body.data.text));
     })
-    .post("/missions/:id/rewrite", async (c) => c.json(await writing.rewrite(missionId(c))))
+    .post("/missions/:id/rewrite", async (c) =>
+      c.json(await writing.rewrite(c.get("user").id, missionId(c))),
+    )
     .post("/missions/:id/complete", async (c) => {
       const id = missionId(c);
       const body = await parseBody(c, CompleteRequest);
       if (!body.ok) return body.response;
-      return c.json(await writing.complete(id, body.data.publishedVersion));
+      return c.json(await writing.complete(c.get("user").id, id, body.data.publishedVersion));
     })
     .post("/missions/:id/published", async (c) => {
       const id = missionId(c);
       const body = await parseBody(c, PublishedRequest);
       if (!body.ok) return body.response;
-      return c.json(await writing.markPublished(id, body.data.version));
+      return c.json(await writing.markPublished(c.get("user").id, id, body.data.version));
     })
-    .post("/missions/:id/skip", async (c) => c.json(await writing.skip(missionId(c))))
+    .post("/missions/:id/skip", async (c) =>
+      c.json(await writing.skip(c.get("user").id, missionId(c))),
+    )
     .post("/practice", async (c) => {
       const body = await parseBody(c, PracticeRequest);
       if (!body.ok) return body.response;
-      return c.json(await writing.practice(body.data.count));
+      return c.json(await writing.practice(c.get("user").id, body.data.count));
     });
 }

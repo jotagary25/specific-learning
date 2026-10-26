@@ -16,8 +16,8 @@ import type { VocabularyStore } from "./vocabulary.store.ts";
 
 export type VocabularyDeps = {
   store: VocabularyStore;
-  /** Key/value settings (`srs.newPerDay`). */
-  settings?: { getSetting(key: string): Promise<unknown> };
+  /** Per-user key/value settings (`srs.newPerDay`). */
+  settings?: { getSetting(userId: string, key: string): Promise<unknown> };
   now?: () => Date;
 };
 
@@ -58,31 +58,31 @@ export function createVocabulary(deps: VocabularyDeps) {
   const { store } = deps;
   const now = deps.now ?? (() => new Date());
 
-  async function newPerDay(): Promise<number> {
-    const value = await deps.settings?.getSetting(NEW_PER_DAY_KEY);
+  async function newPerDay(userId: string): Promise<number> {
+    const value = await deps.settings?.getSetting(userId, NEW_PER_DAY_KEY);
     return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100
       ? value
       : DEFAULT_NEW_PER_DAY;
   }
 
-  async function cardOrThrow(id: string) {
-    const card = await store.getCard(id);
+  async function cardOrThrow(userId: string, id: string) {
+    const card = await store.getCard(userId, id);
     if (!card) throw new VocabularyError("not_found", "Card not found");
     return card;
   }
 
   return {
     /** Due cards first (earliest due), then new cards up to the daily new-card allowance. */
-    async queue(limit = DEFAULT_QUEUE_LIMIT): Promise<QueueResponse> {
+    async queue(userId: string, limit = DEFAULT_QUEUE_LIMIT): Promise<QueueResponse> {
       const size = Math.min(Math.max(1, Math.trunc(limit)), MAX_QUEUE_LIMIT);
       const at = now();
       const [due, dueTotal, perDay, newToday] = await Promise.all([
-        store.dueCards(at, size),
-        store.countDue(at),
-        newPerDay(),
-        store.countFirstReviewsSince(startOfLocalDay(at)),
+        store.dueCards(userId, at, size),
+        store.countDue(userId, at),
+        newPerDay(userId),
+        store.countFirstReviewsSince(userId, startOfLocalDay(at)),
       ]);
-      const fresh = await store.newCards(Math.min(size - due.length, perDay - newToday));
+      const fresh = await store.newCards(userId, Math.min(size - due.length, perDay - newToday));
       return {
         cards: [...due, ...fresh].map(presentCard),
         dueRemaining: Math.max(0, dueTotal - due.length),
@@ -91,11 +91,11 @@ export function createVocabulary(deps: VocabularyDeps) {
       };
     },
 
-    async review(id: string, request: ReviewRequest): Promise<ReviewResponse> {
-      const card = await cardOrThrow(id);
+    async review(userId: string, id: string, request: ReviewRequest): Promise<ReviewResponse> {
+      const card = await cardOrThrow(userId, id);
       const at = now();
       const next = scheduleReview(card.state, request.rating, at);
-      const saved = await store.recordReview(id, request.rating, next, at, request.answer);
+      const saved = await store.recordReview(userId, id, request.rating, next, at, request.answer);
       if (!saved) throw new VocabularyError("not_found", "Card not found");
       return {
         cardId: id,
@@ -105,31 +105,35 @@ export function createVocabulary(deps: VocabularyDeps) {
       };
     },
 
-    async list(filter: { source?: CardSource; q?: string } = {}): Promise<CardsListResponse> {
-      return { cards: (await store.listCards(filter)).map(cardView) };
+    async list(
+      userId: string,
+      filter: { source?: CardSource; q?: string } = {},
+    ): Promise<CardsListResponse> {
+      return { cards: (await store.listCards(userId, filter)).map(cardView) };
     },
 
-    async update(id: string, patch: CardPatch): Promise<CardView> {
-      await cardOrThrow(id);
-      const saved = await store.updateCard(id, patch);
+    async update(userId: string, id: string, patch: CardPatch): Promise<CardView> {
+      await cardOrThrow(userId, id);
+      const saved = await store.updateCard(userId, id, patch);
       if (!saved) throw new VocabularyError("not_found", "Card not found");
       return cardView(saved);
     },
 
-    async remove(id: string): Promise<{ deleted: true }> {
-      if (!(await store.deleteCard(id))) throw new VocabularyError("not_found", "Card not found");
+    async remove(userId: string, id: string): Promise<{ deleted: true }> {
+      if (!(await store.deleteCard(userId, id)))
+        throw new VocabularyError("not_found", "Card not found");
       return { deleted: true };
     },
 
-    async stats(): Promise<StatsResponse> {
+    async stats(userId: string): Promise<StatsResponse> {
       const at = now();
       const today = startOfLocalDay(at);
       const endOfToday = addLocalDays(today, 1);
       const since = addLocalDays(today, -(STATS_DAYS - 1));
       const [cards, newToday, reviewTimes] = await Promise.all([
-        store.listCards({}),
-        store.countFirstReviewsSince(today),
-        store.reviewTimesSince(since),
+        store.listCards(userId, {}),
+        store.countFirstReviewsSince(userId, today),
+        store.reviewTimesSince(userId, since),
       ]);
       const active = cards.filter((c) => !c.suspended);
       const byDay = new Map<string, number>();
@@ -150,8 +154,8 @@ export function createVocabulary(deps: VocabularyDeps) {
     },
 
     /** The client finished a session: one `srs_session_completed` event with its counts. */
-    async completeSession(counts: SessionRequest): Promise<SessionResponse> {
-      await store.insertEvent("srs_session_completed", { ...counts });
+    async completeSession(userId: string, counts: SessionRequest): Promise<SessionResponse> {
+      await store.insertEvent(userId, "srs_session_completed", { ...counts });
       return { recorded: true };
     },
 
@@ -160,23 +164,24 @@ export function createVocabulary(deps: VocabularyDeps) {
      * Idempotent per item; `null` when the item cannot be a card (example, open, no key).
      */
     async createCardFromMissedItem(
+      userId: string,
       itemId: string,
     ): Promise<{ cardId: string; created: boolean } | null> {
-      const existing = await store.findCardByRef("unit_item", "itemId", itemId);
+      const existing = await store.findCardByRef(userId, "unit_item", "itemId", itemId);
       if (existing) return { cardId: existing.id, created: false };
       const item = await store.getMissedItem(itemId);
       if (!item) throw new VocabularyError("not_found", "Exercise item not found");
       const card = unitItemCard(item, now());
       if (!card) return null;
-      return { cardId: (await store.insertCard(card)).id, created: true };
+      return { cardId: (await store.insertCard(userId, card)).id, created: true };
     },
 
     /** Card for one of the learner's own writing errors (writing feature, T12). */
-    async createOwnErrorCard(input: OwnErrorInput): Promise<{ cardId: string }> {
+    async createOwnErrorCard(userId: string, input: OwnErrorInput): Promise<{ cardId: string }> {
       if (!input.original.trim() || !input.corrected.trim()) {
         throw new VocabularyError("invalid", "Original and corrected sentences are required");
       }
-      return { cardId: (await store.insertCard(ownErrorCard(input, now()))).id };
+      return { cardId: (await store.insertCard(userId, ownErrorCard(input, now()))).id };
     },
   };
 }

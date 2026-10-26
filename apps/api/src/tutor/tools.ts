@@ -25,6 +25,7 @@ export type TutorToolDeps = {
    */
   wordCards?: Pick<VocabularyStore, "insertCard" | "findCardByRef">;
   saveDoubt?: (
+    userId: string,
     text: string,
     context: Record<string, unknown>,
     explanation?: string | null,
@@ -32,8 +33,8 @@ export type TutorToolDeps = {
   now?: () => Date;
 };
 
-/** What a tool sees about the conversation it runs in. */
-export type ToolRunContext = { conversationId: string; context: TutorContext };
+/** What a tool sees about the conversation it runs in, including whose conversation it is. */
+export type ToolRunContext = { userId: string; conversationId: string; context: TutorContext };
 
 type ToolSpec<S extends z.ZodType> = {
   name: string;
@@ -107,8 +108,8 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
           section: z.string().trim().min(1).max(3).optional().describe("Section letter, e.g. B"),
         }),
         label: (a) => `looked up Unit ${a.unitNumber} theory${a.section ? ` (${a.section})` : ""}`,
-        run: async (a) => {
-          const unit = await units.detail(a.unitNumber);
+        run: async (a, ctx) => {
+          const unit = await units.detail(ctx.userId, a.unitNumber);
           const sections = unit.theory
             .filter((s) => !a.section || s.letter.toLowerCase() === a.section.toLowerCase())
             .map((s) => ({ section: s.letter, text: htmlToText(s.html) }));
@@ -127,8 +128,8 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
             .regex(/^\d+\.\d+-\d+$/, "Item ids look like 1.1-2"),
         }),
         label: (a) => `looked at item ${a.itemId}`,
-        run: async (a) => {
-          const unit = await units.detail(unitOfItem(a.itemId));
+        run: async (a, ctx) => {
+          const unit = await units.detail(ctx.userId, unitOfItem(a.itemId));
           const exercise = unit.exercises.find((e) => e.items.some((i) => i.id === a.itemId));
           const item = exercise?.items.find((i) => i.id === a.itemId);
           if (!exercise || !item) throw new UnitsError("not_found", `Item ${a.itemId} not found`);
@@ -137,7 +138,7 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
           let answerKey: unknown =
             "LOCKED: the learner has not attempted every item of this exercise. Do not reveal or guess the answer; explain the rule instead.";
           try {
-            const answers = await units.answers(unit.number, exercise.id);
+            const answers = await units.answers(ctx.userId, unit.number, exercise.id);
             const own = answers.items.find((i) => i.itemId === a.itemId);
             if (own) answerKey = { raw: own.raw, blanks: own.blanks };
           } catch (error) {
@@ -178,8 +179,8 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
         run: async (a, ctx) => {
           const detail =
             ctx.context.kind === "article" && ctx.context.ref
-              ? await reading.detail(ctx.context.ref)
-              : (await reading.today()).reading;
+              ? await reading.detail(ctx.userId, ctx.context.ref)
+              : (await reading.today(ctx.userId)).reading;
           if (!detail) return "There is no article today.";
           const paragraphs = paragraphsOf(detail.article.text);
           const selected = a.paragraph
@@ -205,10 +206,10 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
           "The learner's recent writing errors (their sentence and the fix) and the error types that keep recurring.",
         args: z.object({ limit: z.number().int().min(1).max(10).default(5) }),
         label: () => "checked your recent errors",
-        run: async (a) => {
+        run: async (a, ctx) => {
           const [cards, trends] = await Promise.all([
-            vocabulary?.list({ source: "own_error" }),
-            progress?.errors(),
+            vocabulary?.list(ctx.userId, { source: "own_error" }),
+            progress?.errors(ctx.userId),
           ]);
           return {
             recent: (cards?.cards ?? []).slice(0, a.limit).map((c) => ({
@@ -235,7 +236,7 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
         description: "Units completed, words saved, writing trend and study minutes.",
         args: z.object({}),
         label: () => "checked your progress",
-        run: () => progress.summary(),
+        run: (_a, ctx) => progress.summary(ctx.userId),
       }),
     );
   }
@@ -247,8 +248,8 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
         description: "Search the learner's flashcards (words, own errors, exercise items).",
         args: z.object({ query: z.string().trim().min(1).max(80) }),
         label: (a) => `searched your cards for "${a.query}"`,
-        run: async (a) => {
-          const { cards } = await vocabulary.list({ q: a.query });
+        run: async (a, ctx) => {
+          const { cards } = await vocabulary.list(ctx.userId, { q: a.query });
           return {
             found: cards.length,
             cards: cards.slice(0, 10).map((c) => ({
@@ -277,9 +278,9 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
         label: (a) => `saved "${a.word}" as a card`,
         run: async (a, ctx) => {
           const key = a.word.toLowerCase();
-          const existing = await wordCards.findCardByRef("word", "word", key);
+          const existing = await wordCards.findCardByRef(ctx.userId, "word", "word", key);
           if (existing) return { cardId: existing.id, created: false, note: "Already saved." };
-          const card = await wordCards.insertCard({
+          const card = await wordCards.insertCard(ctx.userId, {
             source: "word",
             front: `${a.word}\n${a.sentence}`,
             back: a.meaningEs,
@@ -306,8 +307,8 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
           "Park an unrelated idea or curiosity on the learner's 'later' list so they can return to the task now.",
         args: z.object({ text: z.string().trim().min(1).max(PARKING_TEXT_MAX) }),
         label: () => "parked a note for later",
-        run: async (a) => {
-          const item = await today.addParking(a.text);
+        run: async (a, ctx) => {
+          const item = await today.addParking(ctx.userId, a.text);
           return { parked: true, id: item.id };
         },
       }),
@@ -332,6 +333,7 @@ function buildTools(deps: TutorToolDeps): ToolSpec<z.ZodType>[] {
         label: () => "saved your doubt",
         run: async (a, ctx) => {
           const saved = await saveDoubt(
+            ctx.userId,
             a.text,
             {
               screen: "tutor",

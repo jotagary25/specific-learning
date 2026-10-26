@@ -21,12 +21,13 @@ type Input<K extends ReadingAiFunction> = Parameters<(typeof prompts)[K]["build"
  */
 export async function runReadingAi<K extends ReadingAiFunction>(
   ai: ReadingAi | undefined,
+  userId: string,
   id: K,
   input: Input<K>,
 ): Promise<Output<K> | undefined> {
   if (!ai) return undefined;
   try {
-    const { client, model, think } = await ai.getLlmForFunction(id);
+    const { client, model, think } = await ai.getLlmForFunction(userId, id);
     const prompt = prompts[id];
     const messages = (prompt.build as (value: Input<K>) => ReturnType<typeof prompt.build>)(input);
     const { data } = await client.chatJson({ model, think, messages }, prompt.schema);

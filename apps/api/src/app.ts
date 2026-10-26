@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { type Auth, requireSession } from "./auth/auth.ts";
+import { type AppEnv, type Auth, requireSession } from "./auth/auth.ts";
 import { contentRoutes } from "./content/content.routes.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
 import { evalRoutes } from "./eval/eval.routes.ts";
@@ -29,7 +29,7 @@ export type AppDeps = HealthDeps & {
   contentDir?: string;
   /** Built web app to serve with SPA fallback (production); unset in dev, where Vite serves it. */
   webDistDir?: string;
-  /** Single-user session auth. Without it every protected /api route answers 401. */
+  /** Per-user session auth. Without it every protected /api route answers 401. */
   auth?: Auth;
   settings?: Settings;
   preferences?: PreferencesService;
@@ -45,7 +45,7 @@ export type AppDeps = HealthDeps & {
 
 export function createApp(deps: AppDeps) {
   // Public routes are registered before the session middleware, so they answer first.
-  const api = new Hono().route("/health", healthRoutes(deps));
+  const api = new Hono<AppEnv>().route("/health", healthRoutes(deps));
   if (deps.auth) api.route("/auth", deps.auth.routes);
   api.use("*", requireSession(deps.auth));
   if (deps.preferences) api.route("/settings/preferences", preferencesRoutes(deps.preferences));

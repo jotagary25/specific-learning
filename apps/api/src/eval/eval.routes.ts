@@ -3,6 +3,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { AppEnv } from "../auth/auth.ts";
 import { SettingsError } from "../settings/settings.service.ts";
 import { isLlmError } from "../shared/llm/errors.ts";
 import { type Eval, EvalRunError } from "./eval.service.ts";
@@ -43,20 +44,22 @@ async function parseBody<S extends z.ZodType>(c: Context, schema: S) {
 }
 
 export function evalRoutes(evals: Eval) {
-  return new Hono()
+  return new Hono<AppEnv>()
     .onError(handleError)
     .get("/fixtures", async (c) => c.json({ counts: await evals.fixtureCounts() }))
     .post("/runs", async (c) => {
       const body = await parseBody(c, StartEvalRequest);
       if (!body.ok) return body.response;
-      return c.json({ runIds: await evals.start(body.data) }, 202);
+      return c.json({ runIds: await evals.start(c.get("user").id, body.data) }, 202);
     })
-    .get("/runs", async (c) => c.json({ runs: await evals.list() }))
-    .get("/runs/:id", async (c) => c.json(await evals.get(c.req.param("id"))))
-    .post("/runs/:id/cancel", async (c) => c.json(await evals.cancel(c.req.param("id"))))
+    .get("/runs", async (c) => c.json({ runs: await evals.list(c.get("user").id) }))
+    .get("/runs/:id", async (c) => c.json(await evals.get(c.get("user").id, c.req.param("id"))))
+    .post("/runs/:id/cancel", async (c) =>
+      c.json(await evals.cancel(c.get("user").id, c.req.param("id"))),
+    )
     .post("/runs/:id/apply", async (c) => {
       const body = await parseBody(c, ApplyEvalRequest);
       if (!body.ok) return body.response;
-      return c.json(await evals.apply(c.req.param("id"), body.data.functionId));
+      return c.json(await evals.apply(c.get("user").id, c.req.param("id"), body.data.functionId));
     });
 }

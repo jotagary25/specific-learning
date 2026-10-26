@@ -9,7 +9,7 @@ import {
 } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
-import { createAuth } from "../auth/auth.ts";
+import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import {
   at,
   card,
@@ -23,22 +23,15 @@ import {
 import { createMemoryProgressStore } from "./progress.memory-store.ts";
 import { createProgress } from "./progress.service.ts";
 
-const APP_SECRET = "ef".repeat(32);
-const PASSWORD = "pw";
 const NOW = at(2026, 10, 25, 12);
 
 async function setup() {
   const clock = { now: NOW };
   const store = createMemoryProgressStore(() => clock.now);
   const progress = createProgress({ store, now: () => clock.now });
-  const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
+  const { auth } = await createTestAuth();
   const app = createApp({ pingDb: async () => true, auth, progress });
-  const login = await app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
-  const cookie = login.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/progress${path}`, {
       method: init.method ?? "GET",

@@ -9,6 +9,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { AppEnv } from "../auth/auth.ts";
 import { type Today, TodayError } from "./today.service.ts";
 
 const ERROR_STATUS: Record<TodayError["code"], ContentfulStatusCode> = {
@@ -36,7 +37,7 @@ async function parseBody<S extends z.ZodType>(c: Context, schema: S) {
 
 /** `/api/today`: the plan for now, study sessions and the parking list. */
 export function todayRoutes(today: Today) {
-  return new Hono()
+  return new Hono<AppEnv>()
     .onError(handleError)
     .get("/", async (c) => {
       const raw = c.req.query("mode");
@@ -47,28 +48,30 @@ export function todayRoutes(today: Today) {
           400,
         );
       }
-      return c.json(await today.overview(mode?.data));
+      return c.json(await today.overview(c.get("user").id, mode?.data));
     })
     .post("/sessions", async (c) => {
       const body = await parseBody(c, StartSessionRequest);
       if (!body.ok) return body.response;
-      return c.json(await today.startSession(body.data.mode), 201);
+      return c.json(await today.startSession(c.get("user").id, body.data.mode), 201);
     })
     .post("/sessions/:id/end", async (c) => {
       const body = await parseBody(c, EndSessionRequest);
       if (!body.ok) return body.response;
-      return c.json(await today.endSession(c.req.param("id"), body.data));
+      return c.json(await today.endSession(c.get("user").id, c.req.param("id"), body.data));
     })
-    .get("/parking", async (c) => c.json(await today.listParking()))
+    .get("/parking", async (c) => c.json(await today.listParking(c.get("user").id)))
     .post("/parking", async (c) => {
       const body = await parseBody(c, CreateParkingRequest);
       if (!body.ok) return body.response;
-      return c.json(await today.addParking(body.data.text), 201);
+      return c.json(await today.addParking(c.get("user").id, body.data.text), 201);
     })
     .patch("/parking/:id", async (c) => {
       const body = await parseBody(c, UpdateParkingRequest);
       if (!body.ok) return body.response;
-      return c.json(await today.updateParking(c.req.param("id"), body.data));
+      return c.json(await today.updateParking(c.get("user").id, c.req.param("id"), body.data));
     })
-    .delete("/parking/:id", async (c) => c.json(await today.removeParking(c.req.param("id"))));
+    .delete("/parking/:id", async (c) =>
+      c.json(await today.removeParking(c.get("user").id, c.req.param("id"))),
+    );
 }

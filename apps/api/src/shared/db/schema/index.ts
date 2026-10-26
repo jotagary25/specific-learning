@@ -6,5 +6,6 @@ export * from "./settings.ts";
 export * from "./today.ts";
 export * from "./tutor.ts";
 export * from "./units.ts";
+export * from "./users.ts";
 export * from "./vocabulary.ts";
 export * from "./writing.ts";

@@ -7,6 +7,7 @@ import {
   readingSession,
   srsCard,
   unit,
+  unitProgress,
   writingError,
   writingMission,
   writingSubmission,
@@ -59,24 +60,26 @@ export type ReadingRecord = {
 
 export type EventFilter = { types?: string[]; from?: Date; to?: Date };
 
-/** Persistence port of the Progress feature. */
+/** Persistence port of the Progress feature; every learner read and write is per user. */
 export interface ProgressStore {
   /** Oldest first; `to` is exclusive. */
-  listEvents(filter?: EventFilter): Promise<EventRecord[]>;
-  /** Time of the oldest event whose type is not in `exceptTypes`. */
-  firstEventAt(exceptTypes?: string[]): Promise<Date | undefined>;
-  insertEvent(type: string, payload: Record<string, unknown>): Promise<EventRecord>;
+  listEvents(userId: string, filter?: EventFilter): Promise<EventRecord[]>;
+  /** Time of the user's oldest event whose type is not in `exceptTypes`. */
+  firstEventAt(userId: string, exceptTypes?: string[]): Promise<Date | undefined>;
+  insertEvent(userId: string, type: string, payload: Record<string, unknown>): Promise<EventRecord>;
   /** Newest first. */
-  listCanDo(): Promise<CanDoRecord[]>;
-  insertCanDo(text: string): Promise<CanDoRecord>;
-  listUnits(): Promise<UnitRecord[]>;
-  listWordCards(): Promise<WordCardRecord[]>;
+  listCanDo(userId: string): Promise<CanDoRecord[]>;
+  insertCanDo(userId: string, text: string): Promise<CanDoRecord>;
+  /** Shared units with the user's status and completion. */
+  listUnits(userId: string): Promise<UnitRecord[]>;
+  listWordCards(userId: string): Promise<WordCardRecord[]>;
   /** Oldest first. */
-  listSubmissions(): Promise<SubmissionRecord[]>;
+  listSubmissions(userId: string): Promise<SubmissionRecord[]>;
   /** Oldest first. */
-  listErrors(): Promise<ErrorRecord[]>;
+  listErrors(userId: string): Promise<ErrorRecord[]>;
   /** Oldest first (by start). */
-  listReadings(): Promise<ReadingRecord[]>;
+  listReadings(userId: string): Promise<ReadingRecord[]>;
+  /** Shared article pool. */
   getArticleText(articleId: string): Promise<string | undefined>;
 }
 
@@ -99,10 +102,17 @@ function canDoOf(extras: unknown): string[] {
   return Array.isArray(list) ? list.filter((s): s is string => typeof s === "string") : [];
 }
 
+const canDoColumns = {
+  id: canDo.id,
+  text: canDo.text,
+  source: canDo.source,
+  createdAt: canDo.createdAt,
+};
+
 export function createDrizzleProgressStore(db: Db): ProgressStore {
   return {
-    async listEvents(filter = {}) {
-      const where: SQL[] = [];
+    async listEvents(userId, filter = {}) {
+      const where: SQL[] = [eq(event.userId, userId)];
       if (filter.types) where.push(inArray(event.type, filter.types));
       if (filter.from) where.push(gte(event.createdAt, filter.from));
       if (filter.to) where.push(lt(event.createdAt, filter.to));
@@ -113,52 +123,72 @@ export function createDrizzleProgressStore(db: Db): ProgressStore {
         .orderBy(asc(event.createdAt), asc(event.id));
     },
 
-    async firstEventAt(exceptTypes = []) {
+    async firstEventAt(userId, exceptTypes = []) {
       const [row] = await db
         .select({ at: min(event.createdAt) })
         .from(event)
-        .where(exceptTypes.length ? notInArray(event.type, exceptTypes) : undefined);
+        .where(
+          and(
+            eq(event.userId, userId),
+            exceptTypes.length ? notInArray(event.type, exceptTypes) : undefined,
+          ),
+        );
       return row?.at ?? undefined;
     },
 
-    async insertEvent(type, payload) {
+    async insertEvent(userId, type, payload) {
       const [row] = await db
         .insert(event)
-        .values({ type, payload })
+        .values({ userId, type, payload })
         .returning({ type: event.type, payload: event.payload, createdAt: event.createdAt });
       if (!row) throw new Error("event insert returned no row");
       return row;
     },
 
-    async listCanDo() {
-      return db.select().from(canDo).orderBy(desc(canDo.createdAt), desc(canDo.id));
+    async listCanDo(userId) {
+      return db
+        .select(canDoColumns)
+        .from(canDo)
+        .where(eq(canDo.userId, userId))
+        .orderBy(desc(canDo.createdAt), desc(canDo.id));
     },
 
-    async insertCanDo(text) {
-      const [row] = await db.insert(canDo).values({ text, source: "learner" }).returning();
+    async insertCanDo(userId, text) {
+      const [row] = await db
+        .insert(canDo)
+        .values({ userId, text, source: "learner" })
+        .returning(canDoColumns);
       if (!row) throw new Error("can_do insert returned no row");
       return row;
     },
 
-    async listUnits() {
+    async listUnits(userId) {
       const rows = await db
         .select({
           id: unit.id,
           title: unit.title,
-          status: unit.status,
-          completedAt: unit.completedAt,
+          status: unitProgress.status,
+          completedAt: unitProgress.completedAt,
           extras: unit.extras,
         })
         .from(unit)
+        .leftJoin(
+          unitProgress,
+          and(eq(unitProgress.unitId, unit.id), eq(unitProgress.userId, userId)),
+        )
         .orderBy(asc(unit.id));
-      return rows.map(({ extras, ...rest }) => ({ ...rest, canDo: canDoOf(extras) }));
+      return rows.map(({ extras, status, ...rest }) => ({
+        ...rest,
+        status: status ?? "new",
+        canDo: canDoOf(extras),
+      }));
     },
 
-    async listWordCards() {
+    async listWordCards(userId) {
       const rows = await db
         .select({ ref: srsCard.ref, state: srsCard.state })
         .from(srsCard)
-        .where(eq(srsCard.source, "word"))
+        .where(and(eq(srsCard.userId, userId), eq(srsCard.source, "word")))
         .orderBy(asc(srsCard.createdAt));
       return rows.flatMap(({ ref, state }) => {
         const word = str(ref.word)?.trim().toLowerCase();
@@ -166,7 +196,7 @@ export function createDrizzleProgressStore(db: Db): ProgressStore {
       });
     },
 
-    async listSubmissions() {
+    async listSubmissions(userId) {
       return db
         .select({
           id: writingSubmission.id,
@@ -179,10 +209,11 @@ export function createDrizzleProgressStore(db: Db): ProgressStore {
         })
         .from(writingSubmission)
         .leftJoin(writingMission, eq(writingMission.id, writingSubmission.missionId))
+        .where(eq(writingSubmission.userId, userId))
         .orderBy(asc(writingSubmission.createdAt), asc(writingSubmission.id));
     },
 
-    async listErrors() {
+    async listErrors(userId) {
       return db
         .select({
           submissionId: writingError.submissionId,
@@ -191,10 +222,11 @@ export function createDrizzleProgressStore(db: Db): ProgressStore {
           createdAt: writingError.createdAt,
         })
         .from(writingError)
+        .where(eq(writingError.userId, userId))
         .orderBy(asc(writingError.createdAt), asc(writingError.id));
     },
 
-    async listReadings() {
+    async listReadings(userId) {
       const rows = await db
         .select({
           articleId: readingSession.articleId,
@@ -205,6 +237,7 @@ export function createDrizzleProgressStore(db: Db): ProgressStore {
         })
         .from(readingSession)
         .innerJoin(article, eq(article.id, readingSession.articleId))
+        .where(eq(readingSession.userId, userId))
         .orderBy(asc(readingSession.startedAt), asc(readingSession.id));
       return rows.map(({ answers, ...rest }) => ({ ...rest, glossed: glossedWords(answers) }));
     },

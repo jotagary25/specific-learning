@@ -36,10 +36,24 @@ export type ApiError = z.infer<typeof ApiError>;
 
 // --- auth ---
 
-export const LoginRequest = z.object({ password: z.string().min(1).max(512) });
+/** Email is matched case-insensitively (the api lowercases it). */
+export const LoginRequest = z.object({
+  email: z.string().trim().min(3).max(320),
+  password: z.string().min(1).max(512),
+});
 export type LoginRequest = z.infer<typeof LoginRequest>;
 
-export const AuthStatus = z.object({ authenticated: z.boolean() });
+export const UserRole = z.enum(["admin", "learner"]);
+export type UserRole = z.infer<typeof UserRole>;
+
+/** The signed-in account as the web sees it. */
+export const SessionUser = z.object({ email: z.string(), role: UserRole });
+export type SessionUser = z.infer<typeof SessionUser>;
+
+export const AuthStatus = z.object({
+  authenticated: z.boolean(),
+  user: SessionUser.optional(),
+});
 export type AuthStatus = z.infer<typeof AuthStatus>;
 
 // --- Ollama API key ---

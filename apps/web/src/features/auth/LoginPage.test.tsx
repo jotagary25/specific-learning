@@ -14,14 +14,18 @@ describe("login flow", () => {
     const fetchMock = mockApi({
       "GET /api/auth/me": () =>
         loggedIn
-          ? Response.json({ authenticated: true })
+          ? Response.json({
+              authenticated: true,
+              user: { email: "ana@example.com", role: "admin" },
+            })
           : Response.json({ error: "unauthorized", message: "Log in first" }, { status: 401 }),
       "POST /api/auth/login": ({ body }) => {
-        loggedIn = (body as { password: string }).password === "secret";
+        const { email, password } = body as { email: string; password: string };
+        loggedIn = email === "ana@example.com" && password === "secret";
         return loggedIn
-          ? Response.json({ authenticated: true })
+          ? Response.json({ authenticated: true, user: { email, role: "admin" } })
           : Response.json(
-              { error: "invalid_credentials", message: "Wrong password" },
+              { error: "invalid_credentials", message: "Wrong email or password" },
               { status: 401 },
             );
       },
@@ -34,12 +38,16 @@ describe("login flow", () => {
     const { router } = renderAt("/settings");
 
     const password = await screen.findByLabelText("Password");
+    const email = screen.getByLabelText("Email");
+    expect(email.getAttribute("type")).toBe("email");
+    expect(email.getAttribute("autocomplete")).toBe("username");
     expect(router.state.location.pathname).toBe("/login");
     expect(router.state.location.search).toBe("?next=%2Fsettings");
 
+    fireEvent.change(email, { target: { value: "ana@example.com" } });
     fireEvent.change(password, { target: { value: "wrong" } });
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
-    expect(await screen.findByText("Wrong password.")).toBeTruthy();
+    expect(await screen.findByText("Wrong email or password.")).toBeTruthy();
 
     fireEvent.change(password, { target: { value: "secret" } });
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
@@ -48,7 +56,10 @@ describe("login flow", () => {
     expect(router.state.location.pathname).toBe("/settings");
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/auth/login",
-      expect.objectContaining({ method: "POST", body: JSON.stringify({ password: "secret" }) }),
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ email: "ana@example.com", password: "secret" }),
+      }),
     );
   });
 
@@ -59,7 +70,8 @@ describe("login flow", () => {
     });
     renderAt("/login");
 
-    fireEvent.change(await screen.findByLabelText("Password"), { target: { value: "x" } });
+    fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "a@b.co" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "x" } });
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
 
     await waitFor(() => expect(screen.getByRole("alert").textContent).toMatch(/Too many attempts/));

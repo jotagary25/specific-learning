@@ -134,21 +134,25 @@ export function createReading(deps: ReadingDeps) {
   const { store, editor } = deps;
   const today = deps.today ?? (() => localDate(new Date()));
 
-  async function articleOr404(id: string): Promise<ArticleRecord> {
-    const found = await store.getArticle(id);
+  async function articleOr404(userId: string, id: string): Promise<ArticleRecord> {
+    const found = await store.getArticle(userId, id);
     if (!found) throw new ReadingError("not_found", "Article not found");
     return found;
   }
 
-  async function sessionFor(articleId: string): Promise<SessionRecord> {
-    return (await store.getSession(articleId)) ?? emptySession(articleId);
+  async function sessionFor(userId: string, articleId: string): Promise<SessionRecord> {
+    return (await store.getSession(userId, articleId)) ?? emptySession(articleId);
   }
 
-  async function detailOf(article: ArticleRecord, session?: SessionRecord): Promise<ArticleDetail> {
-    const current = session ?? (await sessionFor(article.id));
+  async function detailOf(
+    userId: string,
+    article: ArticleRecord,
+    session?: SessionRecord,
+  ): Promise<ArticleDetail> {
+    const current = session ?? (await sessionFor(userId, article.id));
     const [savedWords, unit] = await Promise.all([
-      store.savedWords(article.id),
-      store.currentUnit(),
+      store.savedWords(userId, article.id),
+      store.currentUnit(userId),
     ]);
     return {
       article: viewOf(article, current.completedAt !== null),
@@ -160,13 +164,14 @@ export function createReading(deps: ReadingDeps) {
 
   /** Loads, mutates and saves the session of an article that is not completed yet. */
   async function update(
+    userId: string,
     articleId: string,
     mutate: (session: SessionRecord, article: ArticleRecord) => void | Promise<void>,
   ) {
-    const article = await articleOr404(articleId);
-    const session = await sessionFor(articleId);
+    const article = await articleOr404(userId, articleId);
+    const session = await sessionFor(userId, articleId);
     await mutate(session, article);
-    return { article, session: await store.saveSession(session) };
+    return { article, session: await store.saveSession(userId, session) };
   }
 
   function annotationsOf(article: ArticleRecord) {
@@ -177,6 +182,7 @@ export function createReading(deps: ReadingDeps) {
   }
 
   async function gloss(
+    userId: string,
     article: ArticleRecord,
     session: SessionRecord,
     word: string,
@@ -192,16 +198,16 @@ export function createReading(deps: ReadingDeps) {
     }
     const cached = entriesOf(session, "gloss").find((g) => g.word === key);
     if (cached) return { gloss: cached.gloss, source: "cache" };
-    const fresh = await runReadingAi(deps.ai, "gloss_word", { word, sentence });
+    const fresh = await runReadingAi(deps.ai, userId, "gloss_word", { word, sentence });
     if (!fresh) throw new ReadingError("ai-unavailable", "The glossary is unavailable right now");
     session.entries.push({ type: "gloss", word: key, gloss: fresh });
     return { gloss: fresh, source: "ai" };
   }
 
-  async function recallState() {
+  async function recallState(userId: string) {
     const date = addDays(today(), -1);
-    const article = await store.getArticleForDate(date);
-    const session = article ? await store.getSession(article.id) : undefined;
+    const article = await store.getArticleForDate(userId, date);
+    const session = article ? await store.getSession(userId, article.id) : undefined;
     if (!article || !session?.completedAt) return undefined;
     return { article, session };
   }
@@ -220,81 +226,91 @@ export function createReading(deps: ReadingDeps) {
     questions.length > 0 && questions.every((q) => q.answer !== null);
 
   return {
-    async today(): Promise<TodayResponse> {
+    async today(userId: string): Promise<TodayResponse> {
       const date = today();
-      const article = await store.getArticleForDate(date);
+      const article = await store.getArticleForDate(userId, date);
       return {
         date,
-        reading: article ? await detailOf(article) : null,
+        reading: article ? await detailOf(userId, article) : null,
         editorEnabled: deps.editorEnabled ?? true,
       };
     },
 
-    async list(): Promise<ArticlesListResponse> {
-      const articles = await store.listDailyArticles();
+    async list(userId: string): Promise<ArticlesListResponse> {
+      const articles = await store.listDailyArticles(userId);
       return { articles: articles.map((a) => summaryOf(a, a.completed)) };
     },
 
-    async detail(id: string): Promise<ArticleDetail> {
-      return detailOf(await articleOr404(id));
+    async detail(userId: string, id: string): Promise<ArticleDetail> {
+      return detailOf(userId, await articleOr404(userId, id));
     },
 
-    runEditor(): Promise<EditorRunResponse> {
-      return editor.run(today());
+    runEditor(userId: string): Promise<EditorRunResponse> {
+      return editor.run(userId, today());
     },
 
     /** Retries annotation for an article stored without it. */
-    async annotate(id: string): Promise<ArticleDetail> {
-      const article = await articleOr404(id);
+    async annotate(userId: string, id: string): Promise<ArticleDetail> {
+      const article = await articleOr404(userId, id);
       if (!article.annotations) {
-        const annotations = await editor.annotate(article);
+        const annotations = await editor.annotate(userId, article);
         if (!annotations) {
           throw new ReadingError("ai-unavailable", "Annotations are unavailable right now");
         }
         await store.setAnnotations(id, annotations);
         article.annotations = annotations;
       }
-      return detailOf(article);
+      return detailOf(userId, article);
     },
 
-    async prediction(id: string, prediction: string): Promise<ArticleDetail> {
-      const { article, session } = await update(id, (s) => {
+    async prediction(userId: string, id: string, prediction: string): Promise<ArticleDetail> {
+      const { article, session } = await update(userId, id, (s) => {
         const wasPredict = stepOf(s) === "predict";
         s.prediction = prediction;
         if (wasPredict) upsert(s, { type: "step", step: "read" }, (e) => e.type === "step");
       });
-      return detailOf(article, session);
+      return detailOf(userId, article, session);
     },
 
-    async step(id: string, step: ReadingStep): Promise<ArticleDetail> {
+    async step(userId: string, id: string, step: ReadingStep): Promise<ArticleDetail> {
       if (step === "done") throw new ReadingError("invalid", "Use complete to finish the reading");
-      const { article, session } = await update(id, (s) => {
+      const { article, session } = await update(userId, id, (s) => {
         upsert(s, { type: "step", step }, (e) => e.type === "step");
       });
-      return detailOf(article, session);
+      return detailOf(userId, article, session);
     },
 
-    async gloss(id: string, word: string, sentence: string): Promise<GlossResponse> {
+    async gloss(
+      userId: string,
+      id: string,
+      word: string,
+      sentence: string,
+    ): Promise<GlossResponse> {
       let result: Awaited<ReturnType<typeof gloss>> | undefined;
-      await update(id, async (session, article) => {
-        result = await gloss(article, session, word, sentence);
+      await update(userId, id, async (session, article) => {
+        result = await gloss(userId, article, session, word, sentence);
       });
-      const saved = await store.findWordCard(id, wordKey(word));
+      const saved = await store.findWordCard(userId, id, wordKey(word));
       if (!result)
         throw new ReadingError("ai-unavailable", "The glossary is unavailable right now");
       return { ...result.gloss, word, source: result.source, saved: saved !== undefined };
     },
 
-    async saveWord(id: string, word: string, sentence: string): Promise<SaveWordResponse> {
+    async saveWord(
+      userId: string,
+      id: string,
+      word: string,
+      sentence: string,
+    ): Promise<SaveWordResponse> {
       const key = wordKey(word);
-      const existing = await store.findWordCard(id, key);
+      const existing = await store.findWordCard(userId, id, key);
       if (existing) return { cardId: existing, word: key, created: false };
       let entry: GlossWordOutput | undefined;
-      const { article } = await update(id, async (session, a) => {
-        entry = (await gloss(a, session, word, sentence)).gloss;
+      const { article } = await update(userId, id, async (session, a) => {
+        entry = (await gloss(userId, a, session, word, sentence)).gloss;
       });
       if (!entry) throw new ReadingError("ai-unavailable", "The glossary is unavailable right now");
-      const cardId = await store.insertWordCard({
+      const cardId = await store.insertWordCard(userId, {
         articleId: id,
         word: key,
         front: `${word.trim()}\n${sentence}`,
@@ -309,12 +325,17 @@ export function createReading(deps: ReadingDeps) {
       return { cardId, word: key, created: true };
     },
 
-    async answer(id: string, qid: number, answer: string): Promise<QuestionGradeResponse> {
+    async answer(
+      userId: string,
+      id: string,
+      qid: number,
+      answer: string,
+    ): Promise<QuestionGradeResponse> {
       let response: QuestionGradeResponse | undefined;
-      await update(id, async (session, article) => {
+      await update(userId, id, async (session, article) => {
         const question = annotationsOf(article).questions[qid];
         if (!question) throw new ReadingError("not_found", "Question not found");
-        const grade = await runReadingAi(deps.ai, "grade_comprehension", {
+        const grade = await runReadingAi(deps.ai, userId, "grade_comprehension", {
           mode: "question",
           question: question.question,
           answerGuideEs: question.answerGuideEs,
@@ -336,9 +357,9 @@ export function createReading(deps: ReadingDeps) {
       return response as QuestionGradeResponse;
     },
 
-    async spot(id: string, request: SpotRequest): Promise<SpotResponse> {
+    async spot(userId: string, id: string, request: SpotRequest): Promise<SpotResponse> {
       let response: SpotResponse | undefined;
-      await update(id, async (session, article) => {
+      await update(userId, id, async (session, article) => {
         const spots = annotationsOf(article).grammarSpots;
         const spotIndex = matchSpot(
           article.text,
@@ -350,7 +371,7 @@ export function createReading(deps: ReadingDeps) {
         if (matched && request.explanation) {
           // No dedicated AI function: judged as a comprehension question about the writer's choice.
           feedback =
-            (await runReadingAi(deps.ai, "grade_comprehension", {
+            (await runReadingAi(deps.ai, userId, "grade_comprehension", {
               mode: "question",
               question: `Why did the writer use "${matched.form}" in: "${matched.quote}"?`,
               answerGuideEs: matched.whyEs,
@@ -377,18 +398,18 @@ export function createReading(deps: ReadingDeps) {
       return response as SpotResponse;
     },
 
-    async revealSpots(id: string): Promise<ArticleDetail> {
-      const { article, session } = await update(id, (s) => {
+    async revealSpots(userId: string, id: string): Promise<ArticleDetail> {
+      const { article, session } = await update(userId, id, (s) => {
         upsert(s, { type: "spots-revealed" }, (e) => e.type === "spots-revealed");
       });
-      return detailOf(article, session);
+      return detailOf(userId, article, session);
     },
 
-    async retell(id: string, text: string): Promise<RetellResponse> {
+    async retell(userId: string, id: string, text: string): Promise<RetellResponse> {
       let grade: RetellResponse["grade"] = null;
-      await update(id, async (session, article) => {
+      await update(userId, id, async (session, article) => {
         grade =
-          (await runReadingAi(deps.ai, "grade_comprehension", {
+          (await runReadingAi(deps.ai, userId, "grade_comprehension", {
             mode: "retell",
             articleText: article.text,
             answer: text,
@@ -398,20 +419,20 @@ export function createReading(deps: ReadingDeps) {
       return grade ? { grade } : { grade: null, error: "ai-unavailable" };
     },
 
-    async opinion(id: string, opinion: string): Promise<ArticleDetail> {
-      const { article, session } = await update(id, (s) => {
+    async opinion(userId: string, id: string, opinion: string): Promise<ArticleDetail> {
+      const { article, session } = await update(userId, id, (s) => {
         s.opinion = opinion;
       });
-      return detailOf(article, session);
+      return detailOf(userId, article, session);
     },
 
-    async complete(id: string): Promise<ArticleDetail> {
-      const article = await articleOr404(id);
-      let session = await sessionFor(id);
-      if (!session.id) session = await store.saveSession(session);
+    async complete(userId: string, id: string): Promise<ArticleDetail> {
+      const article = await articleOr404(userId, id);
+      let session = await sessionFor(userId, id);
+      if (!session.id) session = await store.saveSession(userId, session);
       if (!session.completedAt && session.id) {
-        const savedWords = await store.savedWords(id);
-        await store.completeSession(session.id, {
+        const savedWords = await store.savedWords(userId, id);
+        await store.completeSession(userId, session.id, {
           articleId: id,
           title: article.title,
           topic: article.topic,
@@ -420,37 +441,37 @@ export function createReading(deps: ReadingDeps) {
           hasOpinion: session.opinion !== null,
         });
       }
-      return detailOf(article);
+      return detailOf(userId, article);
     },
 
-    async recall(): Promise<RecallResponse> {
-      const state = await recallState();
+    async recall(userId: string): Promise<RecallResponse> {
+      const state = await recallState(userId);
       if (!state) return { status: "none", article: null, questions: [] };
       const { article, session } = state;
       const ref = { id: article.id, title: article.title };
       let questions = recallQuestions(session);
       if (questions.length === 0) {
-        const generated = await runReadingAi(deps.ai, "recall_questions", {
+        const generated = await runReadingAi(deps.ai, userId, "recall_questions", {
           article: { title: article.title, text: article.text },
-          savedWords: await store.savedWords(article.id),
+          savedWords: await store.savedWords(userId, article.id),
           opinion: session.opinion ?? undefined,
         });
         if (!generated) return { status: "ai-unavailable", article: ref, questions: [] };
         session.entries.push({ type: "recall-questions", questions: generated.questions });
-        await store.saveSession(session);
+        await store.saveSession(userId, session);
         questions = recallQuestions(session);
       }
       return { status: recallDone(questions) ? "done" : "ready", article: ref, questions };
     },
 
-    async recallAnswer(qid: number, answer: string): Promise<RecallAnswerResponse> {
-      const state = await recallState();
+    async recallAnswer(userId: string, qid: number, answer: string): Promise<RecallAnswerResponse> {
+      const state = await recallState(userId);
       const question = state ? recallQuestions(state.session)[qid] : undefined;
       if (!state || !question) throw new ReadingError("not_found", "Recall question not found");
       const { article, session } = state;
       const wasDone = recallDone(recallQuestions(session));
       const grade =
-        (await runReadingAi(deps.ai, "grade_comprehension", {
+        (await runReadingAi(deps.ai, userId, "grade_comprehension", {
           mode: "question",
           question: question.question,
           answerGuideEs: question.answerGuideEs,
@@ -462,11 +483,11 @@ export function createReading(deps: ReadingDeps) {
         { type: "recall-answer", qid, answer, grade },
         (e) => e.type === "recall-answer" && e.qid === qid,
       );
-      await store.saveSession(session);
+      await store.saveSession(userId, session);
       const questions = recallQuestions(session);
       const done = recallDone(questions);
       if (done && !wasDone) {
-        await store.insertEvent("reading_recall_completed", {
+        await store.insertEvent(userId, "reading_recall_completed", {
           articleId: article.id,
           scores: questions.map((q) => q.grade?.score ?? null),
         });

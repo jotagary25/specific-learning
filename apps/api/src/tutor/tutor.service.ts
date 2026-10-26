@@ -85,11 +85,12 @@ export function createTutor(deps: TutorDeps) {
   const { store } = deps;
   const tools = createTutorTools({
     ...deps,
-    saveDoubt: (text, context, explanation) => store.insertDoubt(text, context, explanation),
+    saveDoubt: (userId, text, context, explanation) =>
+      store.insertDoubt(userId, text, context, explanation),
   });
 
-  async function conversationOr404(id: string): Promise<ConversationRecord> {
-    const found = await store.getConversation(id);
+  async function conversationOr404(userId: string, id: string): Promise<ConversationRecord> {
+    const found = await store.getConversation(userId, id);
     if (!found) throw new TutorError("not_found", "Conversation not found");
     return found;
   }
@@ -97,12 +98,12 @@ export function createTutor(deps: TutorDeps) {
   return {
     toolNames: tools.names,
 
-    async create(context: TutorContext): Promise<CreateConversationResponse> {
-      return { id: (await store.createConversation(context)).id };
+    async create(userId: string, context: TutorContext): Promise<CreateConversationResponse> {
+      return { id: (await store.createConversation(userId, context)).id };
     },
 
-    async list(): Promise<ConversationsListResponse> {
-      const rows = await store.listConversations(LIST_LIMIT);
+    async list(userId: string): Promise<ConversationsListResponse> {
+      const rows = await store.listConversations(userId, LIST_LIMIT);
       return {
         conversations: rows.map(
           (row): ConversationSummary => ({
@@ -115,9 +116,9 @@ export function createTutor(deps: TutorDeps) {
       };
     },
 
-    async get(id: string): Promise<ConversationDetail> {
-      const conversation = await conversationOr404(id);
-      const messages = await store.listMessages(id);
+    async get(userId: string, id: string): Promise<ConversationDetail> {
+      const conversation = await conversationOr404(userId, id);
+      const messages = await store.listMessages(userId, id);
       return {
         id: conversation.id,
         context: conversation.context,
@@ -131,19 +132,25 @@ export function createTutor(deps: TutorDeps) {
      * the learner message, and returns the event stream of the reply.
      */
     async startTurn(
+      userId: string,
       id: string,
       content: string,
     ): Promise<(signal: AbortSignal) => AsyncGenerator<TutorStreamEvent>> {
-      const conversation = await conversationOr404(id);
-      if (!deps.ai || !(await deps.ai.keyStatus()).configured) {
+      const conversation = await conversationOr404(userId, id);
+      if (!deps.ai || !(await deps.ai.keyStatus(userId)).configured) {
         throw new TutorError(
           "ai-unavailable",
           "The AI tutor is unavailable right now (add an Ollama API key in Settings)",
         );
       }
-      const { client, model, think } = await deps.ai.getLlmForFunction("explain_tutor");
-      const earlier = await store.listMessages(id);
-      await store.insertMessage({ conversationId: id, role: "user", content, toolCalls: null });
+      const { client, model, think } = await deps.ai.getLlmForFunction(userId, "explain_tutor");
+      const earlier = await store.listMessages(userId, id);
+      await store.insertMessage(userId, {
+        conversationId: id,
+        role: "user",
+        content,
+        toolCalls: null,
+      });
       const messages: ChatMessage[] = [
         buildSystemMessage(conversation.context),
         ...historyMessages(earlier),
@@ -156,9 +163,9 @@ export function createTutor(deps: TutorDeps) {
           think,
           messages,
           tools,
-          ctx: { conversationId: id, context: conversation.context },
+          ctx: { userId, conversationId: id, context: conversation.context },
           signal,
-          persist: (message) => store.insertMessage({ ...message, conversationId: id }),
+          persist: (message) => store.insertMessage(userId, { ...message, conversationId: id }),
         });
     },
   };

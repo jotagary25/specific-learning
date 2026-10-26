@@ -3,6 +3,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { AppEnv } from "../auth/auth.ts";
 import { DEFAULT_QUEUE_LIMIT, type Vocabulary, VocabularyError } from "./vocabulary.service.ts";
 
 const ERROR_STATUS: Record<VocabularyError["code"], ContentfulStatusCode> = {
@@ -52,30 +53,39 @@ function parseQuery<S extends z.ZodType>(c: Context, schema: S): z.infer<S> {
 
 /** `/api/vocabulary`: review queue, reviews, card browser, stats and session events. */
 export function vocabularyRoutes(vocabulary: Vocabulary) {
-  return new Hono()
+  return new Hono<AppEnv>()
     .onError(handleError)
-    .get("/queue", async (c) => c.json(await vocabulary.queue(parseQuery(c, QueueQuery).limit)))
-    .get("/stats", async (c) => c.json(await vocabulary.stats()))
+    .get("/queue", async (c) =>
+      c.json(await vocabulary.queue(c.get("user").id, parseQuery(c, QueueQuery).limit)),
+    )
+    .get("/stats", async (c) => c.json(await vocabulary.stats(c.get("user").id)))
     .post("/sessions", async (c) => {
       const body = await parseBody(c, SessionRequest);
       if (!body.ok) return body.response;
-      return c.json(await vocabulary.completeSession(body.data));
+      return c.json(await vocabulary.completeSession(c.get("user").id, body.data));
     })
     .get("/cards", async (c) => {
       const { source, q } = parseQuery(c, ListQuery);
-      return c.json(await vocabulary.list({ ...(source ? { source } : {}), ...(q ? { q } : {}) }));
+      return c.json(
+        await vocabulary.list(c.get("user").id, {
+          ...(source ? { source } : {}),
+          ...(q ? { q } : {}),
+        }),
+      );
     })
     .post("/cards/:id/review", async (c) => {
       const id = cardId(c);
       const body = await parseBody(c, ReviewRequest);
       if (!body.ok) return body.response;
-      return c.json(await vocabulary.review(id, body.data));
+      return c.json(await vocabulary.review(c.get("user").id, id, body.data));
     })
     .patch("/cards/:id", async (c) => {
       const id = cardId(c);
       const body = await parseBody(c, CardPatch);
       if (!body.ok) return body.response;
-      return c.json(await vocabulary.update(id, body.data));
+      return c.json(await vocabulary.update(c.get("user").id, id, body.data));
     })
-    .delete("/cards/:id", async (c) => c.json(await vocabulary.remove(cardId(c))));
+    .delete("/cards/:id", async (c) =>
+      c.json(await vocabulary.remove(c.get("user").id, cardId(c))),
+    );
 }

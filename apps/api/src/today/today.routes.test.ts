@@ -6,12 +6,10 @@ import {
 } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
-import { createAuth } from "../auth/auth.ts";
+import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import { createMemoryTodayStore } from "./today.memory-store.ts";
 import { createToday, type TodayState } from "./today.service.ts";
 
-const APP_SECRET = "cd".repeat(32);
-const PASSWORD = "pw";
 // 2026-10-26 is a Monday, 2026-10-31 a Saturday (local time).
 const MONDAY_MORNING = new Date(2026, 9, 26, 6, 30);
 const SATURDAY_MORNING = new Date(2026, 9, 31, 9, 0);
@@ -41,14 +39,9 @@ async function setup(start = MONDAY_MORNING) {
     sources: { state: async () => state() },
     now: () => clock.now,
   });
-  const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
+  const { auth } = await createTestAuth();
   const app = createApp({ pingDb: async () => true, auth, today });
-  const login = await app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
-  const cookie = login.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/today${path}`, {
       method: init.method ?? "GET",

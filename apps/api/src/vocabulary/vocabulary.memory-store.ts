@@ -1,4 +1,5 @@
-// In-memory VocabularyStore for tests.
+// In-memory VocabularyStore for tests. Single-learner fake: user ids are accepted and ignored
+// (isolation is covered by the DB integration test).
 
 import { randomUUID } from "node:crypto";
 import { isNew } from "./srs.ts";
@@ -30,7 +31,7 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
     items,
     events,
 
-    async listCards(filter) {
+    async listCards(_userId, filter) {
       const q = filter.q?.trim().toLowerCase();
       return cards
         .filter((c) => !filter.source || c.source === filter.source)
@@ -39,17 +40,17 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
         .map(clone);
     },
 
-    async getCard(id) {
+    async getCard(_userId, id) {
       const card = cards.find((c) => c.id === id);
       return card ? clone(card) : undefined;
     },
 
-    async findCardByRef(source, key, value) {
+    async findCardByRef(_userId, source, key, value) {
       const card = cards.find((c) => c.source === source && c.ref[key] === value);
       return card ? clone(card) : undefined;
     },
 
-    async insertCard(value) {
+    async insertCard(_userId, value) {
       // Strictly increasing creation times keep "oldest first" deterministic.
       const last = cards.at(-1)?.createdAt.getTime() ?? 0;
       const card: CardRecord = {
@@ -62,14 +63,14 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
       return clone(card);
     },
 
-    async updateCard(id, patch) {
+    async updateCard(_userId, id, patch) {
       const card = cards.find((c) => c.id === id);
       if (!card) return undefined;
       Object.assign(card, clone(patch));
       return clone(card);
     },
 
-    async deleteCard(id) {
+    async deleteCard(_userId, id) {
       const index = cards.findIndex((c) => c.id === id);
       if (index < 0) return false;
       cards.splice(index, 1);
@@ -79,15 +80,15 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
       return true;
     },
 
-    async dueCards(now, limit) {
+    async dueCards(_userId, now, limit) {
       return dueAt(now).slice(0, limit).map(clone);
     },
 
-    async countDue(now) {
+    async countDue(_userId, now) {
       return dueAt(now).length;
     },
 
-    async newCards(limit) {
+    async newCards(_userId, limit) {
       return cards
         .filter((c) => active(c) && isNew(c.state))
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
@@ -95,7 +96,7 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
         .map(clone);
     },
 
-    async countFirstReviewsSince(since) {
+    async countFirstReviewsSince(_userId, since) {
       const first = new Map<string, number>();
       for (const r of reviews) {
         const t = r.reviewedAt.getTime();
@@ -104,13 +105,13 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
       return [...first.values()].filter((t) => t >= since.getTime()).length;
     },
 
-    async reviewTimesSince(since) {
+    async reviewTimesSince(_userId, since) {
       return reviews
         .filter((r) => r.reviewedAt.getTime() >= since.getTime())
         .map((r) => new Date(r.reviewedAt));
     },
 
-    async recordReview(id, rating, next, reviewedAt, answer) {
+    async recordReview(_userId, id, rating, next, reviewedAt, answer) {
       const card = cards.find((c) => c.id === id);
       if (!card) return undefined;
       card.state = clone(next.state);
@@ -129,7 +130,7 @@ export function createMemoryVocabularyStore(): MemoryVocabularyStore {
       return item ? clone(item) : undefined;
     },
 
-    async insertEvent(type, payload) {
+    async insertEvent(_userId, type, payload) {
       events.push({ type, payload: clone(payload) });
     },
   };

@@ -3,6 +3,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { AppEnv } from "../auth/auth.ts";
 import { isLlmError, type LlmErrorCode } from "../shared/llm/errors.ts";
 import { type Settings, SettingsError } from "./settings.service.ts";
 
@@ -47,24 +48,28 @@ async function parseBody<S extends z.ZodType>(c: Context, schema: S) {
 }
 
 export function settingsRoutes(settings: Settings) {
-  return new Hono()
+  return new Hono<AppEnv>()
     .onError(handleError)
-    .get("/ai-key", async (c) => c.json(await settings.keyStatus()))
+    .get("/ai-key", async (c) => c.json(await settings.keyStatus(c.get("user").id)))
     .put("/ai-key", async (c) => {
       const body = await parseBody(c, PutAiKeyRequest);
       if (!body.ok) return body.response;
-      return c.json(await settings.setKey(body.data.apiKey));
+      return c.json(await settings.setKey(c.get("user").id, body.data.apiKey));
     })
-    .delete("/ai-key", async (c) => c.json(await settings.deleteKey()))
-    .post("/ai-key/test", async (c) => c.json(await settings.testKey()))
-    .get("/models", async (c) => c.json({ models: await settings.listModels() }))
+    .delete("/ai-key", async (c) => c.json(await settings.deleteKey(c.get("user").id)))
+    .post("/ai-key/test", async (c) => c.json(await settings.testKey(c.get("user").id)))
+    .get("/models", async (c) => c.json({ models: await settings.listModels(c.get("user").id) }))
     .get("/models/:name/capabilities", async (c) =>
-      c.json(await settings.capabilities(c.req.param("name"))),
+      c.json(await settings.capabilities(c.get("user").id, c.req.param("name"))),
     )
-    .get("/ai-functions", async (c) => c.json({ functions: await settings.listAiFunctions() }))
+    .get("/ai-functions", async (c) =>
+      c.json({ functions: await settings.listAiFunctions(c.get("user").id) }),
+    )
     .put("/ai-functions/:id", async (c) => {
       const body = await parseBody(c, UpdateAiFunctionRequest);
       if (!body.ok) return body.response;
-      return c.json(await settings.updateAiFunction(c.req.param("id"), body.data));
+      return c.json(
+        await settings.updateAiFunction(c.get("user").id, c.req.param("id"), body.data),
+      );
     });
 }

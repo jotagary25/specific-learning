@@ -8,6 +8,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
+import type { AppEnv } from "../auth/auth.ts";
 import { type Units, UnitsError } from "./units.service.ts";
 
 const ERROR_STATUS: Record<UnitsError["code"], ContentfulStatusCode> = {
@@ -42,33 +43,47 @@ function unitNumber(c: Context): number {
 
 /** `/api/units`: list, unit content, attempts, hints, "I don't get it", timeline, review answers. */
 export function unitsRoutes(units: Units) {
-  return new Hono()
+  return new Hono<AppEnv>()
     .onError(handleError)
-    .get("/", async (c) => c.json(await units.list()))
-    .get("/:n", async (c) => c.json(await units.detail(unitNumber(c))))
+    .get("/", async (c) => c.json(await units.list(c.get("user").id)))
+    .get("/:n", async (c) => c.json(await units.detail(c.get("user").id, unitNumber(c))))
     .post("/:n/items/:itemId/attempts", async (c) => {
       const body = await parseBody(c, AttemptRequest);
       if (!body.ok) return body.response;
-      return c.json(await units.attempt(unitNumber(c), c.req.param("itemId"), body.data.inputs));
+      return c.json(
+        await units.attempt(
+          c.get("user").id,
+          unitNumber(c),
+          c.req.param("itemId"),
+          body.data.inputs,
+        ),
+      );
     })
     .post("/:n/items/:itemId/hint", async (c) => {
       const body = await parseBody(c, HintRequest, {});
       if (!body.ok) return body.response;
-      return c.json(await units.hint(unitNumber(c), c.req.param("itemId"), body.data.shown));
+      return c.json(
+        await units.hint(c.get("user").id, unitNumber(c), c.req.param("itemId"), body.data.shown),
+      );
     })
     .post("/:n/explain", async (c) => {
       const body = await parseBody(c, ExplainRequest);
       if (!body.ok) return body.response;
-      return c.json(await units.explain(unitNumber(c), body.data.context));
+      return c.json(await units.explain(c.get("user").id, unitNumber(c), body.data.context));
     })
     .post("/:n/timeline/:itemId", async (c) => {
       const body = await parseBody(c, TimelineCheckRequest);
       if (!body.ok) return body.response;
       return c.json(
-        await units.checkTimeline(unitNumber(c), c.req.param("itemId"), body.data.placement),
+        await units.checkTimeline(
+          c.get("user").id,
+          unitNumber(c),
+          c.req.param("itemId"),
+          body.data.placement,
+        ),
       );
     })
     .get("/:n/answers/:exerciseId", async (c) =>
-      c.json(await units.answers(unitNumber(c), c.req.param("exerciseId"))),
+      c.json(await units.answers(c.get("user").id, unitNumber(c), c.req.param("exerciseId"))),
     );
 }

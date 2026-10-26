@@ -8,7 +8,7 @@ import {
 } from "@english-course/shared";
 import { beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
-import { createAuth } from "../auth/auth.ts";
+import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { LlmError } from "../shared/llm/errors.ts";
@@ -21,7 +21,7 @@ function fakeMissedItems(): MissedItemCards & { calls: string[] } {
   const calls: string[] = [];
   return {
     calls,
-    async createCardFromMissedItem(itemId) {
+    async createCardFromMissedItem(_userId: string, itemId: string) {
       calls.push(itemId);
       return { cardId: `card-${itemId}`, created: true };
     },
@@ -29,7 +29,6 @@ function fakeMissedItems(): MissedItemCards & { calls: string[] } {
 }
 
 const APP_SECRET = "cd".repeat(32);
-const PASSWORD = "pw";
 
 // Loading and validating the content folder is the slow part: do it once, clone per test.
 let pristine: MemoryUnitsStore;
@@ -52,14 +51,9 @@ async function setup(
     ai: options.noAi ? undefined : settings,
     missedItems: options.missedItems,
   });
-  const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
+  const { auth } = await createTestAuth();
   const app = createApp({ pingDb: async () => true, auth, units });
-  const login = await app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
-  const cookie = login.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/units${path}`, {
       method: init.method ?? "GET",
@@ -77,7 +71,7 @@ async function setup(
 
 /** Every graded item of a unit with a correct answer taken from its key. */
 async function correctAnswers(unitId: number) {
-  const content = await pristine.getUnitContent(unitId);
+  const content = await pristine.getUnitContent("test-user", unitId);
   return (content?.items ?? [])
     .filter((item) => !item.isExample && item.answer && item.answer.kind !== "open")
     .map((item) => ({

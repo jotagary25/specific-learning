@@ -117,16 +117,23 @@ export type EditorDeps = {
 export function createEditor(deps: EditorDeps) {
   const { store } = deps;
   const wordRange = deps.wordRange ?? WORD_RANGE;
+  /** In-flight runs, keyed by user and date. */
   const running = new Map<string, Promise<EditorRunResponse>>();
 
-  async function annotate(article: {
-    title: string;
-    outlet: string | null;
-    url: string;
-    text: string;
-  }): Promise<ArticleAnnotations | null> {
-    const [unit, knownWords] = await Promise.all([store.currentUnit(), store.knownWords()]);
-    const result = await runReadingAi(deps.ai, "annotate_article", {
+  async function annotate(
+    userId: string,
+    article: {
+      title: string;
+      outlet: string | null;
+      url: string;
+      text: string;
+    },
+  ): Promise<ArticleAnnotations | null> {
+    const [unit, knownWords] = await Promise.all([
+      store.currentUnit(userId),
+      store.knownWords(userId),
+    ]);
+    const result = await runReadingAi(deps.ai, userId, "annotate_article", {
       article: { title: article.title, source: article.outlet ?? article.url, text: article.text },
       currentUnit: unit ?? GENERAL_FOCUS,
       knownWords,
@@ -134,7 +141,7 @@ export function createEditor(deps: EditorDeps) {
     return result ?? null;
   }
 
-  async function run(date: string): Promise<EditorRunResponse> {
+  async function run(userId: string, date: string): Promise<EditorRunResponse> {
     const base = {
       date,
       selection: null,
@@ -143,7 +150,7 @@ export function createEditor(deps: EditorDeps) {
       sources: [] as EditorRunResponse["sources"],
       warnings: [] as string[],
     };
-    const existing = await store.getArticleForDate(date);
+    const existing = await store.getArticleForDate(userId, date);
     if (existing) {
       return {
         ...base,
@@ -168,8 +175,11 @@ export function createEditor(deps: EditorDeps) {
       }
     }
 
-    // 2. Filter.
-    const usedUrls = await store.usedUrls(gathered.map((g) => normalizeUrl(g.candidate.url)));
+    // 2. Filter: drop what this user already read (other users' picks stay eligible).
+    const usedUrls = await store.usedUrls(
+      userId,
+      gathered.map((g) => normalizeUrl(g.candidate.url)),
+    );
     const pool = filterCandidates(gathered, {
       date,
       usedUrls,
@@ -182,11 +192,11 @@ export function createEditor(deps: EditorDeps) {
     }
 
     // 3. Select: the AI editor, else the deterministic rotation.
-    const recent = await store.recentArticles(date, RECENT_ARTICLES);
+    const recent = await store.recentArticles(userId, date, RECENT_ARTICLES);
     const recentTopics = recent.map((a) => a.topic);
     const ordered = fallbackOrder(pool, recentTopics, wordRange);
     const shortlist = ordered.slice(0, MAX_SELECT_CANDIDATES);
-    const unit = (await store.currentUnit()) ?? GENERAL_FOCUS;
+    const unit = (await store.currentUnit(userId)) ?? GENERAL_FOCUS;
     const promptCandidates: ArticleCandidate[] = shortlist.map(({ candidate }, index) => ({
       id: `c${index + 1}`,
       title: candidate.title,
@@ -196,7 +206,7 @@ export function createEditor(deps: EditorDeps) {
       publishedAt: candidate.publishedAt?.toISOString() ?? "unknown",
       topicHint: candidate.topicHint,
     }));
-    const choice = await runReadingAi(deps.ai, "select_article", {
+    const choice = await runReadingAi(deps.ai, userId, "select_article", {
       candidates: promptCandidates,
       currentUnit: unit,
       recentTopics: recentTopics.filter(
@@ -232,10 +242,10 @@ export function createEditor(deps: EditorDeps) {
 
     // 5. Annotate (null on failure: plain reading plus a retry button) and store.
     const byAi = chosen !== undefined && picked.item === chosen;
-    const annotations = await annotate(picked.article);
+    const annotations = await annotate(userId, picked.article);
     if (!annotations)
       base.warnings.push("annotate_article unavailable: stored without annotations");
-    const { article: stored } = await store.insertArticle({
+    const { article: stored } = await store.insertArticle(userId, {
       source: picked.article.source,
       url: normalizeUrl(picked.article.url),
       title: picked.article.title,
@@ -261,12 +271,13 @@ export function createEditor(deps: EditorDeps) {
 
   return {
     annotate,
-    /** Selects and stores the article for `date` (YYYY-MM-DD); idempotent per date. */
-    run(date: string): Promise<EditorRunResponse> {
-      const inFlight = running.get(date);
+    /** Selects and stores the user's article for `date` (YYYY-MM-DD); idempotent per user and date. */
+    run(userId: string, date: string): Promise<EditorRunResponse> {
+      const key = `${userId}/${date}`;
+      const inFlight = running.get(key);
       if (inFlight) return inFlight;
-      const job = run(date).finally(() => running.delete(date));
-      running.set(date, job);
+      const job = run(userId, date).finally(() => running.delete(key));
+      running.set(key, job);
       return job;
     },
   };

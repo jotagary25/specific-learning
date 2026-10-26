@@ -10,6 +10,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { userIdColumn } from "./users.ts";
 
 /** Today modes (spec §3.1); the legacy `standard` value was migrated to `full`. */
 export type StudySessionMode = "full" | "slump" | "minimum";
@@ -25,6 +26,7 @@ export const studySession = pgTable(
   "study_session",
   {
     id: uuid("id").primaryKey().default(sql`uuidv7()`),
+    userId: userIdColumn(),
     mode: text("mode").$type<StudySessionMode>().notNull(),
     budgetMin: integer("budget_min").notNull(),
     plan: jsonb("plan").$type<Record<string, unknown>>().notNull(),
@@ -34,13 +36,18 @@ export const studySession = pgTable(
     blocksDone: smallint("blocks_done"),
     endReason: text("end_reason").$type<StudySessionEndReason>(),
   },
-  (t) => [index("study_session_started_at_idx").on(t.startedAt)],
+  (t) => [index("study_session_user_id_started_at_idx").on(t.userId, t.startedAt)],
 );
 
 /** "Something caught my interest" note, shown outside sessions. */
-export const parkingItem = pgTable("parking_item", {
-  id: uuid("id").primaryKey().default(sql`uuidv7()`),
-  text: text("text").notNull(),
-  done: boolean("done").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const parkingItem = pgTable(
+  "parking_item",
+  {
+    id: uuid("id").primaryKey().default(sql`uuidv7()`),
+    userId: userIdColumn(),
+    text: text("text").notNull(),
+    done: boolean("done").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("parking_item_user_id_created_at_idx").on(t.userId, t.createdAt)],
+);

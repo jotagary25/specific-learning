@@ -28,6 +28,8 @@ import { createTutor } from "./tutor/tutor.service.ts";
 import { createDrizzleTutorStore } from "./tutor/tutor.store.ts";
 import { createUnits } from "./units/units.service.ts";
 import { createDrizzleUnitsStore } from "./units/units.store.ts";
+import { bootstrapAdmin } from "./users/bootstrap.ts";
+import { createDrizzleUserStore } from "./users/users.store.ts";
 import { createVocabulary } from "./vocabulary/vocabulary.service.ts";
 import { createDrizzleVocabularyStore } from "./vocabulary/vocabulary.store.ts";
 import { createWriting } from "./writing/writing.service.ts";
@@ -36,10 +38,18 @@ import { createDrizzleWritingStore } from "./writing/writing.store.ts";
 const config = loadConfig();
 const contentDir = resolveContentDir();
 const database = createDb(config.DATABASE_URL);
+const users = createDrizzleUserStore(database.db);
 
+let admin: Awaited<ReturnType<typeof bootstrapAdmin>>["user"];
 try {
   console.log(`db: migrations up to date (${await runMigrations(database.db)} applied)`);
   console.log(formatSeedResult(await seed(database.db, contentDir)));
+  const bootstrap = await bootstrapAdmin(users, {
+    email: config.APP_USER_EMAIL,
+    password: config.APP_USER_PASSWORD,
+  });
+  admin = bootstrap.user;
+  console.log(`users: admin ${admin.email} ${bootstrap.action}`);
 } catch (error) {
   console.error("db: startup failed", error);
   await database.close();
@@ -48,14 +58,13 @@ try {
 
 const settingsStore = createDrizzleSettingsStore(database.db);
 const auth = createAuth({
-  password: config.APP_PASSWORD,
+  users,
   appSecret: config.APP_SECRET,
   cookieSecure: config.COOKIE_SECURE,
   trustProxy: config.TRUST_PROXY,
-  // Logout bumps the epoch in `setting`, revoking every session (single-user app).
-  epochStore: settingsStore,
-  // Login rate limiting keys on the socket peer, or on X-Forwarded-For when TRUST_PROXY is
-  // on and the peer is a loopback/private proxy (see auth/trusted-proxy.ts).
+  // Logout bumps the user's session epoch in `app_user`, revoking only that user's sessions.
+  // Login rate limiting keys on the account plus the socket peer, or X-Forwarded-For when
+  // TRUST_PROXY is on and the peer is a loopback/private proxy (see auth/trusted-proxy.ts).
 });
 const settings = createSettings({
   store: settingsStore,
@@ -84,7 +93,11 @@ const editor = createEditor({
   ai: settings,
   sources: [
     createTheConversationSource(),
-    createOllamaWebSearchSource({ baseUrl: config.OLLAMA_BASE_URL, getApiKey: settings.getApiKey }),
+    // Shared news source: searches with the admin's key (env key as fallback).
+    createOllamaWebSearchSource({
+      baseUrl: config.OLLAMA_BASE_URL,
+      getApiKey: () => settings.getApiKey(admin.id),
+    }),
   ],
 });
 const reading = createReading({
@@ -96,8 +109,22 @@ const reading = createReading({
 const scheduler = config.EDITOR_ENABLED
   ? startEditorScheduler({
       hour: config.EDITOR_HOUR,
-      run: (date) => editor.run(date),
-      hasArticle: async (date) => (await readingStore.getArticleForDate(date)) !== undefined,
+      // Every user gets their article at the same instance hour (per-user hours come later).
+      run: async (date) => {
+        for (const userId of await users.listIds()) {
+          try {
+            await editor.run(userId, date);
+          } catch (error) {
+            console.error(`editor: run for user ${userId} on ${date} failed`, error);
+          }
+        }
+      },
+      hasArticle: async (date) => {
+        for (const userId of await users.listIds()) {
+          if (!(await readingStore.getArticleForDate(userId, date))) return false;
+        }
+        return true;
+      },
     })
   : undefined;
 
@@ -116,7 +143,7 @@ const today = createToday({
     readingStore,
     vocabulary,
     writing,
-    getSetting: (key) => settingsStore.getSetting(key),
+    getSetting: (userId, key) => settingsStore.getSetting(userId, key),
   }),
 });
 

@@ -42,14 +42,16 @@ import { correspondingSentence, sentenceAround } from "./writing.text.ts";
 
 export type WritingDeps = {
   store: WritingStore;
-  /** Key/value settings: `writing.level` (1–4). */
+  /** Per-user key/value settings: `writing.level` (1–4). */
   settings?: {
-    getSetting(key: string): Promise<unknown>;
-    putSetting(key: string, value: unknown): Promise<void>;
+    getSetting(userId: string, key: string): Promise<unknown>;
+    putSetting(userId: string, key: string, value: unknown): Promise<void>;
   };
   ai?: WritingAi;
   /** Vocabulary's own-error card factory. */
-  ownErrors?: { createOwnErrorCard(input: OwnErrorInput): Promise<{ cardId: string }> };
+  ownErrors?: {
+    createOwnErrorCard(userId: string, input: OwnErrorInput): Promise<{ cardId: string }>;
+  };
   now?: () => Date;
 };
 
@@ -99,15 +101,15 @@ export function createWriting(deps: WritingDeps) {
   // Level
   // -------------------------------------------------------------------------------------------
 
-  async function readLevel(): Promise<number> {
-    const value = await deps.settings?.getSetting(LEVEL_KEY);
+  async function readLevel(userId: string): Promise<number> {
+    const value = await deps.settings?.getSetting(userId, LEVEL_KEY);
     return typeof value === "number" ? clampLevel(value) : 1;
   }
 
-  async function levelView(missions?: MissionAggregate[]): Promise<LevelView> {
-    const level = await readLevel();
+  async function levelView(userId: string, missions?: MissionAggregate[]): Promise<LevelView> {
+    const level = await readLevel(userId);
     const format = formatForLevel(level);
-    const all = missions ?? (await store.listMissions());
+    const all = missions ?? (await store.listMissions(userId));
     const scores = all
       .filter(
         (agg) =>
@@ -202,15 +204,16 @@ export function createWriting(deps: WritingDeps) {
   }
 
   async function respond(
+    userId: string,
     missionId: string,
     extra: Pick<WritingMissionResponse, "error" | "levelUp"> = {},
   ): Promise<WritingMissionResponse> {
-    const agg = await store.getMission(missionId);
+    const agg = await store.getMission(userId, missionId);
     if (!agg) throw new WritingError("not_found", "Mission not found");
     const [units, errors, level] = await Promise.all([
-      store.listUnits(),
-      store.listErrors([agg.submission.id]),
-      levelView(),
+      store.listUnits(userId),
+      store.listErrors(userId, [agg.submission.id]),
+      levelView(userId),
     ]);
     return {
       level,
@@ -224,10 +227,10 @@ export function createWriting(deps: WritingDeps) {
   // Guards and helpers
   // -------------------------------------------------------------------------------------------
 
-  async function load(missionId: string) {
-    const agg = await store.getMission(missionId);
+  async function load(userId: string, missionId: string) {
+    const agg = await store.getMission(userId, missionId);
     if (!agg) throw new WritingError("not_found", "Mission not found");
-    const errors = await store.listErrors([agg.submission.id]);
+    const errors = await store.listErrors(userId, [agg.submission.id]);
     return { agg, errors, can: actionsFor(agg, errors) };
   }
 
@@ -235,22 +238,27 @@ export function createWriting(deps: WritingDeps) {
     if (!allowed) throw new WritingError("conflict", message);
   }
 
-  async function setFlow(agg: MissionAggregate, patch: Partial<FlowState>, hasText = true) {
+  async function setFlow(
+    userId: string,
+    agg: MissionAggregate,
+    patch: Partial<FlowState>,
+    hasText = true,
+  ) {
     const flow = { ...agg.submission.flow, ...patch };
-    await store.updateSubmission(agg.submission.id, { flow });
-    await store.setMissionStatus(agg.mission.id, missionStatusFor(flow.status, hasText));
+    await store.updateSubmission(userId, agg.submission.id, { flow });
+    await store.setMissionStatus(userId, agg.mission.id, missionStatusFor(flow.status, hasText));
     agg.submission.flow = flow;
   }
 
   const validUnitId = (units: UnitInfo[], id: number | null) =>
     id !== null && units.some((u) => u.id === id) ? id : null;
 
-  async function raisePriorities(errors: Array<{ unitId: number | null }>) {
+  async function raisePriorities(userId: string, errors: Array<{ unitId: number | null }>) {
     const counts = new Map<number, number>();
     for (const { unitId } of errors) {
       if (unitId !== null) counts.set(unitId, (counts.get(unitId) ?? 0) + 1);
     }
-    for (const [unitId, by] of counts) await store.raiseUnitPriority(unitId, by);
+    for (const [unitId, by] of counts) await store.raiseUnitPriority(userId, unitId, by);
   }
 
   const targetRef = (agg: MissionAggregate, units: UnitInfo[]) => {
@@ -261,7 +269,11 @@ export function createWriting(deps: WritingDeps) {
 
   const catalog = (units: UnitInfo[]) => units.map((u) => ({ id: u.id, title: u.title }));
 
-  async function createCard(agg: MissionAggregate, error: ErrorRecord): Promise<string | null> {
+  async function createCard(
+    userId: string,
+    agg: MissionAggregate,
+    error: ErrorRecord,
+  ): Promise<string | null> {
     const { sentence, correctedSentence } = error.span;
     if (
       !deps.ownErrors ||
@@ -272,7 +284,7 @@ export function createWriting(deps: WritingDeps) {
       return null;
     }
     try {
-      const { cardId } = await deps.ownErrors.createOwnErrorCard({
+      const { cardId } = await deps.ownErrors.createOwnErrorCard(userId, {
         original: sentence,
         corrected: correctedSentence,
         hintEs: error.hint,
@@ -292,22 +304,22 @@ export function createWriting(deps: WritingDeps) {
   // Missions
   // -------------------------------------------------------------------------------------------
 
-  async function generate(): Promise<WritingMissionResponse> {
-    if (await store.activeMission()) {
+  async function generate(userId: string): Promise<WritingMissionResponse> {
+    if (await store.activeMission(userId)) {
       throw new WritingError("conflict", "Finish or skip the current mission first");
     }
     const at = now();
     const [units, level, reading, history] = await Promise.all([
-      store.listUnits(),
-      readLevel(),
-      store.recentReading(new Date(at.getTime() - READING_DAYS * 86_400_000), 10),
-      store.listMissions(),
+      store.listUnits(userId),
+      readLevel(userId),
+      store.recentReading(userId, new Date(at.getTime() - READING_DAYS * 86_400_000), 10),
+      store.listMissions(userId),
     ]);
     const format = formatForLevel(level);
     const target = pickTargetUnit(units);
     const inspiration = reading.filter((r) => r.opinion).slice(0, 5);
     const generated = target
-      ? await runWritingAi(deps.ai, prompts.generate_mission, {
+      ? await runWritingAi(deps.ai, userId, prompts.generate_mission, {
           format,
           level: CEFR,
           targetUnit: unitFocus(target),
@@ -340,6 +352,7 @@ export function createWriting(deps: WritingDeps) {
     }
 
     const agg = await store.createMission(
+      userId,
       {
         level,
         format,
@@ -362,19 +375,22 @@ export function createWriting(deps: WritingDeps) {
         },
       },
     );
-    return respond(agg.mission.id);
+    return respond(userId, agg.mission.id);
   }
 
-  async function current(): Promise<WritingCurrentResponse> {
-    const agg = await store.activeMission();
-    if (!agg) return { level: await levelView(), mission: null, submission: null };
-    const { error: _, levelUp: __, ...view } = await respond(agg.mission.id);
+  async function current(userId: string): Promise<WritingCurrentResponse> {
+    const agg = await store.activeMission(userId);
+    if (!agg) return { level: await levelView(userId), mission: null, submission: null };
+    const { error: _, levelUp: __, ...view } = await respond(userId, agg.mission.id);
     return view;
   }
 
-  async function history(): Promise<WritingHistoryResponse> {
-    const missions = await store.listMissions();
-    const errors = await store.listErrors(missions.map((agg) => agg.submission.id));
+  async function history(userId: string): Promise<WritingHistoryResponse> {
+    const missions = await store.listMissions(userId);
+    const errors = await store.listErrors(
+      userId,
+      missions.map((agg) => agg.submission.id),
+    );
     const entries = missions.map((agg): HistoryEntry => {
       const own = errors.filter((e) => e.submissionId === agg.submission.id);
       const { flow, scores } = agg.submission;
@@ -393,38 +409,42 @@ export function createWriting(deps: WritingDeps) {
         publishedVersion: flow.publishedVersion,
       };
     });
-    return { level: await levelView(missions), missions: entries };
+    return { level: await levelView(userId, missions), missions: entries };
   }
 
   // -------------------------------------------------------------------------------------------
   // Review flow
   // -------------------------------------------------------------------------------------------
 
-  async function saveText(agg: MissionAggregate, text: string) {
+  async function saveText(userId: string, agg: MissionAggregate, text: string) {
     if (agg.submission.flow.status === "draft") {
-      await store.updateSubmission(agg.submission.id, { textOriginal: text });
+      await store.updateSubmission(userId, agg.submission.id, { textOriginal: text });
       agg.submission.textOriginal = text;
-      await store.setMissionStatus(agg.mission.id, missionStatusFor("draft", text.trim() !== ""));
+      await store.setMissionStatus(
+        userId,
+        agg.mission.id,
+        missionStatusFor("draft", text.trim() !== ""),
+      );
     } else {
-      await store.updateSubmission(agg.submission.id, { textFixed: text });
+      await store.updateSubmission(userId, agg.submission.id, { textFixed: text });
       agg.submission.textFixed = text;
     }
   }
 
-  async function saveDraft(missionId: string, text: string) {
-    const { agg, can } = await load(missionId);
+  async function saveDraft(userId: string, missionId: string, text: string) {
+    const { agg, can } = await load(userId, missionId);
     ensure(can.saveDraft, "This text can no longer be edited");
-    await saveText(agg, text);
-    return respond(missionId);
+    await saveText(userId, agg, text);
+    return respond(userId, missionId);
   }
 
-  async function submit(missionId: string, text: string) {
-    const { agg } = await load(missionId);
+  async function submit(userId: string, missionId: string, text: string) {
+    const { agg } = await load(userId, missionId);
     ensure(agg.submission.flow.status === "draft", "This mission was already submitted");
-    await saveText(agg, text);
+    await saveText(userId, agg, text);
 
-    const units = await store.listUnits();
-    const review = await runWritingAi(deps.ai, prompts.review_writing, {
+    const units = await store.listUnits(userId);
+    const review = await runWritingAi(deps.ai, userId, prompts.review_writing, {
       text,
       mission: {
         title: agg.mission.title,
@@ -435,7 +455,7 @@ export function createWriting(deps: WritingDeps) {
       level: CEFR,
       units: catalog(units),
     });
-    if (!review) return respond(missionId, { error: "ai-unavailable" });
+    if (!review) return respond(userId, missionId, { error: "ai-unavailable" });
 
     const found: NewError[] = review.errors.slice(0, MAX_ERRORS).map((finding) => ({
       span: newSpan(finding, text, "review", 0, finding.id),
@@ -444,16 +464,16 @@ export function createWriting(deps: WritingDeps) {
       hint: finding.hintEs,
       fixed: false,
     }));
-    const inserted = await store.insertErrors(agg.submission.id, found);
-    await store.updateSubmission(agg.submission.id, { scores: review.scores });
-    await setFlow(agg, {
+    const inserted = await store.insertErrors(userId, agg.submission.id, found);
+    await store.updateSubmission(userId, agg.submission.id, { scores: review.scores });
+    await setFlow(userId, agg, {
       status: "reviewed",
       round: 0,
       strengthEs: review.strengthEs,
       reviewedAt: now().toISOString(),
     });
-    await raisePriorities(inserted);
-    await store.insertEvent("writing_submitted", {
+    await raisePriorities(userId, inserted);
+    await store.insertEvent(userId, "writing_submitted", {
       missionId,
       submissionId: agg.submission.id,
       format: agg.mission.format,
@@ -464,7 +484,7 @@ export function createWriting(deps: WritingDeps) {
       errorTypes: inserted.map((e) => e.type),
       unitIds: inserted.flatMap((e) => (e.unitId === null ? [] : [e.unitId])),
     });
-    return respond(missionId);
+    return respond(userId, missionId);
   }
 
   function newSpan(
@@ -488,14 +508,14 @@ export function createWriting(deps: WritingDeps) {
     };
   }
 
-  async function recheck(missionId: string, text: string) {
-    const { agg, errors, can } = await load(missionId);
+  async function recheck(userId: string, missionId: string, text: string) {
+    const { agg, errors, can } = await load(userId, missionId);
     ensure(can.recheck, "No recheck available for this mission");
-    await saveText(agg, text);
+    await saveText(userId, agg, text);
 
-    const units = await store.listUnits();
+    const units = await store.listUnits(userId);
     const open = errors.filter((e) => !e.fixed);
-    const result = await runWritingAi(deps.ai, prompts.recheck_writing, {
+    const result = await runWritingAi(deps.ai, userId, prompts.recheck_writing, {
       originalText: agg.submission.textOriginal,
       revisedText: text,
       errors: open.map((e) => ({
@@ -507,7 +527,7 @@ export function createWriting(deps: WritingDeps) {
       })),
       units: catalog(units),
     });
-    if (!result) return respond(missionId, { error: "ai-unavailable" });
+    if (!result) return respond(userId, missionId, { error: "ai-unavailable" });
 
     const round = agg.submission.flow.round + 1;
     for (const error of open) {
@@ -523,13 +543,13 @@ export function createWriting(deps: WritingDeps) {
             ? correspondingSentence(text, error.span.sentence)
             : error.span.correctedSentence,
       };
-      if (fixed && !span.cardId) span.cardId = await createCard(agg, { ...error, span });
-      await store.updateError(error.id, { span, fixed });
+      if (fixed && !span.cardId) span.cardId = await createCard(userId, agg, { ...error, span });
+      await store.updateError(userId, error.id, { span, fixed });
     }
 
     if (result.newIssue) {
       const issue = result.newIssue;
-      const inserted = await store.insertErrors(agg.submission.id, [
+      const inserted = await store.insertErrors(userId, agg.submission.id, [
         {
           span: newSpan(issue, text, "recheck", round, `n${round}`),
           type: issue.type,
@@ -538,19 +558,19 @@ export function createWriting(deps: WritingDeps) {
           fixed: false,
         },
       ]);
-      await raisePriorities(inserted);
+      await raisePriorities(userId, inserted);
     }
 
-    await setFlow(agg, { status: "rechecked", round });
-    if (round >= MAX_RECHECKS) await reveal(agg, text);
-    return respond(missionId);
+    await setFlow(userId, agg, { status: "rechecked", round });
+    if (round >= MAX_RECHECKS) await reveal(userId, agg, text);
+    return respond(userId, missionId);
   }
 
   /** After the last round: explanation + corrected fragment for every error still not fixed. */
-  async function reveal(agg: MissionAggregate, text: string) {
-    const remaining = (await store.listErrors([agg.submission.id])).filter((e) => !e.fixed);
+  async function reveal(userId: string, agg: MissionAggregate, text: string) {
+    const remaining = (await store.listErrors(userId, [agg.submission.id])).filter((e) => !e.fixed);
     if (remaining.length === 0) return;
-    const result = await runWritingAi(deps.ai, revealWritingPrompt, {
+    const result = await runWritingAi(deps.ai, userId, revealWritingPrompt, {
       text,
       errors: remaining.map((e) => ({
         id: e.span.key,
@@ -561,7 +581,7 @@ export function createWriting(deps: WritingDeps) {
     });
     for (const error of remaining) {
       const item = result?.items.find((i) => i.errorId === error.span.key);
-      await store.updateError(error.id, {
+      await store.updateError(userId, error.id, {
         span: {
           ...error.span,
           reveal: {
@@ -573,30 +593,30 @@ export function createWriting(deps: WritingDeps) {
     }
   }
 
-  async function rewrite(missionId: string) {
-    const { agg, can } = await load(missionId);
+  async function rewrite(userId: string, missionId: string) {
+    const { agg, can } = await load(userId, missionId);
     ensure(can.rewrite, "Rewrites are available after the self-fix step");
-    const result = await runWritingAi(deps.ai, prompts.rewrite_natural, {
+    const result = await runWritingAi(deps.ai, userId, prompts.rewrite_natural, {
       text: currentText(agg),
       format: agg.mission.format,
     });
-    if (!result) return respond(missionId, { error: "ai-unavailable" });
-    await store.updateSubmission(agg.submission.id, { rewrites: result.versions });
-    await setFlow(agg, { status: "rewritten" });
-    return respond(missionId);
+    if (!result) return respond(userId, missionId, { error: "ai-unavailable" });
+    await store.updateSubmission(userId, agg.submission.id, { rewrites: result.versions });
+    await setFlow(userId, agg, { status: "rewritten" });
+    return respond(userId, missionId);
   }
 
-  async function complete(missionId: string, publishedVersion?: PublishedVersion) {
-    const { agg, errors, can } = await load(missionId);
+  async function complete(userId: string, missionId: string, publishedVersion?: PublishedVersion) {
+    const { agg, errors, can } = await load(userId, missionId);
     ensure(can.complete, "This mission cannot be completed yet");
     const at = now().toISOString();
-    await setFlow(agg, {
+    await setFlow(userId, agg, {
       status: "completed",
       completedAt: at,
       ...(publishedVersion ? { publishedAt: at, publishedVersion } : {}),
     });
     const { scores } = agg.submission;
-    await store.insertEvent("writing_completed", {
+    await store.insertEvent(userId, "writing_completed", {
       missionId,
       submissionId: agg.submission.id,
       format: agg.mission.format,
@@ -608,8 +628,8 @@ export function createWriting(deps: WritingDeps) {
       publishedVersion: publishedVersion ?? null,
     });
 
-    const level = await readLevel();
-    const missions = await store.listMissions();
+    const level = await readLevel(userId);
+    const missions = await store.listMissions(userId);
     const format = formatForLevel(level);
     const progress = levelProgress(
       level,
@@ -618,40 +638,40 @@ export function createWriting(deps: WritingDeps) {
         .flatMap((m) => (m.submission.scores ? [overallScore(m.submission.scores)] : [])),
     );
     if (progress.advance && deps.settings) {
-      await deps.settings.putSetting(LEVEL_KEY, level + 1);
-      await store.insertEvent("writing_level_up", {
+      await deps.settings.putSetting(userId, LEVEL_KEY, level + 1);
+      await store.insertEvent(userId, "writing_level_up", {
         from: level,
         to: level + 1,
         format: formatForLevel(level + 1),
         average: progress.average,
       });
-      return respond(missionId, { levelUp: true });
+      return respond(userId, missionId, { levelUp: true });
     }
-    return respond(missionId);
+    return respond(userId, missionId);
   }
 
-  async function markPublished(missionId: string, version: PublishedVersion) {
-    const { agg, can } = await load(missionId);
+  async function markPublished(userId: string, missionId: string, version: PublishedVersion) {
+    const { agg, can } = await load(userId, missionId);
     ensure(can.markPublished, "Only finished texts can be marked as published");
-    await setFlow(agg, { publishedAt: now().toISOString(), publishedVersion: version });
-    return respond(missionId);
+    await setFlow(userId, agg, { publishedAt: now().toISOString(), publishedVersion: version });
+    return respond(userId, missionId);
   }
 
-  async function skip(missionId: string) {
-    const { agg, can } = await load(missionId);
+  async function skip(userId: string, missionId: string) {
+    const { agg, can } = await load(userId, missionId);
     ensure(can.skip, "This mission is already closed");
-    await setFlow(agg, { status: "skipped" });
-    return respond(missionId);
+    await setFlow(userId, agg, { status: "skipped" });
+    return respond(userId, missionId);
   }
 
   // -------------------------------------------------------------------------------------------
   // Practice from recent errors
   // -------------------------------------------------------------------------------------------
 
-  async function practice(count: number): Promise<PracticeResponse> {
+  async function practice(userId: string, count: number): Promise<PracticeResponse> {
     const [recent, units] = await Promise.all([
-      store.recentErrors(RECENT_ERRORS),
-      store.listUnits(),
+      store.recentErrors(userId, RECENT_ERRORS),
+      store.listUnits(userId),
     ]);
     if (recent.length === 0) return { unit: null, items: [] };
 
@@ -678,7 +698,7 @@ export function createWriting(deps: WritingDeps) {
         ...(error.span.correctedSentence ? { fixed: error.span.correctedSentence } : {}),
       }));
     const unit = { id: unitInfo.id, title: unitInfo.title };
-    const result = await runWritingAi(deps.ai, prompts.generate_practice, {
+    const result = await runWritingAi(deps.ai, userId, prompts.generate_practice, {
       unit: { ...unitFocus(unitInfo), theorySummary: theorySummary(unitInfo.theory) },
       sources,
       count: sources.length,

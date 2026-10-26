@@ -9,7 +9,7 @@ import {
   WritingErrorType,
   WritingFlowStatus,
 } from "@english-course/shared";
-import { asc, desc, eq, gte, inArray, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, type SQL, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "../shared/db/client.ts";
 import {
@@ -17,6 +17,7 @@ import {
   event,
   readingSession,
   unit,
+  unitProgress,
   writingError,
   writingMission,
   writingSubmission,
@@ -143,27 +144,39 @@ export type SubmissionPatch = Partial<
   Pick<SubmissionRecord, "textOriginal" | "textFixed" | "scores" | "flow" | "rewrites">
 >;
 
-/** Persistence port of the Writing feature. */
+/**
+ * Persistence port of the Writing feature. Missions, submissions, errors, events and unit
+ * priority belong to one user; ids of another user's rows are not found (or not touched).
+ */
 export interface WritingStore {
-  listUnits(): Promise<UnitInfo[]>;
-  raiseUnitPriority(unitId: number, by: number): Promise<void>;
-  /** Articles the learner started reading since `since`, newest first, with their opinion. */
-  recentReading(since: Date, limit: number): Promise<Inspiration[]>;
+  /** Shared units with the user's completion and priority. */
+  listUnits(userId: string): Promise<UnitInfo[]>;
+  raiseUnitPriority(userId: string, unitId: number, by: number): Promise<void>;
+  /** Articles the user started reading since `since`, newest first, with their opinion. */
+  recentReading(userId: string, since: Date, limit: number): Promise<Inspiration[]>;
   /** The mission still in progress (not completed or skipped), if any. */
-  activeMission(): Promise<MissionAggregate | undefined>;
-  getMission(id: string): Promise<MissionAggregate | undefined>;
+  activeMission(userId: string): Promise<MissionAggregate | undefined>;
+  getMission(userId: string, id: string): Promise<MissionAggregate | undefined>;
   /** Newest first. */
-  listMissions(): Promise<MissionAggregate[]>;
-  createMission(mission: NewMission, submission: NewSubmission): Promise<MissionAggregate>;
-  setMissionStatus(id: string, status: WritingMissionStatus): Promise<void>;
-  updateSubmission(id: string, patch: SubmissionPatch): Promise<void>;
+  listMissions(userId: string): Promise<MissionAggregate[]>;
+  createMission(
+    userId: string,
+    mission: NewMission,
+    submission: NewSubmission,
+  ): Promise<MissionAggregate>;
+  setMissionStatus(userId: string, id: string, status: WritingMissionStatus): Promise<void>;
+  updateSubmission(userId: string, id: string, patch: SubmissionPatch): Promise<void>;
   /** In creation order. */
-  listErrors(submissionIds: string[]): Promise<ErrorRecord[]>;
-  insertErrors(submissionId: string, errors: NewError[]): Promise<ErrorRecord[]>;
-  updateError(id: string, patch: { span?: ErrorSpan; fixed?: boolean }): Promise<void>;
-  /** Newest first, across all submissions. */
-  recentErrors(limit: number): Promise<ErrorRecord[]>;
-  insertEvent(type: string, payload: Record<string, unknown>): Promise<void>;
+  listErrors(userId: string, submissionIds: string[]): Promise<ErrorRecord[]>;
+  insertErrors(userId: string, submissionId: string, errors: NewError[]): Promise<ErrorRecord[]>;
+  updateError(
+    userId: string,
+    id: string,
+    patch: { span?: ErrorSpan; fixed?: boolean },
+  ): Promise<void>;
+  /** Newest first, across all of the user's submissions. */
+  recentErrors(userId: string, limit: number): Promise<ErrorRecord[]>;
+  insertEvent(userId: string, type: string, payload: Record<string, unknown>): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -275,13 +288,15 @@ function toError(row: typeof writingError.$inferSelect): ErrorRecord {
   };
 }
 
+const UUID = /^[0-9a-f-]{36}$/i;
+
 export function createDrizzleWritingStore(db: Db): WritingStore {
-  async function aggregates(where?: SQL): Promise<MissionAggregate[]> {
+  async function aggregates(userId: string, where?: SQL): Promise<MissionAggregate[]> {
     const rows = await db
       .select({ mission: writingMission, submission: writingSubmission })
       .from(writingMission)
       .innerJoin(writingSubmission, eq(writingSubmission.missionId, writingMission.id))
-      .where(where)
+      .where(and(eq(writingMission.userId, userId), where))
       .orderBy(desc(writingMission.createdAt), asc(writingSubmission.createdAt));
     const seen = new Set<string>();
     const result: MissionAggregate[] = [];
@@ -294,60 +309,74 @@ export function createDrizzleWritingStore(db: Db): WritingStore {
   }
 
   return {
-    async listUnits() {
+    async listUnits(userId) {
       const rows = await db
         .select({
           id: unit.id,
           title: unit.title,
           subtitle: unit.subtitle,
-          completedAt: unit.completedAt,
-          priority: unit.priority,
+          completedAt: unitProgress.completedAt,
+          priority: unitProgress.priority,
           theory: unit.theory,
         })
         .from(unit)
+        .leftJoin(
+          unitProgress,
+          and(eq(unitProgress.unitId, unit.id), eq(unitProgress.userId, userId)),
+        )
         .orderBy(asc(unit.id));
-      return rows.map(({ completedAt, ...row }) => ({ ...row, completed: completedAt !== null }));
+      return rows.map(({ completedAt, priority, ...row }) => ({
+        ...row,
+        priority: priority ?? 0,
+        completed: completedAt !== null,
+      }));
     },
 
-    async raiseUnitPriority(unitId, by) {
+    async raiseUnitPriority(userId, unitId, by) {
       await db
-        .update(unit)
-        .set({ priority: sql`${unit.priority} + ${by}`, updatedAt: new Date() })
-        .where(eq(unit.id, unitId));
+        .insert(unitProgress)
+        .values({ userId, unitId, priority: by })
+        .onConflictDoUpdate({
+          target: [unitProgress.userId, unitProgress.unitId],
+          set: { priority: sql`${unitProgress.priority} + ${by}`, updatedAt: sql`now()` },
+        });
     },
 
-    async recentReading(since, limit) {
+    async recentReading(userId, since, limit) {
       const rows = await db
         .select({ title: article.title, opinion: readingSession.opinion })
         .from(readingSession)
         .innerJoin(article, eq(article.id, readingSession.articleId))
-        .where(gte(readingSession.startedAt, since))
+        .where(and(eq(readingSession.userId, userId), gte(readingSession.startedAt, since)))
         .orderBy(desc(readingSession.startedAt))
         .limit(limit);
       return rows;
     },
 
-    async activeMission() {
+    async activeMission(userId) {
       const [found] = await aggregates(
+        userId,
         inArray(writingMission.status, ["pending", "draft", "submitted"]),
       );
       return found;
     },
 
-    async getMission(id) {
-      const [found] = await aggregates(eq(writingMission.id, id));
+    async getMission(userId, id) {
+      if (!UUID.test(id)) return undefined;
+      const [found] = await aggregates(userId, eq(writingMission.id, id));
       return found;
     },
 
-    async listMissions() {
-      return aggregates();
+    async listMissions(userId) {
+      return aggregates(userId);
     },
 
-    async createMission(mission, submission) {
+    async createMission(userId, mission, submission) {
       return db.transaction(async (tx) => {
         const [m] = await tx
           .insert(writingMission)
           .values({
+            userId,
             level: mission.level,
             format: mission.format,
             title: mission.title,
@@ -360,6 +389,7 @@ export function createDrizzleWritingStore(db: Db): WritingStore {
         const [s] = await tx
           .insert(writingSubmission)
           .values({
+            userId,
             missionId: m.id,
             textOriginal: submission.textOriginal,
             rewrites: packEntries({ meta: submission.meta, flow: submission.flow, rewrites: [] }),
@@ -370,19 +400,19 @@ export function createDrizzleWritingStore(db: Db): WritingStore {
       });
     },
 
-    async setMissionStatus(id, status) {
+    async setMissionStatus(userId, id, status) {
       await db
         .update(writingMission)
         .set({ status, updatedAt: sql`now()` })
-        .where(eq(writingMission.id, id));
+        .where(and(eq(writingMission.userId, userId), eq(writingMission.id, id)));
     },
 
-    async updateSubmission(id, patch) {
+    async updateSubmission(userId, id, patch) {
       await db.transaction(async (tx) => {
         const [row] = await tx
           .select()
           .from(writingSubmission)
-          .where(eq(writingSubmission.id, id))
+          .where(and(eq(writingSubmission.userId, userId), eq(writingSubmission.id, id)))
           .limit(1)
           .for("update");
         if (!row) return;
@@ -414,22 +444,25 @@ export function createDrizzleWritingStore(db: Db): WritingStore {
       });
     },
 
-    async listErrors(submissionIds) {
+    async listErrors(userId, submissionIds) {
       if (submissionIds.length === 0) return [];
       const rows = await db
         .select()
         .from(writingError)
-        .where(inArray(writingError.submissionId, submissionIds))
+        .where(
+          and(eq(writingError.userId, userId), inArray(writingError.submissionId, submissionIds)),
+        )
         .orderBy(asc(writingError.createdAt), asc(writingError.id));
       return rows.map(toError);
     },
 
-    async insertErrors(submissionId, errors) {
+    async insertErrors(userId, submissionId, errors) {
       if (errors.length === 0) return [];
       const rows = await db
         .insert(writingError)
         .values(
           errors.map((error) => ({
+            userId,
             submissionId,
             span: error.span,
             type: error.type,
@@ -442,7 +475,7 @@ export function createDrizzleWritingStore(db: Db): WritingStore {
       return rows.map(toError);
     },
 
-    async updateError(id, patch) {
+    async updateError(userId, id, patch) {
       if (patch.span === undefined && patch.fixed === undefined) return;
       await db
         .update(writingError)
@@ -450,20 +483,21 @@ export function createDrizzleWritingStore(db: Db): WritingStore {
           ...(patch.span ? { span: patch.span } : {}),
           ...(patch.fixed !== undefined ? { fixed: patch.fixed } : {}),
         })
-        .where(eq(writingError.id, id));
+        .where(and(eq(writingError.userId, userId), eq(writingError.id, id)));
     },
 
-    async recentErrors(limit) {
+    async recentErrors(userId, limit) {
       const rows = await db
         .select()
         .from(writingError)
+        .where(eq(writingError.userId, userId))
         .orderBy(desc(writingError.createdAt), desc(writingError.id))
         .limit(limit);
       return rows.map(toError);
     },
 
-    async insertEvent(type, payload) {
-      await db.insert(event).values({ type, payload });
+    async insertEvent(userId, type, payload) {
+      await db.insert(event).values({ userId, type, payload });
     },
   };
 }

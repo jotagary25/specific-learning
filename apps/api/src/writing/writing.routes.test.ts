@@ -6,7 +6,7 @@ import {
 } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
-import { createAuth } from "../auth/auth.ts";
+import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { createFakeLlm, type FakeLlm } from "../shared/llm/fake.ts";
@@ -15,7 +15,6 @@ import { createMemoryWritingStore, type MemoryWritingStore } from "./writing.mem
 import { createWriting, LEVEL_KEY } from "./writing.service.ts";
 
 const APP_SECRET = "ef".repeat(32);
-const PASSWORD = "pw";
 const NOW = new Date("2026-10-25T08:00:00Z");
 
 const DRAFT = "Yesterday the company launch a new robot. It sort trash very fast.";
@@ -86,21 +85,17 @@ async function setup(options: Setup = {}) {
     settings: settingsStore,
     ai: settings,
     ownErrors: {
-      async createOwnErrorCard(input) {
+      async createOwnErrorCard(_userId, input) {
         cards.push(input);
         return { cardId: `card-${cards.length}` };
       },
     },
     now: () => NOW,
   });
-  const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
+  const { auth, user } = await createTestAuth();
+  const userId = user.id;
   const app = createApp({ pingDb: async () => true, auth, writing });
-  const login = await app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
-  const cookie = login.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/writing${path}`, {
       method: init.method ?? "GET",
@@ -112,7 +107,7 @@ async function setup(options: Setup = {}) {
     expect(res.status).toBe(200);
     return WritingMissionResponse.parse(await res.json());
   };
-  return { call, mission, store, llm, cards, settingsStore };
+  return { call, mission, store, llm, cards, settingsStore, userId };
 }
 
 const userPrompt = (llm: FakeLlm, index: number) =>
@@ -321,7 +316,7 @@ describe("level progression", () => {
       scores: { grammar: 80, clarity: 80, vocabulary: 76, naturalness: 76 },
       strengthEs: "Claro.",
     });
-    const { mission, settingsStore, store, call } = await setup({
+    const { mission, settingsStore, store, call, userId } = await setup({
       replies: [missionReply, good, missionReply, good, missionReply, good],
     });
     for (let i = 0; i < 3; i += 1) {
@@ -336,7 +331,7 @@ describe("level progression", () => {
       const done = await mission(`/missions/${m.id}/complete`);
       expect(Boolean(done.levelUp)).toBe(i === 2);
     }
-    expect(await settingsStore.getSetting(LEVEL_KEY)).toBe(2);
+    expect(await settingsStore.getSetting(userId, LEVEL_KEY)).toBe(2);
     expect(store.events.at(-1)).toMatchObject({
       type: "writing_level_up",
       payload: { from: 1, to: 2 },

@@ -34,7 +34,7 @@ import type {
 
 /** Port to the vocabulary feature: turns an item the learner keeps missing into an SRS card. */
 export type MissedItemCards = {
-  createCardFromMissedItem(itemId: string): Promise<unknown>;
+  createCardFromMissedItem(userId: string, itemId: string): Promise<unknown>;
 };
 
 export type UnitsDeps = {
@@ -164,8 +164,8 @@ const unitRef = (unit: UnitRecord) => ({
 export function createUnits(deps: UnitsDeps) {
   const { store } = deps;
 
-  async function content(unitNumber: number): Promise<UnitContent> {
-    const found = await store.getUnitContent(unitNumber);
+  async function content(userId: string, unitNumber: number): Promise<UnitContent> {
+    const found = await store.getUnitContent(userId, unitNumber);
     if (!found) throw notFound(`Unit ${unitNumber}`);
     return found;
   }
@@ -182,12 +182,13 @@ export function createUnits(deps: UnitsDeps) {
 
   /** Runs one AI function; any LLM failure (no key, offline, invalid output) → undefined. */
   async function runAi<K extends "check_answer" | "hint_exercise" | "explain_tutor">(
+    userId: string,
     id: K,
     input: Parameters<(typeof prompts)[K]["build"]>[0],
   ): Promise<z.output<(typeof prompts)[K]["schema"]> | undefined> {
     if (!deps.ai) return undefined;
     try {
-      const { client, model, think } = await deps.ai.getLlmForFunction(id);
+      const { client, model, think } = await deps.ai.getLlmForFunction(userId, id);
       const prompt = prompts[id];
       const messages = (prompt.build as (value: typeof input) => ReturnType<typeof prompt.build>)(
         input,
@@ -202,12 +203,12 @@ export function createUnits(deps: UnitsDeps) {
   }
 
   return {
-    async list(): Promise<UnitsListResponse> {
+    async list(userId: string): Promise<UnitsListResponse> {
       const [blocks, units, refs, attempts] = await Promise.all([
         store.listBlocks(),
-        store.listUnits(),
+        store.listUnits(userId),
         store.listItemRefs(),
-        store.listAttempts(),
+        store.listAttempts(userId),
       ]);
       return {
         blocks: blocks
@@ -236,9 +237,9 @@ export function createUnits(deps: UnitsDeps) {
       };
     },
 
-    async detail(unitNumber: number): Promise<UnitDetail> {
-      const c = await content(unitNumber);
-      const attempts = await store.listAttempts(unitNumber);
+    async detail(userId: string, unitNumber: number): Promise<UnitDetail> {
+      const c = await content(userId, unitNumber);
+      const attempts = await store.listAttempts(userId, unitNumber);
       const progressItems: ItemProgress[] = [];
       for (const item of c.items) {
         const own = attempts.filter((a) => a.itemId === item.id);
@@ -308,8 +309,13 @@ export function createUnits(deps: UnitsDeps) {
       };
     },
 
-    async attempt(unitNumber: number, itemId: string, inputs: string[]): Promise<AttemptResponse> {
-      const c = await content(unitNumber);
+    async attempt(
+      userId: string,
+      unitNumber: number,
+      itemId: string,
+      inputs: string[],
+    ): Promise<AttemptResponse> {
+      const c = await content(userId, unitNumber);
       const { item, answer, exercise } = gradedItem(c, itemId);
       const blanks = blankCount(item);
       if (blanks > 0 && inputs.length !== blanks) {
@@ -324,7 +330,7 @@ export function createUnits(deps: UnitsDeps) {
 
       if (result.status === "needs-ai") {
         const isOpen = answer.kind === "open";
-        const ai = await runAi("check_answer", {
+        const ai = await runAi(userId, "check_answer", {
           unit: unitRef(c.unit),
           instruction: exercise.instruction,
           lines: item.lines,
@@ -341,19 +347,19 @@ export function createUnits(deps: UnitsDeps) {
         }
       }
 
-      const before = await store.listAttempts(unitNumber);
+      const before = await store.listAttempts(userId, unitNumber);
       const attemptNo = before.filter((a) => a.itemId === itemId).length + 1;
       const feedback =
         feedbackEs || hintEs
           ? { ...(feedbackEs ? { feedbackEs } : {}), ...(hintEs ? { hintEs } : {}) }
           : null;
-      await store.insertAttempt({ itemId, inputs, result, method, attemptNo, feedback });
-      await store.markInProgress(unitNumber);
+      await store.insertAttempt(userId, { itemId, inputs, result, method, attemptNo, feedback });
+      await store.markInProgress(userId, unitNumber);
 
-      const attempts = await store.listAttempts(unitNumber);
+      const attempts = await store.listAttempts(userId, unitNumber);
       if (deps.missedItems && isNewlyMissed(attempts.filter((a) => a.itemId === itemId))) {
         try {
-          await deps.missedItems.createCardFromMissedItem(itemId);
+          await deps.missedItems.createCardFromMissedItem(userId, itemId);
         } catch (cardError) {
           // A missing card must never fail the learner's attempt.
           console.warn(`units: missed-item card for ${itemId} failed`, cardError);
@@ -364,6 +370,7 @@ export function createUnits(deps: UnitsDeps) {
       const unitCompleted =
         completion.completed && !c.unit.completedAt
           ? await store.completeUnit(
+              userId,
               unitNumber,
               { ratio: completion.ratio, graded: completion.graded },
               canDoEs,
@@ -385,14 +392,19 @@ export function createUnits(deps: UnitsDeps) {
       };
     },
 
-    async hint(unitNumber: number, itemId: string, shown: number): Promise<HintResponse> {
-      const c = await content(unitNumber);
+    async hint(
+      userId: string,
+      unitNumber: number,
+      itemId: string,
+      shown: number,
+    ): Promise<HintResponse> {
+      const c = await content(userId, unitNumber);
       const { item, answer, exercise } = gradedItem(c, itemId);
-      const own = (await store.listAttempts(unitNumber)).filter((a) => a.itemId === itemId);
+      const own = (await store.listAttempts(userId, unitNumber)).filter((a) => a.itemId === itemId);
       const level = hintLevelFor(Math.max(own.length, shown + 1));
       // Stored on the item's latest attempt; it makes a later wrong attempt count as "missed".
-      await store.recordHintLevel(itemId, level);
-      const ai = await runAi("hint_exercise", {
+      await store.recordHintLevel(userId, itemId, level);
+      const ai = await runAi(userId, "hint_exercise", {
         unit: unitRef(c.unit),
         theorySummary: theorySummary(c.unit),
         instruction: exercise.instruction,
@@ -408,8 +420,12 @@ export function createUnits(deps: UnitsDeps) {
       return { level, hintEs: fallbackHint(level), source: "fallback" };
     },
 
-    async explain(unitNumber: number, context: ExplainContext): Promise<ExplainResponse> {
-      const c = await content(unitNumber);
+    async explain(
+      userId: string,
+      unitNumber: number,
+      context: ExplainContext,
+    ): Promise<ExplainResponse> {
+      const c = await content(userId, unitNumber);
       let task = `Unit ${c.unit.id}, ${context.step} step`;
       let snippet: string | undefined;
       if (context.itemId) {
@@ -432,7 +448,7 @@ export function createUnits(deps: UnitsDeps) {
         snippet = c.chapter.grammarSpans.map((span) => span.text).join("\n");
       }
 
-      const explanation = await runAi("explain_tutor", {
+      const explanation = await runAi(userId, "explain_tutor", {
         screen: context.itemId ? "exercise" : "unit",
         unit: unitRef(c.unit),
         task,
@@ -442,6 +458,7 @@ export function createUnits(deps: UnitsDeps) {
         wantsProgrammerAnalogy: context.wantsProgrammerAnalogy,
       });
       await store.insertDoubt(
+        userId,
         context.question ?? task,
         {
           screen: "unit",
@@ -459,11 +476,12 @@ export function createUnits(deps: UnitsDeps) {
     },
 
     async checkTimeline(
+      userId: string,
       unitNumber: number,
       timelineItemId: string,
       placement: TimelinePlacement,
     ): Promise<TimelineCheckResponse> {
-      const c = await content(unitNumber);
+      const c = await content(userId, unitNumber);
       const item = c.timeline.find((t) => t.id === timelineItemId);
       if (!item) throw notFound(`Timeline item ${timelineItemId}`);
       const check = checkTimelinePlacement(item.expected, item.tolerance, placement);
@@ -479,11 +497,17 @@ export function createUnits(deps: UnitsDeps) {
       };
     },
 
-    async answers(unitNumber: number, exerciseId: string): Promise<AnswersResponse> {
-      const c = await content(unitNumber);
+    async answers(
+      userId: string,
+      unitNumber: number,
+      exerciseId: string,
+    ): Promise<AnswersResponse> {
+      const c = await content(userId, unitNumber);
       if (!c.exercises.some((e) => e.id === exerciseId)) throw notFound(`Exercise ${exerciseId}`);
       const graded = c.items.filter((i) => i.exerciseId === exerciseId && !i.isExample && i.answer);
-      const attempted = new Set((await store.listAttempts(unitNumber)).map((a) => a.itemId));
+      const attempted = new Set(
+        (await store.listAttempts(userId, unitNumber)).map((a) => a.itemId),
+      );
       if (graded.some((i) => !attempted.has(i.id))) {
         throw new UnitsError(
           "answers_locked",

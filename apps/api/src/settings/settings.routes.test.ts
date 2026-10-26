@@ -6,16 +6,15 @@ import {
 } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
-import { createAuth } from "../auth/auth.ts";
+import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import { LlmError } from "../shared/llm/errors.ts";
 import { createFakeLlm, type FakeLlmOptions } from "../shared/llm/fake.ts";
 import { createOllamaClient } from "../shared/llm/ollama.ts";
 import { encryptSecret } from "./crypto.ts";
 import { createSettings, type SettingsOptions } from "./settings.service.ts";
-import { createMemorySettingsStore } from "./settings.store.ts";
+import { createMemorySettingsStore, memoryKey } from "./settings.store.ts";
 
 const APP_SECRET = "ab".repeat(32);
-const PASSWORD = "pw";
 const KEY = "ollama-secret-key-WXYZ";
 
 const fakeOptions: FakeLlmOptions = {
@@ -42,20 +41,16 @@ async function setup(overrides: Partial<SettingsOptions> = {}, llm = createFakeL
     now: () => clock,
     ...overrides,
   });
-  const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
+  const { auth, user } = await createTestAuth();
   const app = createApp({ pingDb: async () => true, auth, settings });
-  const loginRes = await app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
-  const cookie = loginRes.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const cookie = await loginCookie(app);
+  const userId = user.id;
   const call = (path: string, init: RequestInit = {}) =>
     app.request(`/api/settings${path}`, {
       ...init,
       headers: { cookie, "content-type": "application/json", ...init.headers },
     });
-  return { app, call, store, llm, settings, tick: (ms: number) => (clock += ms) };
+  return { app, call, store, llm, settings, userId, tick: (ms: number) => (clock += ms) };
 }
 
 describe("settings routes: auth", () => {
@@ -68,7 +63,7 @@ describe("settings routes: auth", () => {
 
 describe("settings routes: Ollama API key", () => {
   it("reports not configured, then stores the key encrypted and exposes only last4", async () => {
-    const { call, store } = await setup();
+    const { call, store, userId } = await setup();
 
     expect(AiKeyStatus.parse(await (await call("/ai-key")).json())).toEqual({
       configured: false,
@@ -82,7 +77,7 @@ describe("settings routes: Ollama API key", () => {
     expect(put.status).toBe(200);
     expect(JSON.parse(putText)).toEqual({ configured: true, source: "db", last4: "WXYZ" });
     expect(putText).not.toContain(KEY);
-    const stored = store.secrets.get("ollama_api_key");
+    const stored = store.secrets.get(memoryKey(userId, "ollama_api_key"));
     expect(stored?.last4).toBe("WXYZ");
     expect(JSON.stringify(stored)).not.toContain(KEY);
 
@@ -108,7 +103,7 @@ describe("settings routes: Ollama API key", () => {
 
   it("resolves the stored key for the LLM client (db first, then env)", async () => {
     const keys: Array<string | undefined> = [];
-    const { call, settings } = await setup({
+    const { call, settings, userId } = await setup({
       envApiKey: "env-key-0000-1234",
       createClient: (getApiKey) => ({
         ...createFakeLlm(fakeOptions),
@@ -119,16 +114,16 @@ describe("settings routes: Ollama API key", () => {
       }),
     });
 
-    await settings.client.listModels();
+    await settings.clientFor(userId).listModels();
     await call("/ai-key", { method: "PUT", body: JSON.stringify({ apiKey: KEY }) });
-    await settings.client.listModels();
+    await settings.clientFor(userId).listModels();
 
     expect(keys).toEqual(["env-key-0000-1234", KEY]);
   });
 
   it("reports a stored key that APP_SECRET can no longer decrypt", async () => {
-    const { call, store } = await setup();
-    store.secrets.set("ollama_api_key", {
+    const { call, store, userId } = await setup();
+    store.secrets.set(memoryKey(userId, "ollama_api_key"), {
       ...encryptSecret(KEY, "cd".repeat(32)),
       last4: "WXYZ",
     });
@@ -142,8 +137,8 @@ describe("settings routes: Ollama API key", () => {
   });
 
   it("counts the env key as configured while the stored key is undecryptable", async () => {
-    const { call, store, settings } = await setup({ envApiKey: "env-key-1234" });
-    store.secrets.set("ollama_api_key", {
+    const { call, store, settings, userId } = await setup({ envApiKey: "env-key-1234" });
+    store.secrets.set(memoryKey(userId, "ollama_api_key"), {
       ...encryptSecret(KEY, "cd".repeat(32)),
       last4: "WXYZ",
     });
@@ -152,7 +147,7 @@ describe("settings routes: Ollama API key", () => {
       configured: true,
       error: "undecryptable",
     });
-    expect(await settings.getApiKey()).toBe("env-key-1234");
+    expect(await settings.getApiKey(userId)).toBe("env-key-1234");
   });
 
   it("rejects an invalid key payload", async () => {
@@ -309,10 +304,10 @@ describe("settings routes: AI functions", () => {
 
 describe("getLlmForFunction", () => {
   it("returns the configured model and the think value normalized for it", async () => {
-    const { call, settings, llm } = await setup();
+    const { call, settings, llm, userId } = await setup();
 
     // Default for check_answer is gemma4:31b + "low"; gemma4 only supports on/off.
-    expect(await settings.getLlmForFunction("check_answer")).toEqual({
+    expect(await settings.getLlmForFunction(userId, "check_answer")).toEqual({
       client: llm,
       model: "gemma4:31b",
       think: false,
@@ -322,7 +317,7 @@ describe("getLlmForFunction", () => {
       method: "PUT",
       body: JSON.stringify({ model: "gpt-oss:120b", think: "medium" }),
     });
-    const next = await settings.getLlmForFunction("check_answer");
+    const next = await settings.getLlmForFunction(userId, "check_answer");
     expect([next.model, next.think]).toEqual(["gpt-oss:120b", "medium"]);
   });
 
@@ -331,8 +326,8 @@ describe("getLlmForFunction", () => {
     llm.modelCapabilities = async () => {
       throw new LlmError("network", "offline");
     };
-    const { settings } = await setup({}, llm);
-    expect((await settings.getLlmForFunction("review_writing")).think).toBe("high");
+    const { settings, userId } = await setup({}, llm);
+    expect((await settings.getLlmForFunction(userId, "review_writing")).think).toBe("high");
   });
 
   it("propagates unexpected (non-LLM) errors instead of swallowing them", async () => {
@@ -340,11 +335,11 @@ describe("getLlmForFunction", () => {
     llm.modelCapabilities = async () => {
       throw new TypeError("bug");
     };
-    const { settings } = await setup({}, llm);
+    const { settings, userId } = await setup({}, llm);
 
-    await expect(settings.getLlmForFunction("review_writing")).rejects.toThrow(TypeError);
+    await expect(settings.getLlmForFunction(userId, "review_writing")).rejects.toThrow(TypeError);
     await expect(
-      settings.updateAiFunction("gloss_word", { model: "gemma4:31b", think: null }),
+      settings.updateAiFunction(userId, "gloss_word", { model: "gemma4:31b", think: null }),
     ).rejects.toThrow(TypeError);
   });
 });
@@ -362,18 +357,18 @@ describe("capability probe failures", () => {
 
   it("are cached for 60 s so every call does not re-probe", async () => {
     const { llm, probes } = failingLlm(new LlmError("upstream", "down"));
-    const { settings, tick } = await setup({}, llm);
+    const { settings, tick, userId } = await setup({}, llm);
 
-    await settings.getLlmForFunction("review_writing");
-    await settings.getLlmForFunction("review_writing");
+    await settings.getLlmForFunction(userId, "review_writing");
+    await settings.getLlmForFunction(userId, "review_writing");
     expect(probes()).toBe(1);
 
     tick(59_999);
-    await settings.getLlmForFunction("review_writing");
+    await settings.getLlmForFunction(userId, "review_writing");
     expect(probes()).toBe(1);
 
     tick(1);
-    await settings.getLlmForFunction("review_writing");
+    await settings.getLlmForFunction(userId, "review_writing");
     expect(probes()).toBe(2);
   });
 
@@ -381,25 +376,25 @@ describe("capability probe failures", () => {
     const { llm, probes } = failingLlm(
       new LlmError("rate_limited", "slow down", { retryAfterSeconds: 120 }),
     );
-    const { settings, tick } = await setup({}, llm);
+    const { settings, tick, userId } = await setup({}, llm);
 
-    await settings.getLlmForFunction("review_writing");
+    await settings.getLlmForFunction(userId, "review_writing");
     tick(60_000);
-    await settings.getLlmForFunction("review_writing");
+    await settings.getLlmForFunction(userId, "review_writing");
     expect(probes()).toBe(1);
 
     tick(60_000);
-    await settings.getLlmForFunction("review_writing");
+    await settings.getLlmForFunction(userId, "review_writing");
     expect(probes()).toBe(2);
   });
 
   it("are forgotten when the key changes", async () => {
     const { llm, probes } = failingLlm(new LlmError("not_configured", "no key"));
-    const { settings } = await setup({}, llm);
+    const { settings, userId } = await setup({}, llm);
 
-    await settings.getLlmForFunction("review_writing");
-    await settings.setKey(KEY);
-    await settings.getLlmForFunction("review_writing");
+    await settings.getLlmForFunction(userId, "review_writing");
+    await settings.setKey(userId, KEY);
+    await settings.getLlmForFunction(userId, "review_writing");
 
     expect(probes()).toBe(2);
   });

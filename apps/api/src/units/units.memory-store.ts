@@ -1,4 +1,6 @@
 // In-memory UnitsStore for tests, built from the real content folder through the seed mappers.
+// Single-learner fake: user ids are accepted and ignored (isolation is covered by the DB
+// integration test).
 import type { TimelineExpected, UnitExtras } from "@english-course/shared";
 import { resolveContentDir } from "../content/content-dir.ts";
 import { mapAuthored, mapUnit } from "../shared/db/seed/index.ts";
@@ -106,10 +108,10 @@ export async function createMemoryUnitsStore(
     canDos: [],
     doubts: [],
     listBlocks: async () => [...blocks.values()],
-    listUnits: async () => [...units.values()].sort((a, b) => a.id - b.id),
+    listUnits: async (_userId) => [...units.values()].sort((a, b) => a.id - b.id),
     listItemRefs: async () =>
       items.map((i) => ({ id: i.id, unitId: unitOfItem(i.id), isExample: i.isExample })),
-    async getUnitContent(unitId) {
+    async getUnitContent(_userId, unitId) {
       const record = units.get(unitId);
       if (!record) return undefined;
       const unitExercises = exercises.filter((e) => e.unitId === unitId);
@@ -123,9 +125,9 @@ export async function createMemoryUnitsStore(
         timeline: timeline.filter((t) => t.unitId === unitId),
       };
     },
-    listAttempts: async (unitId) =>
+    listAttempts: async (_userId, unitId) =>
       store.attempts.filter((a) => unitId === undefined || a.unitId === unitId),
-    async insertAttempt(value) {
+    async insertAttempt(_userId, value) {
       store.attempts.push({
         ...structuredClone(value),
         hintLevel: 0,
@@ -133,17 +135,17 @@ export async function createMemoryUnitsStore(
         createdAt: new Date(),
       });
     },
-    async recordHintLevel(itemId, level) {
+    async recordHintLevel(_userId, itemId, level) {
       const latest = store.attempts.filter((a) => a.itemId === itemId).at(-1);
       if (!latest) return false;
       latest.hintLevel = Math.max(latest.hintLevel, level);
       return true;
     },
-    async markInProgress(unitId) {
+    async markInProgress(_userId, unitId) {
       const record = units.get(unitId);
       if (record?.status === "new") record.status = "in_progress";
     },
-    async completeUnit(unitId, payload, canDoEs) {
+    async completeUnit(_userId, unitId, payload, canDoEs) {
       const record = units.get(unitId);
       if (!record || record.completedAt) return false;
       record.status = "completed";
@@ -152,7 +154,7 @@ export async function createMemoryUnitsStore(
       for (const text of canDoEs) store.canDos.push({ text, source: "suggested" });
       return true;
     },
-    async insertDoubt(text, context, explanation) {
+    async insertDoubt(_userId, text, context, explanation) {
       store.doubts.push({ text, context, explanation });
     },
   };

@@ -9,6 +9,9 @@ import { createMemoryEvalStore } from "./eval.memory-store.ts";
 import { createEval, EvalRunError } from "./eval.service.ts";
 import { flush, type Reply, scriptedLlm, simpleFixtures } from "./eval.test-support.ts";
 
+/** Memory fakes ignore the user; services still need one. */
+const USER = "test-user";
+
 function setup(reply: Reply, opts: { configured?: boolean; concurrency?: number } = {}) {
   const store = createMemoryEvalStore();
   const { client, stats } = scriptedLlm(reply);
@@ -24,9 +27,9 @@ function setup(reply: Reply, opts: { configured?: boolean; concurrency?: number 
     concurrency: opts.concurrency,
     now: () => (clock += 50),
     ai: {
-      client,
+      clientFor: () => client,
       keyStatus,
-      updateAiFunction: async (id, input): Promise<AiFunctionConfig> => {
+      updateAiFunction: async (_userId, id, input): Promise<AiFunctionConfig> => {
         updates.push({ id, input });
         return {
           id: "review_writing",
@@ -48,7 +51,7 @@ const valid = (score = 1) => JSON.stringify({ score });
 describe("eval runner", () => {
   it("runs every model config over the fixtures and aggregates the results", async () => {
     const { evals } = setup(() => valid(0.5));
-    const ids = await evals.start({
+    const ids = await evals.start(USER, {
       models: [
         { model: "gemma4:31b", think: "low" },
         { model: "deepseek-v4-pro", think: null },
@@ -57,7 +60,7 @@ describe("eval runner", () => {
     expect(ids).toHaveLength(2);
     await evals.whenIdle();
 
-    const run = await evals.get(ids[0] as string);
+    const run = await evals.get(USER, ids[0] as string);
     expect(run).toMatchObject({
       model: "gemma4:31b",
       think: "low",
@@ -76,21 +79,21 @@ describe("eval runner", () => {
       jsonFailureRate: 0,
       metrics: { recall: 0.5, jsonValidity: 1 },
     });
-    expect((await evals.get(ids[1] as string)).status).toBe("completed");
+    expect((await evals.get(USER, ids[1] as string)).status).toBe("completed");
 
-    const list = await evals.list();
+    const list = await evals.list(USER);
     expect(list.map((r) => r.id)).toEqual([...ids].reverse());
     expect(list[0]).not.toHaveProperty("samples");
   });
 
   it("counts every requested function in the progress total", async () => {
     const { evals } = setup(() => valid());
-    const [id] = await evals.start({
+    const [id] = await evals.start(USER, {
       models: [{ model: "m", think: null }],
       functions: ["review_writing", "hint_exercise", "rewrite_natural"],
     });
     await evals.whenIdle();
-    const run = await evals.get(id as string);
+    const run = await evals.get(USER, id as string);
     expect(run.progress).toEqual({ done: 5, total: 5 });
     expect(run.samples.map((s) => s.functionId)).toEqual([
       "review_writing",
@@ -104,9 +107,9 @@ describe("eval runner", () => {
   it("records the JSON retry when the first reply is invalid", async () => {
     let calls = 0;
     const { evals } = setup(() => (++calls === 1 ? "not json" : valid()));
-    const [id] = await evals.start({ models: [{ model: "m", think: null }] });
+    const [id] = await evals.start(USER, { models: [{ model: "m", think: null }] });
     await evals.whenIdle();
-    const run = await evals.get(id as string);
+    const run = await evals.get(USER, id as string);
     expect(run.samples[0]).toMatchObject({ ok: true, attempts: 2 });
     expect(run.aggregate?.retryRate).toBeCloseTo(1 / 3);
     expect(run.aggregate?.jsonFailureRate).toBe(0);
@@ -114,9 +117,9 @@ describe("eval runner", () => {
 
   it("keeps going after a sample fails and counts it as a JSON failure", async () => {
     const { evals } = setup(() => JSON.stringify({ score: 7 }));
-    const [id] = await evals.start({ models: [{ model: "m", think: null }] });
+    const [id] = await evals.start(USER, { models: [{ model: "m", think: null }] });
     await evals.whenIdle();
-    const run = await evals.get(id as string);
+    const run = await evals.get(USER, id as string);
     expect(run.status).toBe("completed");
     expect(run.samples).toHaveLength(3);
     expect(run.samples[0]).toMatchObject({
@@ -136,9 +139,9 @@ describe("eval runner", () => {
       if (calls === 2) throw new LlmError("timeout", "too slow");
       return valid();
     });
-    const [id] = await evals.start({ models: [{ model: "m", think: null }] });
+    const [id] = await evals.start(USER, { models: [{ model: "m", think: null }] });
     await evals.whenIdle();
-    const run = await evals.get(id as string);
+    const run = await evals.get(USER, id as string);
     expect(run.samples.map((s) => s.error?.code ?? "ok")).toEqual(["ok", "timeout", "ok"]);
     expect(run.aggregate).toMatchObject({ failures: 1, jsonFailureRate: 0 });
   });
@@ -147,9 +150,9 @@ describe("eval runner", () => {
     const { evals, stats } = setup(() => {
       throw new LlmError("not_found", 'model "nope" not found', { status: 404 });
     });
-    const [id] = await evals.start({ models: [{ model: "nope", think: null }] });
+    const [id] = await evals.start(USER, { models: [{ model: "nope", think: null }] });
     await evals.whenIdle();
-    const run = await evals.get(id as string);
+    const run = await evals.get(USER, id as string);
     expect(run.status).toBe("failed");
     expect(run.error).toMatch(/not_found/);
     expect(run.samples).toEqual([]);
@@ -158,7 +161,9 @@ describe("eval runner", () => {
 
   it("refuses to start without an API key and creates no run", async () => {
     const { evals, store } = setup(() => valid(), { configured: false });
-    await expect(evals.start({ models: [{ model: "m", think: null }] })).rejects.toMatchObject({
+    await expect(
+      evals.start(USER, { models: [{ model: "m", think: null }] }),
+    ).rejects.toMatchObject({
       code: "not_configured",
     });
     expect(store.records).toEqual([]);
@@ -169,7 +174,7 @@ describe("eval runner", () => {
       await flush();
       return valid();
     });
-    await evals.start({
+    await evals.start(USER, {
       models: [
         { model: "a", think: null },
         { model: "b", think: null },
@@ -190,17 +195,17 @@ describe("eval runner", () => {
           req.signal?.addEventListener("abort", () => reject(new LlmError("aborted", "aborted")));
         }),
     );
-    const [id] = await evals.start({ models: [{ model: "m", think: null }] });
+    const [id] = await evals.start(USER, { models: [{ model: "m", think: null }] });
     await flush();
     expect(stats.calls).toBe(1);
-    const run = await evals.cancel(id as string);
+    const run = await evals.cancel(USER, id as string);
     expect(run.status).toBe("cancelled");
     expect(run.samples).toEqual([]);
     expect(run.finishedAt).not.toBeNull();
     release?.();
     await evals.whenIdle();
     expect(stats.calls).toBe(1);
-    await expect(evals.cancel(id as string)).rejects.toMatchObject({ code: "not_running" });
+    await expect(evals.cancel(USER, id as string)).rejects.toMatchObject({ code: "not_running" });
   });
 
   it("cancels a queued run before it starts", async () => {
@@ -211,35 +216,37 @@ describe("eval runner", () => {
       },
       { concurrency: 1 },
     );
-    const [first, second] = await evals.start({
+    const [first, second] = await evals.start(USER, {
       models: [
         { model: "a", think: null },
         { model: "b", think: null },
       ],
     });
-    expect((await evals.cancel(second as string)).status).toBe("cancelled");
+    expect((await evals.cancel(USER, second as string)).status).toBe("cancelled");
     await evals.whenIdle();
-    expect((await evals.get(first as string)).status).toBe("completed");
-    expect((await evals.get(second as string)).samples).toEqual([]);
+    expect((await evals.get(USER, first as string)).status).toBe("completed");
+    expect((await evals.get(USER, second as string)).samples).toEqual([]);
   });
 
   it("applies a completed run's model and effort to an evaluated function", async () => {
     const { evals, updates } = setup(() => valid());
-    const [id] = await evals.start({ models: [{ model: "kimi-k3", think: "high" }] });
+    const [id] = await evals.start(USER, { models: [{ model: "kimi-k3", think: "high" }] });
     await evals.whenIdle();
-    const config = await evals.apply(id as string, "review_writing");
+    const config = await evals.apply(USER, id as string, "review_writing");
     expect(config).toMatchObject({ model: "kimi-k3", think: "high" });
     expect(updates).toEqual([{ id: "review_writing", input: { model: "kimi-k3", think: "high" } }]);
-    await expect(evals.apply(id as string, "rewrite_natural")).rejects.toBeInstanceOf(EvalRunError);
+    await expect(evals.apply(USER, id as string, "rewrite_natural")).rejects.toBeInstanceOf(
+      EvalRunError,
+    );
   });
 
   it("does not apply a run that did not complete", async () => {
     const { evals, updates } = setup(() => {
       throw new LlmError("invalid_key", "bad key");
     });
-    const [id] = await evals.start({ models: [{ model: "m", think: null }] });
+    const [id] = await evals.start(USER, { models: [{ model: "m", think: null }] });
     await evals.whenIdle();
-    await expect(evals.apply(id as string, "review_writing")).rejects.toMatchObject({
+    await expect(evals.apply(USER, id as string, "review_writing")).rejects.toMatchObject({
       code: "not_completed",
     });
     expect(updates).toEqual([]);
@@ -247,7 +254,7 @@ describe("eval runner", () => {
 
   it("marks runs interrupted by a restart as failed", async () => {
     const { evals, store } = setup(() => valid());
-    const record = await store.create("m", {
+    const record = await store.create(USER, "m", {
       version: 1,
       think: null,
       functions: ["review_writing"],
@@ -260,9 +267,50 @@ describe("eval runner", () => {
       aggregate: null,
     });
     expect(await evals.recover()).toBe(1);
-    expect(await evals.get(record.id)).toMatchObject({
+    expect(await evals.get(USER, record.id)).toMatchObject({
       status: "failed",
       error: "Interrupted by an API restart",
     });
+  });
+
+  it("keeps runs per user: another user cannot list, read, cancel or apply them", async () => {
+    const { evals, updates } = setup(() => valid());
+    const [id] = await evals.start(USER, { models: [{ model: "m", think: null }] });
+    await evals.whenIdle();
+
+    expect(await evals.list("other-user")).toEqual([]);
+    await expect(evals.get("other-user", id as string)).rejects.toMatchObject({
+      code: "not_found",
+    });
+    await expect(evals.cancel("other-user", id as string)).rejects.toMatchObject({
+      code: "not_found",
+    });
+    await expect(evals.apply("other-user", id as string, "review_writing")).rejects.toMatchObject({
+      code: "not_found",
+    });
+    expect(updates).toEqual([]);
+    expect(await evals.list(USER)).toHaveLength(1);
+  });
+
+  it("recovers interrupted runs of every user", async () => {
+    const { evals, store } = setup(() => valid());
+    const state = {
+      version: 1 as const,
+      think: null,
+      functions: ["review_writing" as const],
+      status: "queued" as const,
+      progress: { done: 0, total: 3 },
+      startedAt: null,
+      finishedAt: null,
+      error: null,
+      samples: [],
+      aggregate: null,
+    };
+    const mine = await store.create(USER, "m", state);
+    const theirs = await store.create("other-user", "m", state);
+
+    expect(await evals.recover()).toBe(2);
+    expect((await evals.get(USER, mine.id)).status).toBe("failed");
+    expect((await evals.get("other-user", theirs.id)).status).toBe("failed");
   });
 });

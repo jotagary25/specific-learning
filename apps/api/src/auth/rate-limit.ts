@@ -1,5 +1,6 @@
 /**
- * In-memory fixed-window limiter for login attempts (single process, single user).
+ * In-memory fixed-window limiter for login attempts (single process). Buckets are keyed by
+ * account and client (see auth.ts).
  *
  * `consume` reserves an attempt synchronously, before the handler awaits anything, so
  * parallel requests cannot all pass the gate; a successful login gives it back with `reset`.

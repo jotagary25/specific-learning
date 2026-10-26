@@ -8,6 +8,9 @@ import {
 import { createVocabulary, DEFAULT_NEW_PER_DAY, NEW_PER_DAY_KEY } from "./vocabulary.service.ts";
 import type { NewCard } from "./vocabulary.store.ts";
 
+/** Memory fakes ignore the user; services still need one. */
+const USER = "test-user";
+
 const NOW = new Date("2026-10-25T13:30:00");
 const HOUR = 3_600_000;
 
@@ -16,7 +19,7 @@ function setup(settings: Record<string, unknown> = {}) {
   let now = NOW;
   const vocabulary = createVocabulary({
     store,
-    settings: { getSetting: async (key) => settings[key] },
+    settings: { getSetting: async (_userId, key) => settings[key] },
     now: () => now,
   });
   return {
@@ -51,18 +54,21 @@ function scheduledCard(word: string, hoursAgo: number): NewCard {
 }
 
 async function addNew(store: MemoryVocabularyStore, count: number) {
-  for (let i = 0; i < count; i++) await store.insertCard(wordCard(`new${i}`));
+  for (let i = 0; i < count; i++) await store.insertCard(USER, wordCard(`new${i}`));
 }
 
 describe("queue", () => {
   it("puts due cards first, earliest due first, then new cards", async () => {
     const { store, vocabulary } = setup();
     await addNew(store, 2);
-    const later = await store.insertCard(scheduledCard("later", 1));
-    const earlier = await store.insertCard(scheduledCard("earlier", 5));
-    await store.insertCard({ ...scheduledCard("future", 0), due: new Date(NOW.getTime() + HOUR) });
+    const later = await store.insertCard(USER, scheduledCard("later", 1));
+    const earlier = await store.insertCard(USER, scheduledCard("earlier", 5));
+    await store.insertCard(USER, {
+      ...scheduledCard("future", 0),
+      due: new Date(NOW.getTime() + HOUR),
+    });
 
-    const queue = await vocabulary.queue(10);
+    const queue = await vocabulary.queue(USER, 10);
     expect(queue.cards.map((c) => c.id).slice(0, 2)).toEqual([earlier.id, later.id]);
     expect(queue.cards.slice(2).map((c) => c.phase)).toEqual(["new", "new"]);
     expect(queue.cards).toHaveLength(4);
@@ -71,12 +77,13 @@ describe("queue", () => {
   it("caps new cards per day (default 5) and counts the ones introduced today", async () => {
     const { store, vocabulary } = setup();
     await addNew(store, 8);
-    const first = await vocabulary.queue(10);
+    const first = await vocabulary.queue(USER, 10);
     expect(first.cards).toHaveLength(DEFAULT_NEW_PER_DAY);
     expect(first.newPerDay).toBe(5);
 
-    for (const card of first.cards.slice(0, 2)) await vocabulary.review(card.id, { rating: 3 });
-    const second = await vocabulary.queue(10);
+    for (const card of first.cards.slice(0, 2))
+      await vocabulary.review(USER, card.id, { rating: 3 });
+    const second = await vocabulary.queue(USER, 10);
     expect(second.newToday).toBe(2);
     expect(second.cards.filter((c) => c.phase === "new")).toHaveLength(3);
   });
@@ -84,14 +91,14 @@ describe("queue", () => {
   it("reads the new-card allowance from the srs.newPerDay setting", async () => {
     const { store, vocabulary } = setup({ [NEW_PER_DAY_KEY]: 1 });
     await addNew(store, 3);
-    expect((await vocabulary.queue(10)).cards).toHaveLength(1);
+    expect((await vocabulary.queue(USER, 10)).cards).toHaveLength(1);
   });
 
   it("respects the limit and reports the due backlog", async () => {
     const { store, vocabulary } = setup();
-    for (let i = 0; i < 4; i++) await store.insertCard(scheduledCard(`w${i}`, i + 1));
+    for (let i = 0; i < 4; i++) await store.insertCard(USER, scheduledCard(`w${i}`, i + 1));
     await addNew(store, 2);
-    const queue = await vocabulary.queue(3);
+    const queue = await vocabulary.queue(USER, 3);
     expect(queue.cards).toHaveLength(3);
     expect(queue.cards.every((c) => c.phase === "review")).toBe(true);
     expect(queue.dueRemaining).toBe(1);
@@ -99,53 +106,55 @@ describe("queue", () => {
 
   it("skips suspended cards", async () => {
     const { store, vocabulary } = setup();
-    const card = await store.insertCard(wordCard("thrive"));
-    await vocabulary.update(card.id, { suspended: true });
-    expect((await vocabulary.queue(10)).cards).toHaveLength(0);
-    await vocabulary.update(card.id, { suspended: false });
-    expect((await vocabulary.queue(10)).cards).toHaveLength(1);
+    const card = await store.insertCard(USER, wordCard("thrive"));
+    await vocabulary.update(USER, card.id, { suspended: true });
+    expect((await vocabulary.queue(USER, 10)).cards).toHaveLength(0);
+    await vocabulary.update(USER, card.id, { suspended: false });
+    expect((await vocabulary.queue(USER, 10)).cards).toHaveLength(1);
   });
 
   it("keeps suspension in its own field, out of the FSRS state, across reviews", async () => {
     const { store, vocabulary } = setup();
-    const card = await store.insertCard(wordCard("thrive"));
-    const view = await vocabulary.update(card.id, { suspended: true });
+    const card = await store.insertCard(USER, wordCard("thrive"));
+    const view = await vocabulary.update(USER, card.id, { suspended: true });
     expect(view.suspended).toBe(true);
     expect(store.cards[0]).toMatchObject({ suspended: true, state: {} });
 
-    await vocabulary.review(card.id, { rating: 3 });
+    await vocabulary.review(USER, card.id, { rating: 3 });
     expect(store.cards[0]?.suspended).toBe(true);
     expect(store.cards[0]?.state).not.toHaveProperty("suspended");
-    expect((await vocabulary.stats()).suspended).toBe(1);
+    expect((await vocabulary.stats(USER)).suspended).toBe(1);
   });
 });
 
 describe("review", () => {
   it("persists a review row and moves due into the future on Good", async () => {
     const { store, vocabulary } = setup();
-    const card = await store.insertCard(wordCard("thrive"));
-    const result = await vocabulary.review(card.id, { rating: 3, answer: "thrive" });
+    const card = await store.insertCard(USER, wordCard("thrive"));
+    const result = await vocabulary.review(USER, card.id, { rating: 3, answer: "thrive" });
     expect(new Date(result.due).getTime()).toBeGreaterThan(NOW.getTime());
     expect(store.reviews).toEqual([
       { cardId: card.id, rating: 3, reviewedAt: NOW, answer: "thrive" },
     ]);
-    const saved = await store.getCard(card.id);
+    const saved = await store.getCard(USER, card.id);
     expect(saved?.state.reps).toBe(1);
     expect(saved?.due.toISOString()).toBe(result.due);
   });
 
   it("answers not_found for an unknown card", async () => {
     const { vocabulary } = setup();
-    await expect(vocabulary.review(crypto.randomUUID(), { rating: 3 })).rejects.toMatchObject({
-      code: "not_found",
-    });
+    await expect(vocabulary.review(USER, crypto.randomUUID(), { rating: 3 })).rejects.toMatchObject(
+      {
+        code: "not_found",
+      },
+    );
   });
 });
 
 describe("card presentation", () => {
   it("asks new word cards as recognition with the word highlighted", async () => {
     const { store } = setup();
-    const card = presentCard(await store.insertCard(wordCard("thrive")));
+    const card = presentCard(await store.insertCard(USER, wordCard("thrive")));
     expect(card).toMatchObject({
       direction: "recognition",
       prompt: "Small firms thrive in busy cities.",
@@ -157,7 +166,7 @@ describe("card presentation", () => {
 
   it("asks review-phase word cards as a cloze with the Spanish gloss", async () => {
     const { store } = setup();
-    const card = presentCard(await store.insertCard(scheduledCard("thrive", 1)));
+    const card = presentCard(await store.insertCard(USER, scheduledCard("thrive", 1)));
     expect(card).toMatchObject({
       direction: "production",
       prompt: "Small firms _____ in busy cities.",
@@ -168,13 +177,13 @@ describe("card presentation", () => {
 
   it("asks own-error cards to fix the learner's sentence, with its date", async () => {
     const { vocabulary, store } = setup();
-    const { cardId } = await vocabulary.createOwnErrorCard({
+    const { cardId } = await vocabulary.createOwnErrorCard(USER, {
       original: "She go to work every day.",
       corrected: "She goes to work every day.",
       hintEs: "Tercera persona: -s",
       writtenAt: "2026-10-20T09:00:00.000Z",
     });
-    const card = presentCard((await store.getCard(cardId)) ?? (undefined as never));
+    const card = presentCard((await store.getCard(USER, cardId)) ?? (undefined as never));
     expect(card).toMatchObject({
       direction: "fix",
       prompt: "She go to work every day.",
@@ -207,11 +216,13 @@ describe("createCardFromMissedItem", () => {
         needsAi: false,
       },
     });
-    const first = await vocabulary.createCardFromMissedItem("1.1-2");
-    const again = await vocabulary.createCardFromMissedItem("1.1-2");
+    const first = await vocabulary.createCardFromMissedItem(USER, "1.1-2");
+    const again = await vocabulary.createCardFromMissedItem(USER, "1.1-2");
     expect(first?.created).toBe(true);
     expect(again).toEqual({ cardId: first?.cardId, created: false });
-    const card = presentCard((await store.getCard(first?.cardId ?? "")) ?? (undefined as never));
+    const card = presentCard(
+      (await store.getCard(USER, first?.cardId ?? "")) ?? (undefined as never),
+    );
     expect(card).toMatchObject({
       source: "unit_item",
       direction: "production",
@@ -231,8 +242,8 @@ describe("createCardFromMissedItem", () => {
       lines: [],
       answer: null,
     });
-    expect(await vocabulary.createCardFromMissedItem("ex")).toBeNull();
-    await expect(vocabulary.createCardFromMissedItem("missing")).rejects.toMatchObject({
+    expect(await vocabulary.createCardFromMissedItem(USER, "ex")).toBeNull();
+    await expect(vocabulary.createCardFromMissedItem(USER, "missing")).rejects.toMatchObject({
       code: "not_found",
     });
   });
@@ -242,11 +253,11 @@ describe("stats and sessions", () => {
   it("counts due, new, learned and recent reviews", async () => {
     const { store, vocabulary } = setup();
     await addNew(store, 2);
-    await store.insertCard(scheduledCard("old", 2));
-    const fresh = await store.insertCard(wordCard("fresh"));
-    await vocabulary.review(fresh.id, { rating: 3 });
+    await store.insertCard(USER, scheduledCard("old", 2));
+    const fresh = await store.insertCard(USER, wordCard("fresh"));
+    await vocabulary.review(USER, fresh.id, { rating: 3 });
 
-    const stats = await vocabulary.stats();
+    const stats = await vocabulary.stats(USER);
     expect(stats).toMatchObject({
       total: 4,
       newAvailable: 2,
@@ -261,7 +272,7 @@ describe("stats and sessions", () => {
   it("writes one srs_session_completed event with the counts", async () => {
     const { store, vocabulary } = setup();
     const counts = { reviewed: 3, again: 1, hard: 0, good: 2, easy: 0, seconds: 240 };
-    expect(await vocabulary.completeSession(counts)).toEqual({ recorded: true });
+    expect(await vocabulary.completeSession(USER, counts)).toEqual({ recorded: true });
     expect(store.events).toEqual([{ type: "srs_session_completed", payload: counts }]);
   });
 });

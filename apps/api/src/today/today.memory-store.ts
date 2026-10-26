@@ -1,4 +1,5 @@
-// In-memory TodayStore for tests.
+// In-memory TodayStore for tests. Single-learner fake: user ids are accepted and ignored
+// (isolation is covered by the DB integration test).
 
 import { randomUUID } from "node:crypto";
 import type { ParkingRecord, SessionRecord, TodayEvent, TodayStore } from "./today.store.ts";
@@ -24,7 +25,7 @@ export function createMemoryTodayStore(): MemoryTodayStore {
     events,
     writingActivity: undefined,
 
-    async createSession(session) {
+    async createSession(_userId, session) {
       const record: SessionRecord = {
         ...clone(session),
         id: randomUUID(),
@@ -37,23 +38,23 @@ export function createMemoryTodayStore(): MemoryTodayStore {
       return clone(record);
     },
 
-    async getSession(id) {
+    async getSession(_userId, id) {
       const found = sessions.find((s) => s.id === id);
       return found && clone(found);
     },
 
-    async listSessionsSince(since) {
+    async listSessionsSince(_userId, since) {
       return sessions
         .filter((s) => s.startedAt.getTime() >= since.getTime())
         .sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
         .map(clone);
     },
 
-    async listOpenSessions() {
+    async listOpenSessions(_userId) {
       return sessions.filter((s) => s.endedAt === null).map(clone);
     },
 
-    async endSession(id, end, ev) {
+    async endSession(_userId, id, end, ev) {
       const found = sessions.find((s) => s.id === id);
       if (!found || found.endedAt !== null) return undefined;
       found.endedAt = end.endedAt;
@@ -64,7 +65,7 @@ export function createMemoryTodayStore(): MemoryTodayStore {
       return clone(found);
     },
 
-    async listParking() {
+    async listParking(_userId) {
       return [...parking]
         .sort(
           (a, b) =>
@@ -73,28 +74,28 @@ export function createMemoryTodayStore(): MemoryTodayStore {
         .map(clone);
     },
 
-    async createParking(text) {
+    async createParking(_userId, text) {
       // Strictly increasing timestamps keep "newest first" deterministic within one test.
       const record = { id: randomUUID(), text, done: false, createdAt: new Date(++created * 1000) };
       parking.push(record);
       return clone(record);
     },
 
-    async updateParking(id, patch) {
+    async updateParking(_userId, id, patch) {
       const found = parking.find((p) => p.id === id);
       if (!found) return undefined;
       Object.assign(found, patch);
       return clone(found);
     },
 
-    async deleteParking(id) {
+    async deleteParking(_userId, id) {
       const index = parking.findIndex((p) => p.id === id);
       if (index === -1) return false;
       parking.splice(index, 1);
       return true;
     },
 
-    async lastWritingActivity() {
+    async lastWritingActivity(_userId) {
       return store.writingActivity;
     },
   };

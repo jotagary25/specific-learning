@@ -28,7 +28,8 @@ function settingsApi(aiKey: object = { configured: true, source: "db", last4: "W
   const preferencePuts: unknown[] = [];
   let preferences = { "today.writingDay": 6, "srs.newPerDay": 5 };
   const fetchMock = mockApi({
-    "GET /api/auth/me": () => Response.json({ authenticated: true }),
+    "GET /api/auth/me": () =>
+      Response.json({ authenticated: true, user: { email: "ana@example.com", role: "admin" } }),
     "GET /api/settings/ai-key": () => Response.json(aiKey),
     "POST /api/settings/ai-key/test": () => Response.json({ ok: true, modelCount: 3 }),
     "GET /api/settings/models": () =>
@@ -69,6 +70,15 @@ describe("SettingsPage", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+  });
+
+  it("shows the signed-in account with its role", async () => {
+    settingsApi();
+    renderAt("/settings");
+
+    const account = await screen.findByRole("region", { name: "Account" });
+    expect(await within(account).findByText("ana@example.com")).toBeTruthy();
+    expect(within(account).getByText("Admin")).toBeTruthy();
   });
 
   it("shows only the last 4 characters of the stored key and tests the connection", async () => {

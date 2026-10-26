@@ -40,17 +40,20 @@ export function toolNameOf(message: NewMessage): string | null {
 }
 
 /** Persistence port of the tutor feature. */
+/** Persistence port of the tutor: conversations, messages and doubts of one user. */
 export interface TutorStore {
-  createConversation(context: TutorContext): Promise<ConversationRecord>;
-  getConversation(id: string): Promise<ConversationRecord | undefined>;
+  createConversation(userId: string, context: TutorContext): Promise<ConversationRecord>;
+  getConversation(userId: string, id: string): Promise<ConversationRecord | undefined>;
   /** Newest first, with the first learner message of each. */
   listConversations(
+    userId: string,
     limit: number,
   ): Promise<Array<ConversationRecord & { firstUserMessage: string | null }>>;
   /** Oldest first. */
-  listMessages(conversationId: string): Promise<MessageRecord[]>;
-  insertMessage(message: NewMessage): Promise<MessageRecord>;
+  listMessages(userId: string, conversationId: string): Promise<MessageRecord[]>;
+  insertMessage(userId: string, message: NewMessage): Promise<MessageRecord>;
   insertDoubt(
+    userId: string,
     text: string,
     context: Record<string, unknown>,
     explanation?: string | null,
@@ -77,21 +80,25 @@ const toMessage = (row: typeof tutorMessage.$inferSelect): MessageRecord => ({
 
 export function createDrizzleTutorStore(db: Db): TutorStore {
   return {
-    async createConversation(context) {
-      const [row] = await db.insert(tutorConversation).values({ context }).returning();
+    async createConversation(userId, context) {
+      const [row] = await db.insert(tutorConversation).values({ userId, context }).returning();
       return toConversation(row as typeof tutorConversation.$inferSelect);
     },
 
-    async getConversation(id) {
+    async getConversation(userId, id) {
       if (!UUID.test(id)) return undefined;
-      const [row] = await db.select().from(tutorConversation).where(eq(tutorConversation.id, id));
+      const [row] = await db
+        .select()
+        .from(tutorConversation)
+        .where(and(eq(tutorConversation.userId, userId), eq(tutorConversation.id, id)));
       return row ? toConversation(row) : undefined;
     },
 
-    async listConversations(limit) {
+    async listConversations(userId, limit) {
       const rows = await db
         .select()
         .from(tutorConversation)
+        .where(eq(tutorConversation.userId, userId))
         .orderBy(desc(tutorConversation.createdAt))
         .limit(limit);
       if (rows.length === 0) return [];
@@ -107,6 +114,7 @@ export function createDrizzleTutorStore(db: Db): TutorStore {
               tutorMessage.conversationId,
               rows.map((r) => r.id),
             ),
+            eq(tutorMessage.userId, userId),
             eq(tutorMessage.role, "user"),
           ),
         )
@@ -118,20 +126,23 @@ export function createDrizzleTutorStore(db: Db): TutorStore {
       }));
     },
 
-    async listMessages(conversationId) {
+    async listMessages(userId, conversationId) {
       if (!UUID.test(conversationId)) return [];
       const rows = await db
         .select()
         .from(tutorMessage)
-        .where(eq(tutorMessage.conversationId, conversationId))
+        .where(
+          and(eq(tutorMessage.userId, userId), eq(tutorMessage.conversationId, conversationId)),
+        )
         .orderBy(asc(tutorMessage.createdAt), asc(tutorMessage.id));
       return rows.map(toMessage);
     },
 
-    async insertMessage(message) {
+    async insertMessage(userId, message) {
       const [row] = await db
         .insert(tutorMessage)
         .values({
+          userId,
           conversationId: message.conversationId,
           role: message.role,
           content: message.content,
@@ -144,10 +155,10 @@ export function createDrizzleTutorStore(db: Db): TutorStore {
       return toMessage(row as typeof tutorMessage.$inferSelect);
     },
 
-    async insertDoubt(text, context, explanation) {
+    async insertDoubt(userId, text, context, explanation) {
       const [row] = await db
         .insert(doubt)
-        .values({ text, context, explanation: explanation ?? null })
+        .values({ userId, text, context, explanation: explanation ?? null })
         .returning({ id: doubt.id });
       return { id: (row as { id: string }).id };
     },

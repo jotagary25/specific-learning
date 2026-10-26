@@ -56,7 +56,7 @@ describe("recall pending", () => {
       },
       reading: { today: async () => ({ date: "2026-10-26", reading: null, editorEnabled: true }) },
       readingStore: {
-        getArticleForDate: async (date) =>
+        getArticleForDate: async (_userId, date) =>
           date === "2026-10-25" ? ({ id: "a" } as never) : undefined,
         getSession: async () => readingSession,
       },
@@ -92,7 +92,10 @@ describe("recall pending", () => {
       false,
     ],
   ] as const)("%s", async (_, readingSession, expected) => {
-    const state = await sourcesWith(readingSession as ReadingSession | undefined).state(now);
+    const state = await sourcesWith(readingSession as ReadingSession | undefined).state(
+      "test-user",
+      now,
+    );
     expect(state.recallPending).toBe(expected);
     // New cards are limited by what is left of today's allowance (5 per day, 3 used).
     expect(state.srs).toEqual({ due: 0, fresh: 2 });

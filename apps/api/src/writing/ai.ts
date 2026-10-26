@@ -11,12 +11,13 @@ export type WritingAi = Pick<Settings, "getLlmForFunction">;
  */
 export async function runWritingAi<Input, Schema extends z.ZodType>(
   ai: WritingAi | undefined,
+  userId: string,
   prompt: PromptDefinition<Input, Schema>,
   input: Input,
 ): Promise<z.output<Schema> | undefined> {
   if (!ai) return undefined;
   try {
-    const { client, model, think } = await ai.getLlmForFunction(prompt.id);
+    const { client, model, think } = await ai.getLlmForFunction(userId, prompt.id);
     const { data } = await client.chatJson(
       { model, think, messages: prompt.build(input) },
       prompt.schema,

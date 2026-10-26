@@ -366,7 +366,7 @@ Reasoning output (`message.thinking`) is discarded, never shown or stored.
 
 - **Docker Compose** services: `web` (static build served by nginx or by the api), `api` (Node), `db` (`postgres:18`, **local/dev only**).
 - **Production:** the user's existing PostgreSQL 18 server via `DATABASE_URL`; the compose file has a profile/override that omits `db`.
-- **Env:** `DATABASE_URL`, `APP_SECRET` (32-byte key for encryption), `APP_PASSWORD` (single-user login), `TZ`, optional `OLLAMA_API_KEY` (bootstrap; the UI value overrides it).
+- **Env:** `DATABASE_URL`, `APP_SECRET` (32-byte key for encryption), `APP_USER_EMAIL` + `APP_USER_PASSWORD` (admin user bootstrapped on startup; see README "Users"), `TZ`, optional `OLLAMA_API_KEY` (bootstrap; the UI value overrides it).
 - Migrations run on api start (Drizzle). The content seed is idempotent.
 - PWA: manifest, icons, service worker (app shell cache; API is network-first).
 

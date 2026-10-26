@@ -1,54 +1,69 @@
 import { describe, expect, it } from "vitest";
-import { passwordMatches } from "./password.ts";
+import { hashPassword, normalizeEmail, verifyPassword } from "./password.ts";
 import { createLoginRateLimiter } from "./rate-limit.ts";
-import { deriveSessionKey, signSession, verifySession } from "./session.ts";
+import { deriveSessionKey, readSession, signSession } from "./session.ts";
 
 const SECRET = "ab".repeat(32);
-const key = deriveSessionKey(SECRET, "hunter2");
+const key = deriveSessionKey(SECRET);
 const now = 1_800_000_000_000;
+const USER = "0190a0b0-0000-7000-8000-000000000001";
+const claims = { userId: USER, epoch: 0, expiresAt: now + 1000 };
 
 describe("session token", () => {
-  it("verifies a token it signed until it expires", () => {
-    const token = signSession(key, now + 1000, 0);
+  it("reads back the claims of a token it signed until it expires", () => {
+    const token = signSession(key, claims);
 
-    expect(verifySession(key, token, now, 0)).toBe(true);
-    expect(verifySession(key, token, now + 999, 0)).toBe(true);
-    expect(verifySession(key, token, now + 1000, 0)).toBe(false);
+    expect(readSession(key, token, now)).toEqual(claims);
+    expect(readSession(key, token, now + 999)).toEqual(claims);
+    expect(readSession(key, token, now + 1000)).toBeUndefined();
   });
 
-  it("rejects tampered expiry, signature and garbage", () => {
-    const token = signSession(key, now + 1000, 0);
-    const [, , signature] = token.split(".");
+  it("rejects tampered user, epoch, expiry, signature and garbage", () => {
+    const token = signSession(key, { ...claims, epoch: 3 });
+    const [, , , signature] = token.split(".");
+    const other = "0190a0b0-0000-7000-8000-000000000002";
 
-    expect(verifySession(key, `0.${now + 99_999}.${signature}`, now, 0)).toBe(false);
-    expect(verifySession(key, `${token.slice(0, -2)}xx`, now, 0)).toBe(false);
-    expect(verifySession(key, "garbage", now, 0)).toBe(false);
-    expect(verifySession(key, "", now, 0)).toBe(false);
+    expect(readSession(key, `${other}.3.${now + 1000}.${signature}`, now)).toBeUndefined();
+    expect(readSession(key, `${USER}.4.${now + 1000}.${signature}`, now)).toBeUndefined();
+    expect(readSession(key, `${USER}.3.${now + 99_999}.${signature}`, now)).toBeUndefined();
+    expect(readSession(key, `${token.slice(0, -2)}xx`, now)).toBeUndefined();
+    expect(readSession(key, "garbage", now)).toBeUndefined();
+    expect(readSession(key, "", now)).toBeUndefined();
   });
 
-  it("rejects tokens signed with another secret or another password", () => {
-    const token = signSession(key, now + 1000, 0);
-
-    expect(verifySession(deriveSessionKey("cd".repeat(32), "hunter2"), token, now, 0)).toBe(false);
-    expect(verifySession(deriveSessionKey(SECRET, "changed"), token, now, 0)).toBe(false);
-  });
-
-  it("rejects tokens from an older or tampered session epoch", () => {
-    const token = signSession(key, now + 1000, 3);
-    const [, expiresAt, signature] = token.split(".");
-
-    expect(verifySession(key, token, now, 3)).toBe(true);
-    expect(verifySession(key, token, now, 4)).toBe(false);
-    expect(verifySession(key, `4.${expiresAt}.${signature}`, now, 4)).toBe(false);
+  it("rejects tokens signed with another secret", () => {
+    const token = signSession(key, claims);
+    expect(readSession(deriveSessionKey("cd".repeat(32)), token, now)).toBeUndefined();
   });
 });
 
-describe("passwordMatches", () => {
-  it("compares in constant time regardless of length", () => {
-    expect(passwordMatches("hunter2", "hunter2")).toBe(true);
-    expect(passwordMatches("hunter3", "hunter2")).toBe(false);
-    expect(passwordMatches("", "hunter2")).toBe(false);
-    expect(passwordMatches("hunter2-and-more", "hunter2")).toBe(false);
+describe("password hashing", () => {
+  const FAST = { N: 16, r: 1, p: 1 };
+
+  it("salts every hash and verifies only the right password", async () => {
+    const a = await hashPassword("hunter2-hunter2", FAST);
+    const b = await hashPassword("hunter2-hunter2", FAST);
+
+    expect(a).not.toBe(b);
+    expect(await verifyPassword("hunter2-hunter2", a)).toBe(true);
+    expect(await verifyPassword("hunter3-hunter3", a)).toBe(false);
+    expect(await verifyPassword("", a)).toBe(false);
+  });
+
+  it("never matches a malformed or out-of-bounds hash", async () => {
+    const good = await hashPassword("pw", FAST);
+    const parts = good.split("$");
+
+    expect(await verifyPassword("pw", "")).toBe(false);
+    expect(await verifyPassword("pw", "plain-text")).toBe(false);
+    expect(await verifyPassword("pw", ["scrypt", 2 ** 30, ...parts.slice(2)].join("$"))).toBe(
+      false,
+    );
+    expect(await verifyPassword("pw", [...parts.slice(0, 5), "AAAA"].join("$"))).toBe(false);
+  });
+
+  it("normalizes emails to trimmed lowercase", () => {
+    expect(normalizeEmail("  Ana@Example.COM ")).toBe("ana@example.com");
   });
 });
 

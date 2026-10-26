@@ -7,32 +7,25 @@ import {
 } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
-import { createAuth } from "../auth/auth.ts";
+import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import { createMemoryVocabularyStore } from "./vocabulary.memory-store.ts";
 import { createVocabulary } from "./vocabulary.service.ts";
 
-const APP_SECRET = "ef".repeat(32);
-const PASSWORD = "pw";
 const NOW = new Date("2026-10-25T13:30:00");
 
 async function setup() {
   const store = createMemoryVocabularyStore();
   const vocabulary = createVocabulary({ store, now: () => NOW });
-  const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
+  const { auth } = await createTestAuth();
   const app = createApp({ pingDb: async () => true, auth, vocabulary });
-  const login = await app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
-  const cookie = login.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/vocabulary${path}`, {
       method: init.method ?? "GET",
       headers: { cookie, "content-type": "application/json" },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
     });
-  const card = await store.insertCard({
+  const card = await store.insertCard("test-user", {
     source: "word",
     front: "thrive\nSmall firms thrive here.",
     back: "prosperar (verb) — to grow well",

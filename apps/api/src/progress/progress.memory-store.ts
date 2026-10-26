@@ -1,4 +1,5 @@
-// In-memory ProgressStore for tests: fixture arrays that tests fill directly.
+// In-memory ProgressStore for tests: fixture arrays that tests fill directly. Single-learner
+// fake: user ids are accepted and ignored (isolation is covered by the DB integration test).
 
 import { randomUUID } from "node:crypto";
 import type {
@@ -37,7 +38,7 @@ export function createMemoryProgressStore(now: () => Date = () => new Date()): M
     readings: [],
     articles: new Map(),
 
-    async listEvents(filter = {}) {
+    async listEvents(_userId, filter = {}) {
       return store.events
         .filter(
           (e) =>
@@ -49,44 +50,44 @@ export function createMemoryProgressStore(now: () => Date = () => new Date()): M
         .map((e) => structuredClone(e));
     },
 
-    async firstEventAt(exceptTypes = []) {
+    async firstEventAt(_userId, exceptTypes = []) {
       return [...store.events].filter((e) => !exceptTypes.includes(e.type)).sort(byTime)[0]
         ?.createdAt;
     },
 
-    async insertEvent(type, payload) {
+    async insertEvent(_userId, type, payload) {
       const record = { type, payload: structuredClone(payload), createdAt: now() };
       store.events.push(record);
       return structuredClone(record);
     },
 
-    async listCanDo() {
+    async listCanDo(_userId) {
       return [...store.canDos].sort((a, b) => byTime(b, a)).map((c) => ({ ...c }));
     },
 
-    async insertCanDo(text) {
+    async insertCanDo(_userId, text) {
       const record = { id: randomUUID(), text, source: "learner", createdAt: now() };
       store.canDos.push(record);
       return { ...record };
     },
 
-    async listUnits() {
+    async listUnits(_userId) {
       return structuredClone(store.units);
     },
 
-    async listWordCards() {
+    async listWordCards(_userId) {
       return structuredClone(store.cards);
     },
 
-    async listSubmissions() {
+    async listSubmissions(_userId) {
       return structuredClone([...store.submissions].sort(byTime));
     },
 
-    async listErrors() {
+    async listErrors(_userId) {
       return structuredClone([...store.errors].sort(byTime));
     },
 
-    async listReadings() {
+    async listReadings(_userId) {
       return structuredClone(
         [...store.readings].sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime()),
       );

@@ -9,6 +9,9 @@ import { createMemoryReadingStore } from "./reading.memory-store.ts";
 import { type ArticleRecord, unitFocus } from "./reading.store.ts";
 import { annotations, candidate, fakeSource } from "./reading.test-support.ts";
 
+/** Memory fakes ignore the user; services still need one. */
+const USER = "test-user";
+
 const DATE = "2026-10-25";
 
 function aiWith(llm: FakeLlm) {
@@ -142,7 +145,7 @@ describe("runEditor", () => {
     });
     const editor = createEditor({ store, sources: [source], ai: aiWith(llm) });
 
-    const result = await editor.run(DATE);
+    const result = await editor.run(USER, DATE);
     expect(result).toMatchObject({
       status: "selected",
       selection: "ai",
@@ -167,8 +170,8 @@ describe("runEditor", () => {
       candidate({ url: "https://a.test/2" }),
     ]);
     const editor = createEditor({ store, sources: [source] });
-    const [first, concurrent] = await Promise.all([editor.run(DATE), editor.run(DATE)]);
-    const again = await editor.run(DATE);
+    const [first, concurrent] = await Promise.all([editor.run(USER, DATE), editor.run(USER, DATE)]);
+    const again = await editor.run(USER, DATE);
     expect(first.status).toBe("selected");
     expect(concurrent).toEqual(first);
     expect(again).toMatchObject({ status: "existing", articleId: first.articleId });
@@ -187,7 +190,7 @@ describe("runEditor", () => {
     const llm = createFakeLlm({ failWith: new LlmError("not_configured", "no key") });
     const editor = createEditor({ store, sources: [source], ai: aiWith(llm) });
 
-    const result = await editor.run(DATE);
+    const result = await editor.run(USER, DATE);
     expect(result).toMatchObject({ status: "selected", selection: "fallback", annotated: false });
     expect(result.warnings.join(" ")).toContain("deterministic");
     expect(store.articles.at(-1)).toMatchObject({
@@ -219,7 +222,7 @@ describe("runEditor", () => {
     }, "broken");
     const editor = createEditor({ store, sources: [broken, source] });
 
-    const result = await editor.run(DATE);
+    const result = await editor.run(USER, DATE);
     expect(result.sources).toEqual([
       { name: "broken", candidates: 0, error: "feed down" },
       { name: "web", candidates: 2 },
@@ -232,7 +235,10 @@ describe("runEditor", () => {
   it("reports no candidates without storing anything", async () => {
     const store = createMemoryReadingStore();
     const editor = createEditor({ store, sources: [fakeSource([])] });
-    expect(await editor.run(DATE)).toMatchObject({ status: "no-candidates", articleId: null });
+    expect(await editor.run(USER, DATE)).toMatchObject({
+      status: "no-candidates",
+      articleId: null,
+    });
     expect(store.articles).toHaveLength(0);
   });
 });

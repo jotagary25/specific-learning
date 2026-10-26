@@ -34,7 +34,10 @@ export type SettingsOptions = {
   appSecret: string;
   /** OLLAMA_API_KEY from env; used only when no key is stored. */
   envApiKey?: string;
-  /** Builds the LLM client; it must resolve the key through `getApiKey` on every call. */
+  /**
+   * Builds one user's LLM client; it must resolve the key through `getApiKey` on every call.
+   * Called once per user and cached.
+   */
   createClient: (getApiKey: () => Promise<string | undefined>) => LlmClient;
   now?: () => number;
   cacheTtlMs?: number;
@@ -54,6 +57,19 @@ export type LlmForFunction = { client: LlmClient; model: string; think: ThinkVal
 
 type Cached<T> = { value: T; at: number };
 
+/** Per-user cached state: the resolved key, the client bound to it and model metadata. */
+type UserState = {
+  resolvedKey?: Cached<string | undefined>;
+  modelsCache?: Cached<ModelSummary[]>;
+  client?: LlmClient;
+  capabilitiesCache: Map<string, Cached<ModelCapabilities>>;
+  capabilityFailures: Map<string, Cached<LlmError> & { ttlMs: number }>;
+};
+
+/**
+ * Per-user AI settings: each user has their own Ollama key (env key as fallback) and their own
+ * model/effort per AI function. Every method takes the user id first.
+ */
 export function createSettings(options: SettingsOptions) {
   const { store, appSecret } = options;
   const now = options.now ?? Date.now;
@@ -61,16 +77,22 @@ export function createSettings(options: SettingsOptions) {
   const fresh = <T>(entry: Cached<T> | undefined, maxAge = ttl): entry is Cached<T> =>
     entry !== undefined && now() - entry.at < maxAge;
 
-  let resolvedKey: Cached<string | undefined> | undefined;
-  let modelsCache: Cached<ModelSummary[]> | undefined;
-  const capabilitiesCache = new Map<string, Cached<ModelCapabilities>>();
-  const capabilityFailures = new Map<string, Cached<LlmError> & { ttlMs: number }>();
+  const states = new Map<string, UserState>();
+  const stateOf = (userId: string): UserState => {
+    let state = states.get(userId);
+    if (!state) {
+      state = { capabilitiesCache: new Map(), capabilityFailures: new Map() };
+      states.set(userId, state);
+    }
+    return state;
+  };
 
-  const clearCaches = () => {
-    resolvedKey = undefined;
-    modelsCache = undefined;
-    capabilitiesCache.clear();
-    capabilityFailures.clear();
+  const clearCaches = (userId: string) => {
+    const state = stateOf(userId);
+    state.resolvedKey = undefined;
+    state.modelsCache = undefined;
+    state.capabilitiesCache.clear();
+    state.capabilityFailures.clear();
   };
 
   type StoredKey =
@@ -78,8 +100,8 @@ export function createSettings(options: SettingsOptions) {
     | { state: "ok"; key: string; last4: string }
     | { state: "undecryptable"; last4: string };
 
-  async function readStoredKey(): Promise<StoredKey> {
-    const sealed = await store.getSecret(API_KEY_SECRET);
+  async function readStoredKey(userId: string): Promise<StoredKey> {
+    const sealed = await store.getSecret(userId, API_KEY_SECRET);
     if (!sealed) return { state: "none" };
     try {
       return { state: "ok", key: decryptSecret(sealed, appSecret), last4: sealed.last4 };
@@ -89,18 +111,27 @@ export function createSettings(options: SettingsOptions) {
     }
   }
 
-  async function getApiKey(): Promise<string | undefined> {
-    if (!fresh(resolvedKey)) {
-      const stored = await readStoredKey();
-      resolvedKey = { value: stored.state === "ok" ? stored.key : options.envApiKey, at: now() };
+  async function getApiKey(userId: string): Promise<string | undefined> {
+    const state = stateOf(userId);
+    if (!fresh(state.resolvedKey)) {
+      const stored = await readStoredKey(userId);
+      state.resolvedKey = {
+        value: stored.state === "ok" ? stored.key : options.envApiKey,
+        at: now(),
+      };
     }
-    return resolvedKey.value;
+    return state.resolvedKey.value;
   }
 
-  const client = options.createClient(getApiKey);
+  /** The user's LLM client, bound to their key (resolved on every call). */
+  function clientFor(userId: string): LlmClient {
+    const state = stateOf(userId);
+    state.client ??= options.createClient(() => getApiKey(userId));
+    return state.client;
+  }
 
-  async function keyStatus(): Promise<AiKeyStatus> {
-    const stored = await readStoredKey();
+  async function keyStatus(userId: string): Promise<AiKeyStatus> {
+    const stored = await readStoredKey(userId);
     if (stored.state === "ok") return { configured: true, source: "db", last4: stored.last4 };
     if (stored.state === "undecryptable") {
       // Requests fall back to the env key meanwhile, so `configured` reflects that.
@@ -117,19 +148,23 @@ export function createSettings(options: SettingsOptions) {
     return { configured: false, source: null, last4: null };
   }
 
-  async function listModels(): Promise<ModelSummary[]> {
-    if (!fresh(modelsCache)) modelsCache = { value: await client.listModels(), at: now() };
-    return modelsCache.value;
+  async function listModels(userId: string): Promise<ModelSummary[]> {
+    const state = stateOf(userId);
+    if (!fresh(state.modelsCache)) {
+      state.modelsCache = { value: await clientFor(userId).listModels(), at: now() };
+    }
+    return state.modelsCache.value;
   }
 
   /** Probes `/api/show` once per TTL; LLM failures are negatively cached so callers skip it. */
-  async function capabilities(model: string): Promise<ModelCapabilities> {
+  async function capabilities(userId: string, model: string): Promise<ModelCapabilities> {
+    const { capabilitiesCache, capabilityFailures } = stateOf(userId);
     const cached = capabilitiesCache.get(model);
     if (fresh(cached)) return cached.value;
     const failure = capabilityFailures.get(model);
     if (failure && fresh(failure, failure.ttlMs)) throw failure.value;
     try {
-      const value = await client.modelCapabilities(model);
+      const value = await clientFor(userId).modelCapabilities(model);
       capabilitiesCache.set(model, { value, at: now() });
       capabilityFailures.delete(model);
       return value;
@@ -146,14 +181,17 @@ export function createSettings(options: SettingsOptions) {
     }
   }
 
-  async function readAiFunction(id: AiFunctionId): Promise<AiFunctionSetting | undefined> {
-    const parsed = StoredAiFunction.safeParse(await store.getSetting(settingKey(id)));
+  async function readAiFunction(
+    userId: string,
+    id: AiFunctionId,
+  ): Promise<AiFunctionSetting | undefined> {
+    const parsed = StoredAiFunction.safeParse(await store.getSetting(userId, settingKey(id)));
     return parsed.success ? parsed.data : undefined;
   }
 
-  async function describeAiFunction(id: AiFunctionId): Promise<AiFunctionConfig> {
+  async function describeAiFunction(userId: string, id: AiFunctionId): Promise<AiFunctionConfig> {
     const defaults = defaultFor(id);
-    const stored = await readAiFunction(id);
+    const stored = await readAiFunction(userId, id);
     const current = stored ?? defaults;
     return {
       id,
@@ -167,7 +205,7 @@ export function createSettings(options: SettingsOptions) {
   }
 
   return {
-    client,
+    clientFor,
     /**
      * Raw Ollama key for backend-only Ollama endpoints (web_search/web_fetch). Never send it to
      * the browser and never log it.
@@ -177,34 +215,36 @@ export function createSettings(options: SettingsOptions) {
     listModels,
     capabilities,
 
-    async setKey(apiKey: string): Promise<AiKeyStatus> {
-      await store.putSecret(API_KEY_SECRET, {
+    async setKey(userId: string, apiKey: string): Promise<AiKeyStatus> {
+      await store.putSecret(userId, API_KEY_SECRET, {
         ...encryptSecret(apiKey, appSecret),
         last4: apiKey.slice(-4),
       });
-      clearCaches();
-      return keyStatus();
+      clearCaches(userId);
+      return keyStatus(userId);
     },
 
-    async deleteKey(): Promise<AiKeyStatus> {
-      await store.deleteSecret(API_KEY_SECRET);
-      clearCaches();
-      return keyStatus();
+    async deleteKey(userId: string): Promise<AiKeyStatus> {
+      await store.deleteSecret(userId, API_KEY_SECRET);
+      clearCaches(userId);
+      return keyStatus(userId);
     },
 
-    async testKey(): Promise<AiKeyTestResult> {
+    async testKey(userId: string): Promise<AiKeyTestResult> {
       try {
-        modelsCache = undefined;
-        return { ok: true, modelCount: (await listModels()).length };
+        stateOf(userId).modelsCache = undefined;
+        return { ok: true, modelCount: (await listModels(userId)).length };
       } catch (error) {
         if (!isLlmError(error)) throw error;
         return { ok: false, error: error.code, message: error.message };
       }
     },
 
-    listAiFunctions: () => Promise.all(AiFunctionId.options.map(describeAiFunction)),
+    listAiFunctions: (userId: string) =>
+      Promise.all(AiFunctionId.options.map((id) => describeAiFunction(userId, id))),
 
     async updateAiFunction(
+      userId: string,
       rawId: string,
       input: UpdateAiFunctionRequest,
     ): Promise<AiFunctionConfig> {
@@ -214,7 +254,7 @@ export function createSettings(options: SettingsOptions) {
 
       let caps: ModelCapabilities | undefined;
       try {
-        caps = await capabilities(input.model);
+        caps = await capabilities(userId, input.model);
       } catch (error) {
         if (!isLlmError(error)) throw error;
         if (error.code === "not_found") {
@@ -229,18 +269,22 @@ export function createSettings(options: SettingsOptions) {
         );
       }
 
-      await store.putSetting(settingKey(id.data), { model: input.model, think: input.think });
-      return describeAiFunction(id.data);
+      await store.putSetting(userId, settingKey(id.data), {
+        model: input.model,
+        think: input.think,
+      });
+      return describeAiFunction(userId, id.data);
     },
 
     /** Model + effort for one AI function, read fresh so changes apply on the next call. */
-    async getLlmForFunction(id: AiFunctionId): Promise<LlmForFunction> {
-      const { model, think } = (await readAiFunction(id)) ?? defaultFor(id);
+    async getLlmForFunction(userId: string, id: AiFunctionId): Promise<LlmForFunction> {
+      const { model, think } = (await readAiFunction(userId, id)) ?? defaultFor(id);
+      const client = clientFor(userId);
       try {
         return {
           client,
           model,
-          think: normalizeThink(think, (await capabilities(model)).thinking),
+          think: normalizeThink(think, (await capabilities(userId, model)).thinking),
         };
       } catch (error) {
         // Capabilities unknown (no key, offline, rate limited): keep the stored effort.

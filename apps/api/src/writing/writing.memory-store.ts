@@ -1,4 +1,5 @@
-// In-memory WritingStore for tests.
+// In-memory WritingStore for tests. Single-learner fake: user ids are accepted and ignored
+// (isolation is covered by the DB integration test).
 
 import { randomUUID } from "node:crypto";
 import type { Inspiration } from "@english-course/shared";
@@ -59,32 +60,32 @@ export function createMemoryWritingStore(units: UnitInfo[] = sampleUnits()): Mem
     errors,
     events,
 
-    async listUnits() {
+    async listUnits(_userId) {
       return clone([...units].sort((a, b) => a.id - b.id));
     },
-    async raiseUnitPriority(unitId, by) {
+    async raiseUnitPriority(_userId, unitId, by) {
       const found = units.find((u) => u.id === unitId);
       if (found) found.priority += by;
     },
-    async recentReading(since, limit) {
+    async recentReading(_userId, since, limit) {
       return reading
         .filter((r) => r.startedAt >= since)
         .sort((a, b) => +b.startedAt - +a.startedAt)
         .slice(0, limit)
         .map(({ title, opinion }) => ({ title, opinion }));
     },
-    async activeMission() {
+    async activeMission(_userId) {
       const found = newestFirst().find((m) => m.status !== "done");
       return found ? aggregate(found) : undefined;
     },
-    async getMission(id) {
+    async getMission(_userId, id) {
       const found = missions.find((m) => m.id === id);
       return found ? aggregate(found) : undefined;
     },
-    async listMissions() {
+    async listMissions(_userId) {
       return newestFirst().flatMap((m) => aggregate(m) ?? []);
     },
-    async createMission(mission, submission) {
+    async createMission(_userId, mission, submission) {
       const createdAt = stamp();
       const m: MissionRecord = {
         ...clone(mission),
@@ -105,24 +106,24 @@ export function createMemoryWritingStore(units: UnitInfo[] = sampleUnits()): Mem
       submissions.push(s);
       return clone({ mission: m, submission: s });
     },
-    async setMissionStatus(id, status) {
+    async setMissionStatus(_userId, id, status) {
       const found = missions.find((m) => m.id === id);
       if (found) {
         found.status = status;
         found.updatedAt = stamp();
       }
     },
-    async updateSubmission(id, patch) {
+    async updateSubmission(_userId, id, patch) {
       const found = submissions.find((s) => s.id === id);
       if (!found) return;
       Object.assign(found, clone(patch));
       const mission = missions.find((m) => m.id === found.missionId);
       if (mission) mission.updatedAt = stamp();
     },
-    async listErrors(submissionIds) {
+    async listErrors(_userId, submissionIds) {
       return clone(errors.filter((e) => submissionIds.includes(e.submissionId)));
     },
-    async insertErrors(submissionId, rows) {
+    async insertErrors(_userId, submissionId, rows) {
       const created = rows.map((row) => ({
         ...clone(row),
         id: randomUUID(),
@@ -132,14 +133,14 @@ export function createMemoryWritingStore(units: UnitInfo[] = sampleUnits()): Mem
       errors.push(...created);
       return clone(created);
     },
-    async updateError(id, patch) {
+    async updateError(_userId, id, patch) {
       const found = errors.find((e) => e.id === id);
       if (found) Object.assign(found, clone(patch));
     },
-    async recentErrors(limit) {
+    async recentErrors(_userId, limit) {
       return clone([...errors].reverse().slice(0, limit));
     },
-    async insertEvent(type, payload) {
+    async insertEvent(_userId, type, payload) {
       events.push({ type, payload: clone(payload) });
     },
   };

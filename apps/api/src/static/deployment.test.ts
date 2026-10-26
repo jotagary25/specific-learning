@@ -3,9 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
+import { addTestUser, TEST_EMAIL, TEST_PASSWORD, TEST_SECRET } from "../auth/auth.test-support.ts";
 import { type AuthOptions, createAuth } from "../auth/auth.ts";
 import { resolveContentDir } from "../content/content-dir.ts";
 import { loadConfig } from "../shared/config.ts";
+import { createMemoryUserStore } from "../users/users.store.ts";
 
 const INDEX = '<!doctype html><html lang="en"><body><div id="root"></div></body></html>';
 
@@ -18,8 +20,9 @@ writeFileSync(join(distDir, "assets", "index-abc123.js"), "console.log('app');")
 
 afterAll(() => rmSync(distDir, { recursive: true, force: true }));
 
-const PASSWORD = "correct horse";
-const authOptions: AuthOptions = { password: PASSWORD, appSecret: "ab".repeat(32) };
+const users = createMemoryUserStore();
+await addTestUser(users);
+const authOptions: AuthOptions = { users, appSecret: TEST_SECRET };
 const contentDir = resolveContentDir({});
 
 const prodApp = (auth = createAuth(authOptions)) =>
@@ -36,7 +39,7 @@ const login = (
     {
       method: "POST",
       headers: { "content-type": "application/json", ...headers },
-      body: JSON.stringify({ password: PASSWORD }),
+      body: JSON.stringify({ email: TEST_EMAIL, password: TEST_PASSWORD }),
     },
     env,
   );
@@ -189,7 +192,8 @@ describe("Secure session cookie behind a reverse proxy", () => {
 describe("deployment config", () => {
   const base = {
     DATABASE_URL: "postgres://u:p@localhost:5432/db",
-    APP_PASSWORD: "pw",
+    APP_USER_EMAIL: "admin@example.com",
+    APP_USER_PASSWORD: "a long enough passphrase",
     APP_SECRET: "ab".repeat(32),
   };
 
@@ -207,5 +211,24 @@ describe("deployment config", () => {
 
   it("rejects an invalid TRUST_PROXY value", () => {
     expect(() => loadConfig({ ...base, TRUST_PROXY: "yes" })).toThrow(/TRUST_PROXY/);
+  });
+
+  it("requires the admin email and a password of at least 12 characters", () => {
+    const { APP_USER_EMAIL: _email, ...noEmail } = base;
+    const { APP_USER_PASSWORD: _password, ...noPassword } = base;
+
+    expect(() => loadConfig(noEmail)).toThrow(/APP_USER_EMAIL/);
+    expect(() => loadConfig(noPassword)).toThrow(/APP_USER_PASSWORD/);
+    expect(() => loadConfig({ ...base, APP_USER_EMAIL: "not-an-email" })).toThrow(/APP_USER_EMAIL/);
+    expect(() => loadConfig({ ...base, APP_USER_PASSWORD: "elevenchars" })).toThrow(
+      /at least 12 characters/,
+    );
+  });
+
+  it("no longer accepts APP_PASSWORD in place of the admin credentials", () => {
+    const { APP_USER_EMAIL: _e, APP_USER_PASSWORD: _p, ...rest } = base;
+    expect(() => loadConfig({ ...rest, APP_PASSWORD: "a long enough passphrase" })).toThrow(
+      /APP_USER_EMAIL/,
+    );
   });
 });

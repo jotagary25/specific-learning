@@ -13,7 +13,7 @@ import {
 } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
-import { createAuth } from "../auth/auth.ts";
+import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { LlmError } from "../shared/llm/errors.ts";
@@ -30,7 +30,6 @@ import {
 } from "./reading.test-support.ts";
 
 const APP_SECRET = "cd".repeat(32);
-const PASSWORD = "pw";
 const TODAY = "2026-10-25";
 
 type Setup = { llm?: FakeLlm; today?: string; store?: MemoryReadingStore };
@@ -51,14 +50,9 @@ async function setup(options: Setup = {}) {
     ai: settings,
     today: () => options.today ?? TODAY,
   });
-  const auth = createAuth({ password: PASSWORD, appSecret: APP_SECRET });
+  const { auth } = await createTestAuth();
   const app = createApp({ pingDb: async () => true, auth, reading });
-  const login = await app.request("/api/auth/login", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ password: PASSWORD }),
-  });
-  const cookie = login.headers.get("set-cookie")?.split(";")[0] ?? "";
+  const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/reading${path}`, {
       method: init.method ?? "GET",

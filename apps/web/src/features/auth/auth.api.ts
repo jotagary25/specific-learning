@@ -3,8 +3,13 @@ import { type LoaderFunctionArgs, redirect } from "react-router";
 import { apiRequest } from "../../shared/api/http.ts";
 import { clearSessionData } from "../../shared/api/session-cache.ts";
 
-export const login = (password: string) =>
-  apiRequest("/api/auth/login", AuthStatus, { method: "POST", body: { password } });
+export const login = (credentials: { email: string; password: string }) =>
+  apiRequest("/api/auth/login", AuthStatus, { method: "POST", body: credentials });
+
+export const authKeys = { me: ["auth", "me"] as const };
+
+/** The signed-in account (email and role). */
+export const fetchMe = () => apiRequest("/api/auth/me", AuthStatus);
 
 /** Logs out and drops the session's cached data, even when the request itself fails. */
 export async function logout() {

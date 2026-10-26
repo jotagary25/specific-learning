@@ -19,7 +19,7 @@ export type TodaySourcesDeps = {
   readingStore: Pick<ReadingStore, "getArticleForDate" | "getSession">;
   vocabulary: Pick<Vocabulary, "stats" | "queue">;
   writing: Pick<Writing, "current">;
-  getSetting?: (key: string) => Promise<unknown>;
+  getSetting?: (userId: string, key: string) => Promise<unknown>;
 };
 
 /** Priority unit (raised by writing errors) first, else the lowest unit not completed. */
@@ -45,19 +45,22 @@ export function itemsLeft(detail: UnitDetail): number {
     .filter((i) => !i.isExample && !attempted.has(i.id)).length;
 }
 
-async function writingDay(getSetting: TodaySourcesDeps["getSetting"]): Promise<number> {
-  const value = await getSetting?.(WRITING_DAY_KEY);
+async function writingDay(
+  userId: string,
+  getSetting: TodaySourcesDeps["getSetting"],
+): Promise<number> {
+  const value = await getSetting?.(userId, WRITING_DAY_KEY);
   return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 6
     ? value
     : DEFAULT_WRITING_DAY;
 }
 
 export function createTodaySources(deps: TodaySourcesDeps): TodaySources {
-  async function unitState(): Promise<Pick<TodayState, "unit" | "teaser">> {
-    const list = await deps.units.list();
+  async function unitState(userId: string): Promise<Pick<TodayState, "unit" | "teaser">> {
+    const list = await deps.units.list(userId);
     const current = pickCurrentUnit(list.blocks.flatMap((b) => b.units));
     if (!current) return { unit: null, teaser: null };
-    const detail = await deps.units.detail(current.number);
+    const detail = await deps.units.detail(userId, current.number);
     const chapter = detail.story?.chapter;
     return {
       unit: {
@@ -74,9 +77,9 @@ export function createTodaySources(deps: TodaySourcesDeps): TodaySources {
     };
   }
 
-  async function recallPending(now: Date): Promise<boolean> {
-    const article = await deps.readingStore.getArticleForDate(addDays(localDate(now), -1));
-    const session = article ? await deps.readingStore.getSession(article.id) : undefined;
+  async function recallPending(userId: string, now: Date): Promise<boolean> {
+    const article = await deps.readingStore.getArticleForDate(userId, addDays(localDate(now), -1));
+    const session = article ? await deps.readingStore.getSession(userId, article.id) : undefined;
     if (!session?.completedAt) return false;
     const questions = session.entries.filter((e) => e.type === "recall-questions").at(-1);
     if (questions?.type !== "recall-questions") return true;
@@ -86,21 +89,24 @@ export function createTodaySources(deps: TodaySourcesDeps): TodaySources {
     return questions.questions.some((_, qid) => !answered.has(qid));
   }
 
-  async function srsState(): Promise<TodayState["srs"]> {
-    const [stats, queue] = await Promise.all([deps.vocabulary.stats(), deps.vocabulary.queue(1)]);
+  async function srsState(userId: string): Promise<TodayState["srs"]> {
+    const [stats, queue] = await Promise.all([
+      deps.vocabulary.stats(userId),
+      deps.vocabulary.queue(userId, 1),
+    ]);
     const allowed = Math.max(0, queue.newPerDay - queue.newToday);
     return { due: stats.dueToday, fresh: Math.min(stats.newAvailable, allowed) };
   }
 
   return {
-    async state(now) {
+    async state(userId, now) {
       const [units, srs, today, recall, writing, day] = await Promise.all([
-        unitState(),
-        srsState(),
-        deps.reading.today(),
-        recallPending(now),
-        deps.writing.current(),
-        writingDay(deps.getSetting),
+        unitState(userId),
+        srsState(userId),
+        deps.reading.today(userId),
+        recallPending(userId, now),
+        deps.writing.current(userId),
+        writingDay(userId, deps.getSetting),
       ]);
       const article = today.reading;
       return {
