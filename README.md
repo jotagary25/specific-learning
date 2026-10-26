@@ -29,42 +29,64 @@ refuses to start and names what is missing. A ready-to-copy development `.env` (
 
 ```env
 # ============================================================
-# PostgreSQL — local development database (compose service `db`).
-# Compose builds the api's DATABASE_URL from these three values.
+# English Course — environment variables
+# Values below are for LOCAL development (docker compose up).
+# Lines marked [PROD] are for production (Dokploy): uncomment
+# them and comment out the local line above them.
+# Every variable is required: the app refuses to start if one
+# is missing. AI API keys never go here: each user saves theirs
+# in Settings.
 # ============================================================
-POSTGRES_USER=english
-POSTGRES_PASSWORD=<a real password>
-POSTGRES_DB=english_course
 
-# ============================================================
-# API — port it listens on, the public address of the app (sent
-# to OpenRouter as HTTP-Referer) and whether a TLS proxy sits in
-# front (false in development).
-# ============================================================
+# ------------------------------------------------------------
+# Database
+# Local: the dev compose starts PostgreSQL with these 3 values
+#        and builds the connection URL for the api by itself.
+# Prod:  remove the 3 POSTGRES_* lines and use DATABASE_URL
+#        pointing to your own PostgreSQL 18.
+# ------------------------------------------------------------
+POSTGRES_USER=english
+POSTGRES_PASSWORD=change-me
+POSTGRES_DB=english_course
+# [PROD] DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DATABASE
+
+# ------------------------------------------------------------
+# Admin account (created/updated on every start)
+# APP_SECRET encrypts saved AI keys and signs sessions: generate
+# it with `openssl rand -hex 32` (a NEW one on the server) and
+# never change it afterwards.
+# ------------------------------------------------------------
+APP_USER_EMAIL=you@example.com
+APP_USER_PASSWORD=change-me
+APP_SECRET=generate-with-openssl-rand-hex-32
+
+# ------------------------------------------------------------
+# App and network
+# Local: api on port 3000, web on localhost:5173, no proxy.
+# Prod:  public HTTPS domain, Traefik in front (TRUST_PROXY=true),
+#        and where the container is published on the server
+#        (APP_BIND/APP_PORT, prod only). PORT is local only.
+# ------------------------------------------------------------
 PORT=3000
 APP_PUBLIC_URL=http://localhost:5173
 TRUST_PROXY=false
+# [PROD] APP_PUBLIC_URL=https://your-domain
+# [PROD] TRUST_PROXY=true
+# [PROD] APP_BIND=127.0.0.1
+# [PROD] APP_PORT=3000
 
-# ============================================================
-# Admin account — created or updated on every start. APP_SECRET
-# (openssl rand -hex 32) encrypts saved AI keys and signs
-# sessions: keep it stable.
-# ============================================================
-APP_USER_EMAIL=you@example.com
-APP_USER_PASSWORD=<8+ characters>
-APP_SECRET=<openssl rand -hex 32>
-
-# ============================================================
-# AI providers — API addresses only. The API keys are saved by
-# each user in Settings, never here.
-# ============================================================
+# ------------------------------------------------------------
+# AI providers (API addresses only, same in local and prod)
+# ------------------------------------------------------------
 OLLAMA_BASE_URL=https://ollama.com
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 
-# ============================================================
-# Daily reading editor — turn the automatic daily article on/off
-# and the hour (0-23) new users get until they pick their own.
-# ============================================================
+# ------------------------------------------------------------
+# Daily reading editor (same in local and prod)
+# EDITOR_ENABLED: automatic daily article on (true) or off.
+# EDITOR_HOUR: hour (0-23) new users get; each user changes it
+#              in Settings.
+# ------------------------------------------------------------
 EDITOR_ENABLED=true
 EDITOR_HOUR=5
 ```
@@ -233,44 +255,7 @@ Every line is required (no defaults); `PORT`, `CONTENT_DIR` and `WEB_DIST_DIR` a
 image, so leave them out. AI keys are not here: each user saves
 theirs in Settings.
 
-```env
-# ============================================================
-# Database — your own PostgreSQL 18 (the user must own the db).
-# ============================================================
-DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
-
-# ============================================================
-# Admin account — created or updated on every start. Generate
-# APP_SECRET on the server (openssl rand -hex 32), keep it stable.
-# ============================================================
-APP_USER_EMAIL=you@example.com
-APP_USER_PASSWORD=<8+ characters>
-APP_SECRET=<openssl rand -hex 32>
-
-# ============================================================
-# App and network — public HTTPS address, a TLS proxy in front
-# (Traefik on Dokploy: true), and where the container port is
-# published on the host.
-# ============================================================
-APP_PUBLIC_URL=https://english.example.com
-TRUST_PROXY=true
-APP_BIND=127.0.0.1
-APP_PORT=3000
-
-# ============================================================
-# AI providers — API addresses only; keys are saved per user in
-# Settings.
-# ============================================================
-OLLAMA_BASE_URL=https://ollama.com
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-
-# ============================================================
-# Daily reading editor — automatic daily article on/off and the
-# hour (0-23) new users get until they pick their own.
-# ============================================================
-EDITOR_ENABLED=true
-EDITOR_HOUR=5
-```
+Use the same `.env.example` (above): remove the `POSTGRES_*` and `PORT` lines and enable the lines marked `[PROD]`.
 
 ```sh
 docker compose -f docker-compose.prod.yml up -d --build
