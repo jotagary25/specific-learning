@@ -2,7 +2,7 @@ import type { EvalAggregate, EvalRun, EvalRunSummary } from "@english-course/sha
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockApi, renderAt } from "../../test/render.tsx";
-import { estimateCalls, sortRuns } from "./estimate.ts";
+import { estimateCalls, formatUsd, sortRuns } from "./estimate.ts";
 
 const aggregate = (overall: number, recall: number): EvalAggregate => ({
   metrics: { recall, hintLeakFree: 1, jsonValidity: 1 },
@@ -97,15 +97,17 @@ function evalApi() {
   const posts: Array<{ path: string; body: unknown }> = [];
   mockApi({
     "GET /api/auth/me": () => Response.json({ authenticated: true }),
-    "GET /api/settings/models": () =>
+    "GET /api/settings/ai-provider": () =>
+      Response.json({ provider: "ollama", available: ["ollama", "openrouter"] }),
+    "GET /api/settings/models?provider=ollama": () =>
       Response.json({ models: [{ name: "gemma4:31b" }, { name: "kimi-k3" }] }),
-    "GET /api/settings/models/gemma4%3A31b/capabilities": () =>
+    "GET /api/settings/models/gemma4%3A31b/capabilities?provider=ollama": () =>
       Response.json({
         model: "gemma4:31b",
         capabilities: ["completion", "thinking"],
         thinking: { values: ["low", "medium", "high"], default: "medium" },
       }),
-    "GET /api/settings/models/kimi-k3/capabilities": () =>
+    "GET /api/settings/models/kimi-k3/capabilities?provider=ollama": () =>
       Response.json({ model: "kimi-k3", capabilities: ["completion"], thinking: null }),
     "GET /api/eval/fixtures": () =>
       Response.json({ counts: { review_writing: 5, rewrite_natural: 5, hint_exercise: 5 } }),
@@ -233,11 +235,32 @@ function mockApiExtend() {
     "fetch",
     vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const path = String(input);
-      if (path === "/api/settings/ai-key") {
+      if (path === "/api/settings/ai-key?provider=ollama") {
         return Response.json({ configured: true, source: "db", last4: "WXYZ" });
       }
-      if (path === "/api/settings/ai-functions") return Response.json({ functions: [] });
+      if (path === "/api/settings/ai-functions?provider=ollama") {
+        return Response.json({ functions: [] });
+      }
+      if (path === "/api/settings/ai-key?provider=openrouter") {
+        return Response.json({ configured: false, source: null, last4: null });
+      }
       return original(input, init);
     }),
   );
 }
+
+describe("eval cost", () => {
+  it("formats the reported cost and sorts by it, cheapest first", () => {
+    const priced = run("p", "openai/gpt-oss-120b", { ...aggregate(50, 0.5), totalCostUsd: 0.0123 });
+    const cheap = run("c", "google/gemma-4-31b-it", { ...aggregate(50, 0.5), totalCostUsd: 0.002 });
+    const unpriced = run("u", "gemma4:31b", aggregate(50, 0.5));
+    expect(sortRuns([priced, unpriced, cheap], "totalCostUsd", "asc").map((r) => r.id)).toEqual([
+      "c",
+      "p",
+      "u",
+    ]);
+    expect(formatUsd(0.0123)).toBe("$0.0123");
+    expect(formatUsd(1.5)).toBe("$1.50");
+    expect(formatUsd(undefined)).toBe("–");
+  });
+});

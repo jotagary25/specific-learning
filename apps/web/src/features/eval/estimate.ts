@@ -10,7 +10,7 @@ export function estimateCalls(
   return functions.reduce((sum, fn) => sum + (counts[fn] ?? 0), 0) * modelCount;
 }
 
-export type SortKey = "overall" | EvalMetricId | "latencyMeanMs" | "totalTokens";
+export type SortKey = "overall" | EvalMetricId | "latencyMeanMs" | "totalTokens" | "totalCostUsd";
 
 /** Value used to sort a run by `key`; runs without a value sort last. */
 export function sortValue(run: EvalRunSummary, key: SortKey): number | null {
@@ -19,12 +19,17 @@ export function sortValue(run: EvalRunSummary, key: SortKey): number | null {
   if (key === "overall") return agg.overall;
   if (key === "latencyMeanMs") return agg.latencyMeanMs;
   if (key === "totalTokens") return agg.totalTokens;
+  if (key === "totalCostUsd") return agg.totalCostUsd ?? null;
   return agg.metrics[key] ?? null;
 }
 
-/** Lower is better for latency and tokens; higher for every score. */
+/** Lower is better for latency, tokens and cost; higher for every score. */
 export const ascendingByDefault = (key: SortKey) =>
-  key === "latencyMeanMs" || key === "totalTokens";
+  key === "latencyMeanMs" || key === "totalTokens" || key === "totalCostUsd";
+
+/** Real provider cost (OpenRouter); "–" when the provider reports none (Ollama). */
+export const formatUsd = (usd: number | null | undefined) =>
+  usd === null || usd === undefined ? "–" : `$${usd.toFixed(usd < 1 ? 4 : 2)}`;
 
 export function sortRuns(
   runs: readonly EvalRunSummary[],

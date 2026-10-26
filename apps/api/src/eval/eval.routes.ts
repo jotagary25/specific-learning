@@ -20,6 +20,7 @@ const SETTINGS_ERROR_STATUS: Record<SettingsError["code"], ContentfulStatusCode>
   unknown_function: 404,
   unknown_model: 400,
   unsupported_think: 400,
+  unknown_provider: 400,
 };
 
 function handleError(error: Error, c: Context) {

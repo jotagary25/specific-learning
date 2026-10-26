@@ -19,6 +19,7 @@ import { createDb } from "./shared/db/client.ts";
 import { runMigrations } from "./shared/db/migrate.ts";
 import { formatSeedResult, seed } from "./shared/db/seed/index.ts";
 import { createOllamaClient } from "./shared/llm/ollama.ts";
+import { createOpenRouterClient } from "./shared/llm/openrouter.ts";
 import { createTheConversationSource } from "./shared/news/theconversation.ts";
 import { createToday } from "./today/today.service.ts";
 import { createTodaySources } from "./today/today.sources.ts";
@@ -68,6 +69,15 @@ const settings = createSettings({
   appSecret: config.APP_SECRET,
   envApiKey: config.OLLAMA_API_KEY,
   createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
+  openrouter: {
+    envApiKey: config.OPENROUTER_API_KEY,
+    createClient: (getApiKey) =>
+      createOpenRouterClient({
+        baseUrl: config.OPENROUTER_BASE_URL,
+        appUrl: config.APP_PUBLIC_URL,
+        getApiKey,
+      }),
+  },
 });
 
 const preferences = createPreferences(settingsStore, {

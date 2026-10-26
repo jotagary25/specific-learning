@@ -873,6 +873,28 @@ describe.skipIf(!url)("data isolation between users (real Postgres)", () => {
     expect((await preferences.get(a))["srs.newPerDay" as never]).toBe(12);
   });
 
+  it("settings: provider choice and per-provider keys are per user", async () => {
+    const settings = createSettings({
+      store: settingsStore,
+      appSecret: APP_SECRET,
+      createClient: () => createFakeLlm({}),
+      openrouter: { createClient: () => createFakeLlm({}) },
+    });
+    await settings.setProvider(a, "openrouter");
+    await settings.setKey(a, "sk-or-key-of-a-5678");
+    await settings.setKey(b, "ollama-key-of-b-4321", "ollama");
+
+    expect(await settings.activeProvider(a)).toBe("openrouter");
+    expect(await settings.activeProvider(b)).toBe("ollama");
+    expect(await settings.getApiKey(a)).toBe("sk-or-key-of-a-5678");
+    expect(await settings.keyStatus(a, "openrouter")).toMatchObject({ last4: "5678" });
+    expect(await settings.getApiKey(b, "openrouter")).toBeUndefined();
+    expect(await settings.keyStatus(b, "openrouter")).toMatchObject({ configured: false });
+    expect(await settings.getApiKey(b)).toBe("ollama-key-of-b-4321");
+    const sealed = await settingsStore.getSecret(a, "openrouter_api_key");
+    expect(JSON.stringify(sealed)).not.toContain("sk-or-key-of-a-5678");
+  });
+
   it("eval: runs are listed and read only by their user", async () => {
     const run = await evalStore.create(a, "m", {
       version: 1,

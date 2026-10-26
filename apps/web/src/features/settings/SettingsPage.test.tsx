@@ -41,27 +41,32 @@ function settingsApi(
   const fetchMock = mockApi({
     "GET /api/auth/me": () =>
       Response.json({ authenticated: true, user: { email: "ana@example.com", role: "admin" } }),
-    "GET /api/settings/ai-key": () => Response.json(aiKey),
-    "POST /api/settings/ai-key/test": () => Response.json({ ok: true, modelCount: 3 }),
-    "GET /api/settings/models": () =>
+    "GET /api/settings/ai-provider": () =>
+      Response.json({ provider: "ollama", available: ["ollama", "openrouter"] }),
+    "GET /api/settings/ai-key?provider=ollama": () => Response.json(aiKey),
+    "GET /api/settings/ai-key?provider=openrouter": () =>
+      Response.json({ configured: false, source: null, last4: null }),
+    "POST /api/settings/ai-key/test?provider=ollama": () =>
+      Response.json({ ok: true, modelCount: 3 }),
+    "GET /api/settings/models?provider=ollama": () =>
       Response.json({
         models: [{ name: "gemma4:31b" }, { name: "gpt-oss:120b" }, { name: "deepseek-v4-pro" }],
       }),
-    "GET /api/settings/ai-functions": () =>
+    "GET /api/settings/ai-functions?provider=ollama": () =>
       Response.json({ functions: [checkAnswer, reviewWriting] }),
-    "GET /api/settings/models/gemma4%3A31b/capabilities": () =>
+    "GET /api/settings/models/gemma4%3A31b/capabilities?provider=ollama": () =>
       Response.json({
         model: "gemma4:31b",
         capabilities: ["completion", "thinking"],
         thinking: { values: [true, false], default: true },
       }),
-    "GET /api/settings/models/gpt-oss%3A120b/capabilities": () =>
+    "GET /api/settings/models/gpt-oss%3A120b/capabilities?provider=ollama": () =>
       Response.json({
         model: "gpt-oss:120b",
         capabilities: ["completion", "thinking"],
         thinking: { values: ["low", "medium", "high"], default: "medium" },
       }),
-    "GET /api/settings/models/deepseek-v4-pro/capabilities": () =>
+    "GET /api/settings/models/deepseek-v4-pro/capabilities?provider=ollama": () =>
       Response.json({ model: "deepseek-v4-pro", capabilities: ["completion"], thinking: null }),
     "GET /api/settings/preferences": () => Response.json(preferences),
     "PUT /api/settings/preferences": ({ body }) => {
@@ -74,7 +79,7 @@ function settingsApi(
       };
       return Response.json(preferences);
     },
-    "PUT /api/settings/ai-functions/check_answer": ({ body }) => {
+    "PUT /api/settings/ai-functions/check_answer?provider=ollama": ({ body }) => {
       puts.push(body);
       return Response.json({ ...checkAnswer, ...(body as object), isDefault: false });
     },
@@ -113,9 +118,12 @@ describe("SettingsPage", () => {
     renderAt("/settings");
 
     expect(await screen.findByText("Saved (encrypted) · ends in WXYZ")).toBeTruthy();
-    expect((screen.getByLabelText("New API key") as HTMLInputElement).type).toBe("password");
+    const ollama = screen.getByRole("region", { name: "Ollama Cloud API key" });
+    expect(
+      (within(ollama).getByLabelText("New Ollama Cloud API key") as HTMLInputElement).type,
+    ).toBe("password");
 
-    fireEvent.click(screen.getByRole("button", { name: "Test connection" }));
+    fireEvent.click(within(ollama).getByRole("button", { name: "Test connection" }));
     expect(await screen.findByText("Connection works: 3 models available.")).toBeTruthy();
   });
 
@@ -128,9 +136,11 @@ describe("SettingsPage", () => {
         "Saved key can't be decrypted (APP_SECRET changed?) — enter it again",
       ),
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Remove stored key" })).toBeTruthy();
+    const ollama = screen.getByRole("region", { name: "Ollama Cloud API key" });
+    expect(within(ollama).getByRole("button", { name: "Remove stored key" })).toBeTruthy();
     expect(
-      (screen.getByRole("button", { name: "Test connection" }) as HTMLButtonElement).disabled,
+      (within(ollama).getByRole("button", { name: "Test connection" }) as HTMLButtonElement)
+        .disabled,
     ).toBe(true);
   });
 
@@ -309,5 +319,84 @@ describe("SettingsPage", () => {
     fireEvent.change(perDay, { target: { value: "2.5" } });
     expect((saveButton as HTMLButtonElement).disabled).toBe(true);
     expect(preferencePuts).toEqual([]);
+  });
+});
+
+describe("SettingsPage: AI providers", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("switches to OpenRouter and shows its models with price, context and efforts", async () => {
+    const providerPuts: unknown[] = [];
+    let provider = "ollama";
+    mockApi({
+      "GET /api/auth/me": () =>
+        Response.json({ authenticated: true, user: { email: "ana@example.com", role: "admin" } }),
+      "GET /api/settings/ai-provider": () =>
+        Response.json({ provider, available: ["ollama", "openrouter"] }),
+      "PUT /api/settings/ai-provider": ({ body }) => {
+        providerPuts.push(body);
+        provider = (body as { provider: string }).provider;
+        return Response.json({ provider, available: ["ollama", "openrouter"] });
+      },
+      "GET /api/settings/ai-key?provider=ollama": () =>
+        Response.json({ configured: false, source: null, last4: null }),
+      "GET /api/settings/ai-key?provider=openrouter": () =>
+        Response.json({ configured: true, source: "env", last4: "9999" }),
+      "GET /api/settings/models?provider=ollama": () => Response.json({ models: [] }),
+      "GET /api/settings/ai-functions?provider=ollama": () =>
+        Response.json({ functions: [checkAnswer] }),
+      "GET /api/settings/models?provider=openrouter": () =>
+        Response.json({
+          models: [
+            {
+              name: "openai/gpt-oss-120b",
+              contextLength: 131072,
+              pricing: { inputPerMTok: 0.15, outputPerMTok: 0.6 },
+            },
+          ],
+        }),
+      "GET /api/settings/ai-functions?provider=openrouter": () =>
+        Response.json({
+          functions: [{ ...checkAnswer, model: "openai/gpt-oss-120b", defaultModel: "x" }],
+        }),
+      "GET /api/settings/models/openai%2Fgpt-oss-120b/capabilities?provider=openrouter": () =>
+        Response.json({
+          model: "openai/gpt-oss-120b",
+          capabilities: ["completion", "tools", "thinking"],
+          thinking: { values: ["none", "low", "high"], default: "none" },
+        }),
+      "GET /api/settings/preferences": () => Response.json(DEFAULT_PREFERENCES),
+    });
+    renderAt("/settings");
+
+    expect(
+      await screen.findByText(
+        "Using OPENROUTER_API_KEY from the server environment · ends in 9999",
+      ),
+    ).toBeTruthy();
+    fireEvent.click(await screen.findByLabelText("OpenRouter"));
+    expect(await screen.findByText("Now using OpenRouter.")).toBeTruthy();
+    expect(providerPuts).toEqual([{ provider: "openrouter" }]);
+
+    const modelSelect = (await screen.findByLabelText(
+      "Model for Check answer",
+    )) as HTMLSelectElement;
+    await waitFor(() =>
+      expect([...modelSelect.options].map((o) => o.textContent)).toEqual([
+        "openai/gpt-oss-120b · $0.15 / $0.60 per 1M · 131k ctx",
+      ]),
+    );
+    const effort = screen.getByLabelText("Effort for Check answer") as HTMLSelectElement;
+    await waitFor(() =>
+      expect([...effort.options].map((o) => o.textContent)).toEqual([
+        "Model default (none)",
+        "none",
+        "low",
+        "high",
+      ]),
+    );
   });
 });

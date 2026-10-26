@@ -16,7 +16,10 @@ import type { EvalRunRecord, EvalStore } from "./eval.store.ts";
 import { type EvalCase, type EvalFixtures, fixtureCounts } from "./fixtures.ts";
 import { aggregate, failedMetrics } from "./scoring.ts";
 
-export type EvalAi = Pick<Settings, "clientFor" | "keyStatus" | "updateAiFunction">;
+export type EvalAi = Pick<
+  Settings,
+  "activeProvider" | "clientFor" | "keyStatus" | "updateAiFunction"
+>;
 
 export type EvalOptions = {
   store: EvalStore;
@@ -44,7 +47,12 @@ export class EvalRunError extends Error {
 }
 
 /** Errors that make every later call fail too: the run stops and is marked failed. */
-const FATAL_CODES = new Set<LlmErrorCode>(["not_configured", "invalid_key", "not_found"]);
+const FATAL_CODES = new Set<LlmErrorCode>([
+  "not_configured",
+  "invalid_key",
+  "payment_required",
+  "not_found",
+]);
 const LIST_LIMIT = 50;
 /** Runs checked at start-up for interruption, across all users. */
 const RECOVER_LIMIT = 200;
@@ -98,14 +106,15 @@ export function createEval(options: EvalOptions) {
     userId: string,
     c: EvalCase,
     model: string,
-    think: EvalRunState["think"],
+    state: EvalRunState,
     signal: AbortSignal,
   ): Promise<CaseOutcome> {
+    const { think } = state;
     const base = { functionId: c.functionId, sampleId: c.sampleId, label: c.label };
     const started = now();
     try {
       const { data, attempts, usage } = await ai
-        .clientFor(userId)
+        .clientFor(userId, state.provider ?? "ollama")
         .chatJson({ model, think, messages: c.messages, signal }, c.schema as z.ZodType);
       return {
         sample: {
@@ -114,6 +123,7 @@ export function createEval(options: EvalOptions) {
           latencyMs: now() - started,
           attempts,
           tokens: tokensOf(usage),
+          ...(usage?.costUsd === undefined ? {} : { costUsd: usage.costUsd }),
           output: data,
           ...c.score(data),
         },
@@ -151,7 +161,7 @@ export function createEval(options: EvalOptions) {
       const cases = state.functions.flatMap((fn) => all[fn]);
       for (const c of cases) {
         if (controller.signal.aborted) break;
-        const outcome = await runCase(userId, c, record.model, state.think, controller.signal);
+        const outcome = await runCase(userId, c, record.model, state, controller.signal);
         // A result that arrives after cancel is discarded.
         if (controller.signal.aborted) break;
         if ("fatal" in outcome) {
@@ -212,10 +222,11 @@ export function createEval(options: EvalOptions) {
     /** Creates one queued run per model config and starts them in the background. */
     async start(userId: string, input: StartEvalRequest): Promise<string[]> {
       const request = StartEvalRequest.parse(input);
-      if (!(await ai.keyStatus(userId)).configured) {
+      const provider = await ai.activeProvider(userId);
+      if (!(await ai.keyStatus(userId, provider)).configured) {
         throw new EvalRunError(
           "not_configured",
-          "No Ollama API key is configured. Add it in Settings before running an evaluation.",
+          "No API key is configured for the active AI provider. Add it in Settings before running an evaluation.",
         );
       }
       const counts = fixtureCounts(await fixtures());
@@ -224,6 +235,7 @@ export function createEval(options: EvalOptions) {
       for (const config of request.models) {
         const record = await store.create(userId, config.model, {
           version: 1,
+          provider,
           think: config.think,
           functions: request.functions,
           status: "queued",
@@ -282,10 +294,12 @@ export function createEval(options: EvalOptions) {
           `This run did not evaluate ${functionId}; run it for that function first`,
         );
       }
-      return ai.updateAiFunction(userId, functionId, {
-        model: record.model,
-        think: record.state.think,
-      });
+      return ai.updateAiFunction(
+        userId,
+        functionId,
+        { model: record.model, think: record.state.think },
+        record.state.provider ?? "ollama",
+      );
     },
 
     /**

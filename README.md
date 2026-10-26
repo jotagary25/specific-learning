@@ -6,7 +6,8 @@ units from an intermediate grammar book (puzzle → theory → timeline → exer
 checking), a daily real-world article read through a 6-step active-reading flow, spaced-repetition
 vocabulary that includes your own mistakes, writing missions reviewed with hints instead of
 corrections, a tutor you can ask "I don't get it", and a progress timeline with a monthly
-"mirror". AI features use Ollama Cloud through the backend only.
+"mirror". AI features run through the backend only, on Ollama Cloud or OpenRouter (each user
+picks one; see [AI providers](#ai-providers)).
 
 - Why it works this way: [docs/learning-methodology.md](docs/learning-methodology.md)
 - What it does and how: [docs/spec.md](docs/spec.md)
@@ -38,9 +39,10 @@ First run:
 
 1. **Log in** with `APP_USER_EMAIL` and `APP_USER_PASSWORD`. Migrations, the content seed
    (units 1–6) and the admin account run when the api starts.
-2. **Settings → Ollama API key**: paste a key from https://ollama.com/settings/keys. It is
-   encrypted at rest with `APP_SECRET` and never reaches the browser. (`OLLAMA_API_KEY` in `.env`
-   works as a bootstrap; a key saved in Settings wins.)
+2. **Settings → AI provider**: pick Ollama Cloud or OpenRouter and paste that provider's key
+   (https://ollama.com/settings/keys or https://openrouter.ai/settings/keys). Keys are encrypted
+   at rest with `APP_SECRET` and never reach the browser. (`OLLAMA_API_KEY` / `OPENROUTER_API_KEY`
+   in `.env` work as a bootstrap; a key saved in Settings wins.)
 3. **Settings → Open model evaluation** (`/settings/eval`): run the evaluation, compare models on
    quality, latency and cost, and apply the winner to each AI function.
 4. **Time zone**: after the first login the app offers your browser's time zone; accept it or
@@ -64,10 +66,13 @@ invalid. Empty values count as unset.
 | `DATABASE_URL` | yes | — | PostgreSQL 18 URL, `postgres://user:pass@host:5432/db`. |
 | `APP_USER_EMAIL` | yes | — | Email of the admin account, used to log in (case-insensitive). See [Users](#users). |
 | `APP_USER_PASSWORD` | yes | — | Admin password, at least 8 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
-| `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored Ollama keys unreadable (save them again). |
+| `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored provider keys unreadable (save them again). |
 | `PORT` | no | `3000` | API listen port. `docker-compose.prod.yml` pins it to 3000 inside the container. |
 | `OLLAMA_API_KEY` | no | — | Instance Ollama Cloud key, the fallback for every user; a key a user saves in Settings overrides it for that user. |
 | `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show). |
+| `OPENROUTER_API_KEY` | no | — | Instance OpenRouter key, the fallback for every user; a key a user saves in Settings overrides it for that user. Users who never chose a provider start on OpenRouter when this is the only env key. |
+| `OPENROUTER_BASE_URL` | no | `https://openrouter.ai/api/v1` | OpenRouter API base URL (chat/completions, models, key). |
+| `APP_PUBLIC_URL` | no | — | Public URL of this app, sent to OpenRouter as `HTTP-Referer` (with the title `English Course`) for app attribution. Omitted when unset. |
 | `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
 | `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting (per account and client) uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
 | `EDITOR_ENABLED` | no | `true` | `false` disables the in-process daily editor (manual runs still work). It checks every 5 minutes which users are due. |
@@ -81,6 +86,31 @@ invalid. Empty values count as unset.
 | `APP_BIND` | no | `127.0.0.1` | Prod compose: host address to publish on. The default only accepts a reverse proxy on the same host; set `0.0.0.0` to expose the app directly (then leave `TRUST_PROXY` off). |
 | `APP_IMAGE` | no | `english-course:latest` | Prod compose: image tag to build/run. |
 | `ENV_FILE` | no | `.env` | Prod compose: env file passed to the app container. |
+
+## AI providers
+
+Both providers are optional: without a key, AI features answer "AI unavailable" and everything
+else keeps working. Each user picks the active provider in **Settings → AI provider**; keys and
+the model/effort chosen for every AI function are kept per provider, so switching back and forth
+loses nothing. Evaluation runs use the active provider.
+
+- **Ollama Cloud** (default): key from https://ollama.com/settings/keys. Default models
+  `gemma4:31b` (fast functions) and `deepseek-v4-pro` (quality functions).
+- **OpenRouter**: create a key at https://openrouter.ai/settings/keys and add credits. OpenRouter
+  passes model prices through; every reply reports its real cost (`usage.cost`), which the model
+  evaluation shows per run and per sample. A 402 (no credits) shows as AI unavailable.
+  - **Choosing models**: Settings lists every OpenRouter model with its price per 1M input / output
+    tokens and its context length; the effort menu shows the model's `supported_efforts` (plus
+    `none` when reasoning is optional) or on/off. Effort maps to `reasoning.effort`.
+  - **Structured output**: AI functions that return JSON use `response_format: json_schema`
+    (strict) with `provider.require_parameters`, so only endpoints that honor it are used. Models
+    without `structured_outputs` fall back to `json_object` or a plain prompt; replies are always
+    validated and retried once. Prefer models that list `tools` and `structured_outputs` (the
+    tutor needs `tools`).
+  - **Defaults**: `google/gemma-4-31b-it` (fast, $0.20 / $0.40 per 1M) and
+    `deepseek/deepseek-v4-pro` (quality, $0.78 / $1.55 per 1M) — the same model families as the
+    Ollama defaults, both with `tools` and `structured_outputs` (prices from the models API,
+    Oct 2026).
 
 ## Users
 
@@ -168,7 +198,7 @@ docker compose -f docker-compose.prod.yml exec -T db \
 pg_restore --no-owner -d "$DATABASE_URL" english-course-YYYY-MM-DD.dump
 ```
 
-Keep `APP_SECRET` with your backups: without it the stored Ollama key cannot be decrypted.
+Keep `APP_SECRET` with your backups: without it the stored provider keys cannot be decrypted.
 
 ### Updating
 
@@ -236,7 +266,7 @@ english-course/
 ```
 
 **Architecture.** Light hexagonal, organized by feature ("screaming" folders). Ports exist only
-for external things — the LLM (Ollama native API), news sources (The Conversation feeds; the port
+for external things — the LLM (Ollama native API or OpenRouter), news sources (The Conversation feeds; the port
 stays open for more) and persistence (Drizzle stores with in-memory test doubles). Domain rules (answer
 normalization, session planning, completion, SRS, scoring) are pure functions with unit tests.
 The web app uses TanStack Query for server state; the service worker precaches the app shell,

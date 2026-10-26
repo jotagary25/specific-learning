@@ -262,6 +262,7 @@ export function aggregate(samples: readonly EvalSampleResult[]): EvalAggregate {
   const jsonFailureRate = calls === 0 ? null : jsonFailures / calls;
   if (jsonFailureRate !== null) metrics.jsonValidity = 1 - jsonFailureRate;
   const latencies = samples.map((s) => s.latencyMs);
+  const costs = samples.flatMap((s) => (s.costUsd === undefined ? [] : [s.costUsd]));
 
   return {
     metrics,
@@ -273,5 +274,6 @@ export function aggregate(samples: readonly EvalSampleResult[]): EvalAggregate {
     latencyMeanMs: mean(latencies),
     latencyP95Ms: percentile(latencies, 0.95),
     totalTokens: samples.reduce((sum, s) => sum + (s.tokens ?? 0), 0),
+    ...(costs.length > 0 ? { totalCostUsd: costs.reduce((sum, c) => sum + c, 0) } : {}),
   };
 }

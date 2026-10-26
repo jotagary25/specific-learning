@@ -1,38 +1,48 @@
-import type { AiKeyStatus } from "@english-course/shared";
+import type { AiKeyStatus, AiProviderId } from "@english-course/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useId, useState } from "react";
 import styles from "./SettingsPage.module.css";
-import { deleteAiKey, fetchAiKey, saveAiKey, settingsKeys, testAiKey } from "./settings.api.ts";
+import {
+  deleteAiKey,
+  fetchAiKey,
+  PROVIDER_LABEL,
+  saveAiKey,
+  settingsKeys,
+  testAiKey,
+} from "./settings.api.ts";
 
-function describeStatus(status: AiKeyStatus): string {
+function describeStatus(status: AiKeyStatus, provider: AiProviderId): string {
   if (status.error === "undecryptable") {
     return "Saved key can't be decrypted (APP_SECRET changed?) — enter it again";
   }
   if (!status.configured) return "Not configured";
   const ending = status.last4 ? ` · ends in ${status.last4}` : "";
   return status.source === "env"
-    ? `Using OLLAMA_API_KEY from the server environment${ending}`
+    ? `Using ${provider.toUpperCase()}_API_KEY from the server environment${ending}`
     : `Saved (encrypted)${ending}`;
 }
 
-export function ApiKeySection() {
+export function ApiKeySection({ provider }: { provider: AiProviderId }) {
   const queryClient = useQueryClient();
   const [apiKey, setApiKey] = useState("");
   const [message, setMessage] = useState("");
   const inputId = useId();
   const statusId = useId();
 
-  const status = useQuery({ queryKey: settingsKeys.aiKey, queryFn: fetchAiKey });
+  const status = useQuery({
+    queryKey: settingsKeys.aiKey(provider),
+    queryFn: () => fetchAiKey(provider),
+  });
 
   const onKeyChanged = async (next: AiKeyStatus) => {
     // The mutation answer is authoritative: show it now instead of waiting for the refetch,
     // which is still needed for the key-dependent model list and capabilities.
-    queryClient.setQueryData(settingsKeys.aiKey, next);
+    queryClient.setQueryData(settingsKeys.aiKey(provider), next);
     await queryClient.invalidateQueries({ queryKey: ["settings"] });
   };
 
   const save = useMutation({
-    mutationFn: saveAiKey,
+    mutationFn: (key: string) => saveAiKey(provider, key),
     onSuccess: async (next) => {
       setApiKey("");
       setMessage("Key saved.");
@@ -42,7 +52,7 @@ export function ApiKeySection() {
   });
 
   const remove = useMutation({
-    mutationFn: deleteAiKey,
+    mutationFn: () => deleteAiKey(provider),
     onSuccess: async (next) => {
       setMessage("Stored key removed.");
       await onKeyChanged(next);
@@ -51,7 +61,7 @@ export function ApiKeySection() {
   });
 
   const test = useMutation({
-    mutationFn: testAiKey,
+    mutationFn: () => testAiKey(provider),
     onSuccess: (result) =>
       setMessage(
         result.ok
@@ -69,18 +79,18 @@ export function ApiKeySection() {
   return (
     <section className={styles.section} aria-labelledby={`${inputId}-title`}>
       <h2 id={`${inputId}-title`} className={styles.heading}>
-        Ollama API key
+        {PROVIDER_LABEL[provider]} API key
       </h2>
       <p id={statusId} className={styles.muted}>
         {status.isPending
           ? "Loading…"
           : status.isError
             ? "Could not load the key status."
-            : describeStatus(status.data)}
+            : describeStatus(status.data, provider)}
       </p>
       <form className={styles.keyForm} onSubmit={onSubmit}>
         <label htmlFor={inputId} className={styles.label}>
-          New API key
+          New {PROVIDER_LABEL[provider]} API key
         </label>
         <input
           id={inputId}

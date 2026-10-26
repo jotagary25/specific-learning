@@ -23,11 +23,14 @@ export type AgentOptions = {
 
 function describeError(error: unknown): { error: string; message: string } {
   if (isLlmError(error)) {
-    const unavailable = error.code === "not_configured" || error.code === "invalid_key";
+    const unavailable =
+      error.code === "not_configured" ||
+      error.code === "invalid_key" ||
+      error.code === "payment_required";
     return {
       error: unavailable ? "ai-unavailable" : error.code,
       message: unavailable
-        ? "The AI tutor is unavailable (check the Ollama API key in Settings)."
+        ? "The AI tutor is unavailable (check the AI provider key and credits in Settings)."
         : `The tutor stopped: ${error.message}`,
     };
   }
@@ -110,7 +113,12 @@ export async function* runTutorTurn(options: AgentOptions): AsyncGenerator<Tutor
           },
         ],
       });
-      messages.push({ role: "tool", content: outcome.content, toolName: call.name });
+      messages.push({
+        role: "tool",
+        content: outcome.content,
+        toolName: call.name,
+        ...(call.id ? { toolCallId: call.id } : {}),
+      });
       yield { type: "tool", tool: outcome.tool };
     }
   }

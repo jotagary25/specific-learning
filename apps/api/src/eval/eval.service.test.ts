@@ -27,6 +27,7 @@ function setup(reply: Reply, opts: { configured?: boolean; concurrency?: number 
     concurrency: opts.concurrency,
     now: () => (clock += 50),
     ai: {
+      activeProvider: async () => "ollama",
       clientFor: () => client,
       keyStatus,
       updateAiFunction: async (_userId, id, input): Promise<AiFunctionConfig> => {
@@ -312,5 +313,65 @@ describe("eval runner", () => {
     expect(await evals.recover()).toBe(2);
     expect((await evals.get(USER, mine.id)).status).toBe("failed");
     expect((await evals.get("other-user", theirs.id)).status).toBe("failed");
+  });
+});
+
+describe("eval runner: providers and cost", () => {
+  it("runs on the active provider, records it and sums the reported cost", async () => {
+    const { client } = scriptedLlm(() => valid(1));
+    const priced = {
+      ...client,
+      chatJson: (async (req, schema) => {
+        const result = await client.chatJson(req, schema);
+        return { ...result, usage: { ...result.usage, costUsd: 0.0025 } };
+      }) as typeof client.chatJson,
+    };
+    const providers: string[] = [];
+    const applied: string[] = [];
+    const evals = createEval({
+      store: createMemoryEvalStore(),
+      fixtures: simpleFixtures(),
+      ai: {
+        activeProvider: async () => "openrouter",
+        clientFor: (_userId, provider) => {
+          providers.push(provider);
+          return priced;
+        },
+        keyStatus: async () => ({ configured: true, source: "env", last4: "1234" }),
+        updateAiFunction: async (_userId, id, input, provider) => {
+          applied.push(String(provider));
+          return {
+            id: id as "review_writing",
+            tier: "quality",
+            model: input.model,
+            think: input.think,
+            defaultModel: "x",
+            defaultThink: null,
+            isDefault: false,
+          };
+        },
+      },
+    });
+    const [id] = await evals.start(USER, {
+      models: [{ model: "openai/gpt-oss-120b", think: "low" }],
+    });
+    await evals.whenIdle();
+    const run = await evals.get(USER, id as string);
+
+    expect(run.provider).toBe("openrouter");
+    expect(new Set(providers)).toEqual(new Set(["openrouter"]));
+    expect(run.samples.every((s) => s.costUsd === 0.0025)).toBe(true);
+    expect(run.aggregate?.totalCostUsd).toBeCloseTo(0.0025 * run.samples.length, 10);
+    await evals.apply(USER, id as string, "review_writing");
+    expect(applied).toEqual(["openrouter"]);
+  });
+
+  it("omits cost when the provider reports none (Ollama)", async () => {
+    const { evals } = setup(() => valid(1));
+    const [id] = await evals.start(USER, { models: [{ model: "gemma4:31b", think: null }] });
+    await evals.whenIdle();
+    const run = await evals.get(USER, id as string);
+    expect(run.aggregate).not.toHaveProperty("totalCostUsd");
+    expect(run.samples[0]).not.toHaveProperty("costUsd");
   });
 });

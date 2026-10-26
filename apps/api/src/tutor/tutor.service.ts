@@ -140,7 +140,7 @@ export function createTutor(deps: TutorDeps) {
       if (!deps.ai || !(await deps.ai.keyStatus(userId)).configured) {
         throw new TutorError(
           "ai-unavailable",
-          "The AI tutor is unavailable right now (add an Ollama API key in Settings)",
+          "The AI tutor is unavailable right now (add an AI provider key in Settings)",
         );
       }
       const { client, model, think } = await deps.ai.getLlmForFunction(userId, "explain_tutor");

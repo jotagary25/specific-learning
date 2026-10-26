@@ -2,9 +2,15 @@ import type { EvalRunSummary } from "@english-course/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 import { encodeThink } from "../settings/effort.ts";
-import { settingsKeys } from "../settings/settings.api.ts";
 import styles from "./EvalPage.module.css";
-import { ascendingByDefault, formatMs, percent, type SortKey, sortRuns } from "./estimate.ts";
+import {
+  ascendingByDefault,
+  formatMs,
+  formatUsd,
+  percent,
+  type SortKey,
+  sortRuns,
+} from "./estimate.ts";
 import { applyRun, cancelRun, evalKeys } from "./eval.api.ts";
 import { RunDetails } from "./RunDetails.tsx";
 
@@ -53,6 +59,7 @@ const COLUMNS: Array<{ key: SortKey; label: string; format: (run: EvalRunSummary
       `${formatMs(r.aggregate?.latencyMeanMs)} / ${formatMs(r.aggregate?.latencyP95Ms)}`,
   },
   { key: "totalTokens", label: "Tokens", format: (r) => String(r.aggregate?.totalTokens ?? "–") },
+  { key: "totalCostUsd", label: "Cost", format: (r) => formatUsd(r.aggregate?.totalCostUsd) },
 ];
 
 const effortLabel = (run: EvalRunSummary) =>
@@ -75,7 +82,7 @@ function RunActions({ run }: { run: EvalRunSummary }) {
     mutationFn: () => applyRun(run.id, "review_writing"),
     onSuccess: async () => {
       setMessage("Now used for review_writing");
-      await queryClient.invalidateQueries({ queryKey: settingsKeys.aiFunctions });
+      await queryClient.invalidateQueries({ queryKey: ["settings", "ai-functions"] });
     },
     onError: (error) => setMessage(error.message),
   });

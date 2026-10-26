@@ -26,7 +26,7 @@ Branch: `feat/multi-user-providers` (from `feat/english-course-mvp` @ `a4dde70`)
 |----|-------|-------|--------|--------|
 | T1 | S1, S2 | delegated writer (context backstop: parent session is very long) | [x] | see Log |
 | T2 | S3, S5 | delegated writer (context backstop) | [x] | see Log |
-| T3 | S4 | delegated writer (context backstop) | [ ] | |
+| T3 | S4 | delegated writer (context backstop) | [x] | see Log |
 | T4 | S6 | inline or delegated | [ ] | |
 
 Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in its own commit for native review. Do not commit while a committed-only review is open.
@@ -48,6 +48,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 - L10 (user): "a quien se le ocurre poner ese limite de caracteres, que el minimo sea 8 y ya deja de molestar con eso." → admin password minimum lowered to 8 (`4338355`). User chose to skip native review of T1 (verifier evidence stands) and review T3 instead.
 - L11 (T2 evidence): `shared/clock.ts` (Intl, DST-correct) replaces every process-TZ usage; per-user prefs `clock.timeZone` (+ chosen flag) and `reading.editorHour`; Settings zone picker + one-time browser-zone banner; editor tick every 5 min per user at local hour (shared candidate fetch per tick, failure isolation); Ollama web-search source removed (S5); migration `0003_user_timezone_annotations` moves annotations to `daily_article`; TZ=UTC pinned in compose/Dockerfile. Tests: shared 224, importer 40, api 536 (+31 skipped, also green under TZ=Asia/Tokyo/Pacific/Honolulu), web 114; test:db 31/31; live: La Paz morning plan at 15:21Z, manual + tick editor runs, cleanup done. Remaining: own-error card dates and tutor tool dates still UTC; docs/spec.md + .env.example stale (T4). Risk: items 1, 3, 4, 5 → one independent verifier at feature end (T2–T4).
 
+- L12 (T3 evidence): OpenRouter adapter (`shared/llm/openrouter.ts`: SSE with comments, tool-call fragment accumulation by index, reasoning deltas, usage `costUsd`, truncation error; errors 401/402(`payment_required`)/403/408/429/5xx; chatJson strict json_schema + `provider.require_parameters`, json_object/plain fallbacks; models catalog cached 10 min; key test via `GET /key`). Per-user provider `ai.provider` (ollama|openrouter), per-provider keys + per-function configs, env fallbacks `OPENROUTER_API_KEY`/`OPENROUTER_BASE_URL`/`APP_PUBLIC_URL`; defaults `google/gemma-4-31b-it` (fast) and `deepseek/deepseek-v4-pro` (quality), both with tools + structured_outputs in the live catalog; Settings provider switch + prices per 1M; eval shows real cost. Tests: shared 224, importer 40, api 570 (+32 skipped), web 116; test:db 32; live: provider switch, not_configured without key, bad provider 400. Risk: items 2, 3.
+
 ## Next step
 
-T3 (providers + OpenRouter), then T4, then one verifier for T2–T4 and native review of T3.
+Native review of T3 commit alone, then T4, then one verifier for T2–T4.

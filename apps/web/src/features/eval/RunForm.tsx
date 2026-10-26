@@ -1,25 +1,34 @@
-import { EvalFunctionId, type ThinkValue } from "@english-course/shared";
+import { type AiProviderId, EvalFunctionId, type ThinkValue } from "@english-course/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { decodeThink, effortOptions, encodeThink, functionLabel } from "../settings/effort.ts";
-import { fetchCapabilities, fetchModels, settingsKeys } from "../settings/settings.api.ts";
+import {
+  fetchAiProvider,
+  fetchCapabilities,
+  fetchModels,
+  modelLabel,
+  PROVIDER_LABEL,
+  settingsKeys,
+} from "../settings/settings.api.ts";
 import styles from "./EvalPage.module.css";
 import { estimateCalls } from "./estimate.ts";
 import { evalKeys, fetchFixtureCounts, startEval } from "./eval.api.ts";
 
 function EffortSelect({
+  provider,
   model,
   think,
   onChange,
 }: {
+  provider: AiProviderId;
   model: string;
   think: ThinkValue;
   onChange: (think: ThinkValue) => void;
 }) {
   const id = useId();
   const capabilities = useQuery({
-    queryKey: settingsKeys.capabilities(model),
-    queryFn: () => fetchCapabilities(model),
+    queryKey: settingsKeys.capabilities(provider, model),
+    queryFn: () => fetchCapabilities(provider, model),
     staleTime: 10 * 60_000,
     retry: false,
   });
@@ -53,9 +62,13 @@ export function RunForm() {
   const [functions, setFunctions] = useState<EvalFunctionId[]>(["review_writing"]);
   const [message, setMessage] = useState("");
 
+  const providerQuery = useQuery({ queryKey: settingsKeys.provider, queryFn: fetchAiProvider });
+  // Runs use the active provider (the api resolves it too); until it loads nothing is listed.
+  const provider = providerQuery.data?.provider;
   const models = useQuery({
-    queryKey: settingsKeys.models,
-    queryFn: fetchModels,
+    queryKey: settingsKeys.models(provider ?? "ollama"),
+    queryFn: () => fetchModels(provider ?? "ollama"),
+    enabled: provider !== undefined,
     staleTime: 10 * 60_000,
     retry: false,
   });
@@ -114,7 +127,8 @@ export function RunForm() {
           </p>
         )}
         <ul className={styles.modelList}>
-          {(models.data ?? []).map(({ name }) => {
+          {(models.data ?? []).map((model) => {
+            const { name } = model;
             const think = selected.get(name);
             return (
               <li key={name} className={styles.modelRow}>
@@ -124,10 +138,11 @@ export function RunForm() {
                     checked={selected.has(name)}
                     onChange={(event) => toggleModel(name, event.target.checked)}
                   />
-                  {name}
+                  {modelLabel(model)}
                 </label>
-                {think !== undefined && (
+                {think !== undefined && provider && (
                   <EffortSelect
+                    provider={provider}
                     model={name}
                     think={think}
                     onChange={(value) =>
@@ -159,8 +174,8 @@ export function RunForm() {
       </fieldset>
 
       <p className={styles.warning} data-testid="estimate">
-        Uses Ollama credits: about {calls} LLM call{calls === 1 ? "" : "s"} (fixtures × functions ×
-        models; a JSON retry adds one).
+        Uses {provider ? PROVIDER_LABEL[provider] : "provider"} credits: about {calls} LLM call
+        {calls === 1 ? "" : "s"} (fixtures × functions × models; a JSON retry adds one).
       </p>
       <div className={styles.actions}>
         <button

@@ -1,4 +1,9 @@
-import type { AiFunctionConfig, ModelSummary, ThinkValue } from "@english-course/shared";
+import type {
+  AiFunctionConfig,
+  AiProviderId,
+  ModelSummary,
+  ThinkValue,
+} from "@english-course/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { decodeThink, effortOptions, encodeThink, functionLabel } from "./effort.ts";
@@ -8,11 +13,15 @@ import {
   fetchCapabilities,
   fetchModels,
   MODEL_METADATA_STALE_MS,
+  modelLabel,
+  PROVIDER_LABEL,
   saveAiFunction,
   settingsKeys,
 } from "./settings.api.ts";
 
-function AiFunctionRow({ config, models }: { config: AiFunctionConfig; models: ModelSummary[] }) {
+type RowProps = { provider: AiProviderId; config: AiFunctionConfig; models: ModelSummary[] };
+
+function AiFunctionRow({ provider, config, models }: RowProps) {
   const queryClient = useQueryClient();
   const [model, setModel] = useState(config.model);
   const [think, setThink] = useState<ThinkValue>(config.think);
@@ -22,25 +31,24 @@ function AiFunctionRow({ config, models }: { config: AiFunctionConfig; models: M
   const label = functionLabel(config.id);
 
   const capabilities = useQuery({
-    queryKey: settingsKeys.capabilities(model),
-    queryFn: () => fetchCapabilities(model),
+    queryKey: settingsKeys.capabilities(provider, model),
+    queryFn: () => fetchCapabilities(provider, model),
     staleTime: MODEL_METADATA_STALE_MS,
     retry: false,
   });
 
   const save = useMutation({
-    mutationFn: () => saveAiFunction(config.id, { model, think }),
+    mutationFn: () => saveAiFunction(provider, config.id, { model, think }),
     onSuccess: (saved) => {
       setMessage("Saved");
-      queryClient.setQueryData<AiFunctionConfig[]>(settingsKeys.aiFunctions, (list) =>
+      queryClient.setQueryData<AiFunctionConfig[]>(settingsKeys.aiFunctions(provider), (list) =>
         list?.map((item) => (item.id === saved.id ? saved : item)),
       );
     },
     onError: (error) => setMessage(error.message),
   });
 
-  const modelNames = models.map((m) => m.name);
-  if (!modelNames.includes(model)) modelNames.unshift(model);
+  const options = models.some((m) => m.name === model) ? models : [{ name: model }, ...models];
   const thinking = capabilities.isSuccess ? capabilities.data.thinking : undefined;
   const dirty = model !== config.model || think !== config.think;
 
@@ -63,9 +71,9 @@ function AiFunctionRow({ config, models }: { config: AiFunctionConfig; models: M
             setMessage("");
           }}
         >
-          {modelNames.map((name) => (
-            <option key={name} value={name}>
-              {name}
+          {options.map((m) => (
+            <option key={m.name} value={m.name}>
+              {modelLabel(m)}
             </option>
           ))}
         </select>
@@ -108,12 +116,15 @@ function AiFunctionRow({ config, models }: { config: AiFunctionConfig; models: M
   );
 }
 
-export function AiFunctionsSection() {
+export function AiFunctionsSection({ provider }: { provider: AiProviderId }) {
   const titleId = useId();
-  const functions = useQuery({ queryKey: settingsKeys.aiFunctions, queryFn: fetchAiFunctions });
+  const functions = useQuery({
+    queryKey: settingsKeys.aiFunctions(provider),
+    queryFn: () => fetchAiFunctions(provider),
+  });
   const models = useQuery({
-    queryKey: settingsKeys.models,
-    queryFn: fetchModels,
+    queryKey: settingsKeys.models(provider),
+    queryFn: () => fetchModels(provider),
     staleTime: MODEL_METADATA_STALE_MS,
     retry: false,
   });
@@ -123,7 +134,10 @@ export function AiFunctionsSection() {
       <h2 id={titleId} className={styles.heading}>
         AI functions
       </h2>
-      <p className={styles.muted}>Model and reasoning effort used by each AI feature.</p>
+      <p className={styles.muted}>
+        Model and reasoning effort used by each AI feature on {PROVIDER_LABEL[provider]}.
+        {provider === "openrouter" && " Prices are USD per 1M input / output tokens."}
+      </p>
       {models.isError && (
         <p className={styles.warning}>
           Could not load the model list ({models.error.message}). Check the API key.
@@ -145,7 +159,12 @@ export function AiFunctionsSection() {
           </thead>
           <tbody>
             {functions.data.map((config) => (
-              <AiFunctionRow key={config.id} config={config} models={models.data ?? []} />
+              <AiFunctionRow
+                key={config.id}
+                provider={provider}
+                config={config}
+                models={models.data ?? []}
+              />
             ))}
           </tbody>
         </table>

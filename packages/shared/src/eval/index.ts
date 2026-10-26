@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AiFunctionId, ThinkValue } from "../settings/index.ts";
+import { AiFunctionId, AiProviderId, ThinkValue } from "../settings/index.ts";
 
 /**
  * Model evaluation (docs/spec.md §3.10): runs AI functions over fixed fixtures with one model
@@ -116,6 +116,8 @@ export const EvalSampleResult = z.object({
   /** chatJson attempts: 1, or 2 when the JSON retry was needed; 0 when the call failed. */
   attempts: z.number().int().nonnegative(),
   tokens: z.number().int().nonnegative().nullable(),
+  /** Real cost in USD when the provider reports it (OpenRouter). */
+  costUsd: z.number().nonnegative().optional(),
   error: z.object({ code: z.string(), message: z.string() }).optional(),
   metrics: EvalMetrics,
   /** Sub-checks behind a composite metric (e.g. rewrite registers/meaning/length), 0–1. */
@@ -139,12 +141,16 @@ export const EvalAggregate = z.object({
   latencyMeanMs: z.number().nonnegative().nullable(),
   latencyP95Ms: z.number().nonnegative().nullable(),
   totalTokens: z.number().int().nonnegative(),
+  /** Sum of the samples' reported cost; absent when no sample reported one (Ollama). */
+  totalCostUsd: z.number().nonnegative().optional(),
 });
 export type EvalAggregate = z.infer<typeof EvalAggregate>;
 
 /** Everything stored in `eval_run.results` (model and effort have their own columns). */
 export const EvalRunState = z.object({
   version: z.literal(1),
+  /** Provider the run used; runs from before providers existed used Ollama. */
+  provider: AiProviderId.optional(),
   think: ThinkValue,
   functions: z.array(EvalFunctionId).min(1),
   status: EvalRunStatus,

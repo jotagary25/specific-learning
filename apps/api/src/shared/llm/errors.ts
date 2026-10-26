@@ -1,6 +1,7 @@
 export type LlmErrorCode =
   | "not_configured"
   | "invalid_key"
+  | "payment_required"
   | "rate_limited"
   | "not_found"
   | "bad_request"
@@ -40,22 +41,27 @@ export function errorFromStatus(
   status: number,
   upstreamMessage: string | undefined,
   retryAfter?: string | null,
+  provider = "Ollama",
 ): LlmError {
   const detail = upstreamMessage ? `: ${upstreamMessage}` : "";
   if (status === 401 || status === 403) {
-    return new LlmError("invalid_key", `Ollama rejected the API key (HTTP ${status})`, { status });
+    return new LlmError("invalid_key", `${provider} rejected the API key (HTTP ${status})`, {
+      status,
+    });
   }
   if (status === 429) {
     const seconds = retryAfter ? Number.parseInt(retryAfter, 10) : Number.NaN;
-    return new LlmError("rate_limited", `Ollama rate limit reached${detail}`, {
+    return new LlmError("rate_limited", `${provider} rate limit reached${detail}`, {
       status,
       retryAfterSeconds: Number.isFinite(seconds) ? seconds : undefined,
     });
   }
   if (status === 404) return new LlmError("not_found", `Not found${detail}`, { status });
   if (status >= 500)
-    return new LlmError("upstream", `Ollama upstream error (HTTP ${status})${detail}`, { status });
-  return new LlmError("bad_request", `Ollama rejected the request (HTTP ${status})${detail}`, {
+    return new LlmError("upstream", `${provider} upstream error (HTTP ${status})${detail}`, {
+      status,
+    });
+  return new LlmError("bad_request", `${provider} rejected the request (HTTP ${status})${detail}`, {
     status,
   });
 }

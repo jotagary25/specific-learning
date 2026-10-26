@@ -4,6 +4,8 @@ import type { z } from "zod";
 export type { ModelCapabilities, ModelSummary, ThinkValue };
 
 export type ToolCall = {
+  /** Provider call id (OpenAI-style APIs); adapters synthesize one when it is missing. */
+  id?: string;
   name: string;
   arguments: Record<string, unknown>;
 };
@@ -11,7 +13,7 @@ export type ToolCall = {
 export type ChatMessage =
   | { role: "system" | "user"; content: string }
   | { role: "assistant"; content: string; toolCalls?: ToolCall[] }
-  | { role: "tool"; content: string; toolName: string };
+  | { role: "tool"; content: string; toolName: string; toolCallId?: string };
 
 export type ToolDefinition = {
   name: string;
@@ -42,6 +44,8 @@ export type Usage = {
   promptTokens?: number;
   completionTokens?: number;
   durationMs?: number;
+  /** Real cost in USD reported by the provider (OpenRouter `usage.cost`). */
+  costUsd?: number;
 };
 
 export type ChatDelta =
@@ -78,4 +82,6 @@ export interface LlmClient {
   ): Promise<ChatJsonResult<z.output<S>>>;
   listModels(opts?: { signal?: AbortSignal }): Promise<ModelSummary[]>;
   modelCapabilities(model: string, opts?: { signal?: AbortSignal }): Promise<ModelCapabilities>;
+  /** Checks the key itself when listing models does not need one (OpenRouter). */
+  verifyKey?(opts?: { signal?: AbortSignal }): Promise<void>;
 }

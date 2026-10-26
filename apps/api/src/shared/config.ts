@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DEFAULT_OLLAMA_BASE_URL } from "./llm/ollama.ts";
+import { DEFAULT_OPENROUTER_BASE_URL } from "./llm/openrouter.ts";
 
 const emptyToUndefined = (value: unknown) => (value === "" ? undefined : value);
 
@@ -14,6 +15,11 @@ const EnvSchema = z.object({
     .regex(/^[0-9a-fA-F]{64}$/, "APP_SECRET must be 32 bytes encoded as 64 hex chars"),
   OLLAMA_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
   OLLAMA_BASE_URL: z.preprocess(emptyToUndefined, z.url().default(DEFAULT_OLLAMA_BASE_URL)),
+  /** Instance-wide OpenRouter key; used only for users who have not stored their own. */
+  OPENROUTER_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
+  OPENROUTER_BASE_URL: z.preprocess(emptyToUndefined, z.url().default(DEFAULT_OPENROUTER_BASE_URL)),
+  /** Public URL of this app, sent to OpenRouter as `HTTP-Referer` for attribution (optional). */
+  APP_PUBLIC_URL: z.preprocess(emptyToUndefined, z.url().optional()),
   /**
    * Session cookie `Secure` flag: `auto` = Secure for https (or `X-Forwarded-Proto: https`
    * with TRUST_PROXY); plain http drops it only on local dev hosts.

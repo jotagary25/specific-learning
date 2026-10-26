@@ -114,9 +114,9 @@ describe("settings routes: Ollama API key", () => {
       }),
     });
 
-    await settings.clientFor(userId).listModels();
+    await settings.clientFor(userId, "ollama").listModels();
     await call("/ai-key", { method: "PUT", body: JSON.stringify({ apiKey: KEY }) });
-    await settings.clientFor(userId).listModels();
+    await settings.clientFor(userId, "ollama").listModels();
 
     expect(keys).toEqual(["env-key-0000-1234", KEY]);
   });
@@ -397,5 +397,164 @@ describe("capability probe failures", () => {
     await settings.getLlmForFunction(userId, "review_writing");
 
     expect(probes()).toBe(2);
+  });
+});
+
+describe("settings routes: AI providers", () => {
+  const ORKEY = "sk-or-v1-secret-ABCD";
+  const openrouterLlm = () =>
+    createFakeLlm({
+      models: [
+        {
+          name: "openai/gpt-oss-120b",
+          contextLength: 131072,
+          pricing: { inputPerMTok: 0.15, outputPerMTok: 0.6 },
+        },
+      ],
+      capabilities: {
+        "openai/gpt-oss-120b": {
+          capabilities: ["completion", "tools", "thinking"],
+          thinking: { values: ["high", "medium", "low"], default: "medium" },
+        },
+      },
+    });
+
+  async function withOpenRouter(envApiKey?: string) {
+    const orLlm = openrouterLlm();
+    const ctx = await setup({ openrouter: { envApiKey, createClient: () => orLlm } });
+    return { ...ctx, orLlm };
+  }
+
+  it("defaults to Ollama and lists the available providers", async () => {
+    const { call } = await withOpenRouter();
+    expect(await (await call("/ai-provider")).json()).toEqual({
+      provider: "ollama",
+      available: ["ollama", "openrouter"],
+    });
+  });
+
+  it("defaults to OpenRouter when only its env key is set", async () => {
+    const { call } = await withOpenRouter("env-or-key-9999");
+    expect(await (await call("/ai-provider")).json()).toMatchObject({ provider: "openrouter" });
+  });
+
+  it("rejects an unknown or unavailable provider", async () => {
+    const { call } = await setup();
+    const put = (provider: string) =>
+      call("/ai-provider", { method: "PUT", body: JSON.stringify({ provider }) });
+    expect((await put("acme")).status).toBe(400);
+    expect(await (await put("openrouter")).json()).toMatchObject({ error: "unknown_provider" });
+    expect((await call("/ai-key?provider=acme")).status).toBe(400);
+  });
+
+  it("keeps one encrypted key per provider", async () => {
+    const { call, store, userId } = await withOpenRouter();
+    await call("/ai-key", { method: "PUT", body: JSON.stringify({ apiKey: KEY }) });
+    const put = await call("/ai-key?provider=openrouter", {
+      method: "PUT",
+      body: JSON.stringify({ apiKey: ORKEY }),
+    });
+    expect(await put.json()).toEqual({ configured: true, source: "db", last4: "ABCD" });
+    const sealed = store.secrets.get(memoryKey(userId, "openrouter_api_key"));
+    expect(JSON.stringify(sealed)).not.toContain(ORKEY);
+    expect(await (await call("/ai-key?provider=ollama")).json()).toMatchObject({ last4: "WXYZ" });
+
+    await call("/ai-key?provider=openrouter", { method: "DELETE" });
+    expect(await (await call("/ai-key?provider=openrouter")).json()).toMatchObject({
+      configured: false,
+    });
+    expect(await (await call("/ai-key?provider=ollama")).json()).toMatchObject({ last4: "WXYZ" });
+  });
+
+  it("switching provider keeps each provider's function config and changes the resolved client", async () => {
+    const { call, settings, userId, llm, orLlm } = await withOpenRouter();
+    await call("/ai-functions/check_answer", {
+      method: "PUT",
+      body: JSON.stringify({ model: "gpt-oss:120b", think: "high" }),
+    });
+
+    const switched = await call("/ai-provider", {
+      method: "PUT",
+      body: JSON.stringify({ provider: "openrouter" }),
+    });
+    expect(await switched.json()).toMatchObject({ provider: "openrouter" });
+
+    const orFunctions = AiFunctionsResponse.parse(await (await call("/ai-functions")).json());
+    expect(orFunctions.functions.find((f) => f.id === "check_answer")).toMatchObject({
+      model: "google/gemma-4-31b-it",
+      isDefault: true,
+    });
+    await call("/ai-functions/check_answer", {
+      method: "PUT",
+      body: JSON.stringify({ model: "openai/gpt-oss-120b", think: "low" }),
+    });
+    const resolved = await settings.getLlmForFunction(userId, "check_answer");
+    expect(resolved).toMatchObject({ model: "openai/gpt-oss-120b", think: "low" });
+    expect(resolved.client).toBe(orLlm);
+
+    const models = ModelsResponse.parse(await (await call("/models")).json());
+    expect(models.models[0]?.pricing).toEqual({ inputPerMTok: 0.15, outputPerMTok: 0.6 });
+    const caps = await call(`/models/${encodeURIComponent("openai/gpt-oss-120b")}/capabilities`);
+    expect(ModelCapabilities.parse(await caps.json()).thinking?.values).toEqual([
+      "high",
+      "medium",
+      "low",
+    ]);
+
+    await call("/ai-provider", { method: "PUT", body: JSON.stringify({ provider: "ollama" }) });
+    const back = await settings.getLlmForFunction(userId, "check_answer");
+    expect(back).toMatchObject({ model: "gpt-oss:120b", think: "high" });
+    expect(back.client).toBe(llm);
+    const orList = AiFunctionsResponse.parse(
+      await (await call("/ai-functions?provider=openrouter")).json(),
+    );
+    expect(orList.functions.find((f) => f.id === "check_answer")?.model).toBe(
+      "openai/gpt-oss-120b",
+    );
+  });
+
+  it("tests an OpenRouter key with verifyKey before listing models", async () => {
+    const orLlm = openrouterLlm();
+    const verify = { calls: 0 };
+    const { call } = await setup({
+      openrouter: {
+        envApiKey: "env-or-key-9999",
+        createClient: () => ({
+          ...orLlm,
+          verifyKey: async () => {
+            verify.calls += 1;
+            throw new LlmError("invalid_key", "OpenRouter rejected the API key (HTTP 401)");
+          },
+        }),
+      },
+    });
+    const res = await call("/ai-key/test?provider=openrouter", { method: "POST" });
+    expect(await res.json()).toMatchObject({ ok: false, error: "invalid_key" });
+    expect(verify.calls).toBe(1);
+  });
+
+  it("answers not_configured for the active provider without a key", async () => {
+    const { call } = await setup({
+      openrouter: {
+        createClient: () => ({
+          ...openrouterLlm(),
+          listModels: async () => {
+            throw new LlmError("not_configured", "No OpenRouter API key is configured");
+          },
+        }),
+      },
+    });
+    await call("/ai-provider", { method: "PUT", body: JSON.stringify({ provider: "openrouter" }) });
+    const res = await call("/models");
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ error: "not_configured" });
+  });
+
+  it("maps insufficient credits to 402", async () => {
+    const { call } = await setup(
+      {},
+      createFakeLlm({ failWith: new LlmError("payment_required", "no credits") }),
+    );
+    expect((await call("/models")).status).toBe(402);
   });
 });

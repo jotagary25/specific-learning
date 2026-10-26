@@ -56,7 +56,22 @@ export const AuthStatus = z.object({
 });
 export type AuthStatus = z.infer<typeof AuthStatus>;
 
-// --- Ollama API key ---
+// --- AI provider ---
+
+export const AiProviderId = z.enum(["ollama", "openrouter"]);
+export type AiProviderId = z.infer<typeof AiProviderId>;
+
+/** The user's active provider and the providers this instance can use. */
+export const AiProviderResponse = z.object({
+  provider: AiProviderId,
+  available: z.array(AiProviderId),
+});
+export type AiProviderResponse = z.infer<typeof AiProviderResponse>;
+
+export const UpdateAiProviderRequest = z.object({ provider: AiProviderId });
+export type UpdateAiProviderRequest = z.infer<typeof UpdateAiProviderRequest>;
+
+// --- provider API keys ---
 
 export const AiKeyStatus = z.object({
   /** True when a usable key exists (a stored key that decrypts, or the env key). */
@@ -92,6 +107,12 @@ export const ModelSummary = z.object({
   name: z.string(),
   modifiedAt: z.string().optional(),
   size: z.number().optional(),
+  /** OpenRouter: human-readable name, context window and price in USD per 1M tokens. */
+  displayName: z.string().optional(),
+  contextLength: z.number().int().nonnegative().optional(),
+  pricing: z
+    .object({ inputPerMTok: z.number().nonnegative(), outputPerMTok: z.number().nonnegative() })
+    .optional(),
 });
 export type ModelSummary = z.infer<typeof ModelSummary>;
 

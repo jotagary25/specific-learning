@@ -3,9 +3,11 @@ import { useId } from "react";
 import { Link, useNavigate } from "react-router";
 import { authKeys, fetchMe, logout } from "../auth/auth.api.ts";
 import { AiFunctionsSection } from "./AiFunctionsSection.tsx";
+import { AiProviderSection } from "./AiProviderSection.tsx";
 import { ApiKeySection } from "./ApiKeySection.tsx";
 import { PreferencesSection } from "./PreferencesSection.tsx";
 import styles from "./SettingsPage.module.css";
+import { fetchAiProvider, settingsKeys } from "./settings.api.ts";
 
 export function SettingsPage() {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export function SettingsPage() {
   const accountTitle = useId();
   const me = useQuery({ queryKey: authKeys.me, queryFn: fetchMe });
   const user = me.data?.user;
+  const provider = useQuery({ queryKey: settingsKeys.provider, queryFn: fetchAiProvider });
   const signOut = useMutation({
     mutationFn: logout,
     onSettled: async () => {
@@ -38,8 +41,16 @@ export function SettingsPage() {
           <p className={styles.muted}>{me.isError ? "Account unavailable." : "Loading…"}</p>
         )}
       </section>
-      <ApiKeySection />
-      <AiFunctionsSection />
+      {provider.isError && <p className={styles.warning}>Could not load the AI provider.</p>}
+      {provider.isSuccess && (
+        <>
+          <AiProviderSection current={provider.data} />
+          {provider.data.available.map((id) => (
+            <ApiKeySection key={id} provider={id} />
+          ))}
+          <AiFunctionsSection provider={provider.data.provider} />
+        </>
+      )}
       <PreferencesSection />
       <section className={styles.section} aria-labelledby={evalTitle}>
         <h2 id={evalTitle} className={styles.heading}>
@@ -47,7 +58,7 @@ export function SettingsPage() {
         </h2>
         <p className={styles.muted}>
           Compare models on fixed learner texts before choosing one: errors found, hint leaks, JSON
-          validity, latency and tokens.
+          validity, latency, tokens and cost.
         </p>
         <Link to="/settings/eval">Open model evaluation</Link>
       </section>

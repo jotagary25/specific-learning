@@ -1,14 +1,20 @@
 import type {
   AiFunctionId,
   AiFunctionTier,
+  AiProviderId,
   ThinkingControls,
   ThinkValue,
 } from "@english-course/shared";
 
-/** Default models per tier (Ollama Cloud catalog, Oct 2026); changeable in Settings. */
-export const DEFAULT_MODELS: Record<AiFunctionTier, string> = {
-  fast: "gemma4:31b",
-  quality: "deepseek-v4-pro",
+/**
+ * Default models per provider and tier (catalogs checked Oct 2026); changeable in Settings.
+ * OpenRouter mirrors the Ollama picks (same model families, so prompts and evals carry over):
+ * both support `tools` and `structured_outputs` and are cheap — gemma-4-31b-it $0.20/$0.40 and
+ * deepseek-v4-pro $0.78/$1.55 per 1M input/output tokens.
+ */
+export const DEFAULT_MODELS: Record<AiProviderId, Record<AiFunctionTier, string>> = {
+  ollama: { fast: "gemma4:31b", quality: "deepseek-v4-pro" },
+  openrouter: { fast: "google/gemma-4-31b-it", quality: "deepseek/deepseek-v4-pro" },
 };
 
 type CatalogEntry = { tier: AiFunctionTier; think: ThinkValue };
@@ -32,9 +38,9 @@ export const AI_FUNCTIONS: Record<AiFunctionId, CatalogEntry> = {
 
 export type AiFunctionSetting = { model: string; think: ThinkValue };
 
-export function defaultFor(id: AiFunctionId): AiFunctionSetting {
+export function defaultFor(id: AiFunctionId, provider: AiProviderId = "ollama"): AiFunctionSetting {
   const entry = AI_FUNCTIONS[id];
-  return { model: DEFAULT_MODELS[entry.tier], think: entry.think };
+  return { model: DEFAULT_MODELS[provider][entry.tier], think: entry.think };
 }
 
 /**

@@ -2,7 +2,7 @@ import type { EvalSampleResult } from "@english-course/shared";
 import { useQuery } from "@tanstack/react-query";
 import { functionLabel } from "../settings/effort.ts";
 import styles from "./EvalPage.module.css";
-import { formatMs, percent } from "./estimate.ts";
+import { formatMs, formatUsd, percent } from "./estimate.ts";
 import { evalKeys, fetchRun } from "./eval.api.ts";
 
 const ACTIVE = new Set(["queued", "running"]);
@@ -88,6 +88,7 @@ export function RunDetails({ id }: { id: string }) {
             {functionLabel(sample.functionId)} · {sample.label} ·{" "}
             {sample.ok ? "ok" : `failed (${sample.error?.code})`} · {formatMs(sample.latencyMs)}
             {sample.attempts > 1 ? " · JSON retry" : ""}
+            {sample.costUsd === undefined ? "" : ` · ${formatUsd(sample.costUsd)}`}
           </summary>
           <Metrics sample={sample} />
           {sample.error && <p className={styles.warning}>{sample.error.message}</p>}
