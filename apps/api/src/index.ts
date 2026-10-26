@@ -20,6 +20,8 @@ import { createUnits } from "./units/units.service.ts";
 import { createDrizzleUnitsStore } from "./units/units.store.ts";
 import { createVocabulary } from "./vocabulary/vocabulary.service.ts";
 import { createDrizzleVocabularyStore } from "./vocabulary/vocabulary.store.ts";
+import { createWriting } from "./writing/writing.service.ts";
+import { createDrizzleWritingStore } from "./writing/writing.store.ts";
 
 const config = loadConfig();
 const contentDir = resolveContentDir();
@@ -84,6 +86,13 @@ const vocabulary = createVocabulary({
   settings: settingsStore,
 });
 
+const writing = createWriting({
+  store: createDrizzleWritingStore(database.db),
+  settings: settingsStore,
+  ai: settings,
+  ownErrors: vocabulary,
+});
+
 const app = createApp({
   pingDb: database.ping,
   contentDir,
@@ -92,6 +101,7 @@ const app = createApp({
   units,
   reading,
   vocabulary,
+  writing,
 });
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {

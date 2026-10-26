@@ -11,6 +11,8 @@ import { unitsRoutes } from "./units/units.routes.ts";
 import type { Units } from "./units/units.service.ts";
 import { vocabularyRoutes } from "./vocabulary/vocabulary.routes.ts";
 import type { Vocabulary } from "./vocabulary/vocabulary.service.ts";
+import { writingRoutes } from "./writing/writing.routes.ts";
+import type { Writing } from "./writing/writing.service.ts";
 
 export type AppDeps = HealthDeps & {
   /** Content root for static assets; defaults to `resolveContentDir()`. */
@@ -21,6 +23,7 @@ export type AppDeps = HealthDeps & {
   units?: Units;
   reading?: Reading;
   vocabulary?: Vocabulary;
+  writing?: Writing;
 };
 
 export function createApp(deps: AppDeps) {
@@ -32,6 +35,7 @@ export function createApp(deps: AppDeps) {
   if (deps.units) api.route("/units", unitsRoutes(deps.units));
   if (deps.reading) api.route("/reading", readingRoutes(deps.reading));
   if (deps.vocabulary) api.route("/vocabulary", vocabularyRoutes(deps.vocabulary));
+  if (deps.writing) api.route("/writing", writingRoutes(deps.writing));
 
   return new Hono()
     .route("/api", api)

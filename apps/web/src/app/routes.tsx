@@ -10,6 +10,8 @@ import { UnitPage } from "../features/units/UnitPage.tsx";
 import { UnitsPage } from "../features/units/UnitsPage.tsx";
 import { CardsPage } from "../features/vocabulary/CardsPage.tsx";
 import { VocabularyPage } from "../features/vocabulary/VocabularyPage.tsx";
+import { WritingHistoryPage } from "../features/writing/WritingHistoryPage.tsx";
+import { WritingPage } from "../features/writing/WritingPage.tsx";
 import { Layout } from "./Layout.tsx";
 
 export const routes: RouteObject[] = [
@@ -31,6 +33,8 @@ export const routes: RouteObject[] = [
       { path: "reading/:id", element: <ArticlePage /> },
       { path: "vocabulary", element: <VocabularyPage /> },
       { path: "vocabulary/cards", element: <CardsPage /> },
+      { path: "writing", element: <WritingPage /> },
+      { path: "writing/history", element: <WritingHistoryPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],
   },

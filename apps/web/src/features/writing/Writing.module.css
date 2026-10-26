@@ -1,0 +1,272 @@
+.page {
+  display: grid;
+  gap: 1rem;
+  padding-bottom: 5rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.subheading {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.error {
+  margin: 0;
+  color: var(--color-down);
+}
+
+.notice {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-warn);
+  color: inherit;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.primary,
+.secondary {
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.primary {
+  border: 0;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.secondary {
+  border: 1px solid var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.linkButton {
+  color: var(--color-primary);
+}
+
+.card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+}
+
+.card p {
+  margin: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: 0.875rem;
+}
+
+.quote {
+  margin: 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--color-border);
+  color: var(--color-muted);
+}
+
+/* --- Editor --- */
+
+.label {
+  display: grid;
+  gap: 0.25rem;
+  font-weight: 600;
+}
+
+.textarea {
+  font: inherit;
+  font-weight: 400;
+  width: 100%;
+  min-height: 10rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-muted);
+  border-radius: 0.5rem;
+  background: var(--color-bg);
+  color: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.counter {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.counterLong {
+  color: var(--color-down);
+}
+
+/* --- Review --- */
+
+.text {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+
+.mark {
+  background: var(--color-highlight);
+  color: inherit;
+  padding: 0 0.15rem;
+  border-radius: 0.25rem;
+  text-decoration: underline wavy var(--color-down);
+  text-underline-offset: 0.25rem;
+}
+
+.markNumber {
+  font-size: 0.7rem;
+  vertical-align: super;
+  font-weight: 700;
+  margin-left: 0.1rem;
+}
+
+.errors {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.errorItem {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.errorItem p {
+  margin: 0;
+}
+
+.badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.fixed {
+  color: var(--color-ok);
+}
+
+.pending {
+  color: var(--color-warn);
+}
+
+.reveal {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+}
+
+.scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.scores div {
+  display: grid;
+}
+
+.scores dt {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.scores dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Rewrites --- */
+
+.versions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+
+.versionText {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* --- History --- */
+
+.history {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sparkline {
+  width: 100%;
+  max-width: 24rem;
+  height: 4rem;
+  color: var(--color-primary);
+}
