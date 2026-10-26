@@ -75,8 +75,8 @@ invalid. Empty values count as unset.
 | `APP_PUBLIC_URL` | no | — | Public URL of this app, sent to OpenRouter as `HTTP-Referer` (with the title `English Course`) for app attribution. Omitted when unset. |
 | `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
 | `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting (per account and client) uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
-| `APP_PORT` | no | `3000` | Prod compose: host port published for the app. |
-| `APP_BIND` | no | `127.0.0.1` | Prod compose: host address to publish on. Set `0.0.0.0` to expose the app directly (then leave `TRUST_PROXY` off). |
+| `APP_PORT` | prod: yes | — | Host port published for the app. The production compose fails if it is missing. |
+| `APP_BIND` | prod: yes | — | Host address to publish on: `127.0.0.1` behind a reverse proxy, `0.0.0.0` to expose the app directly (then leave `TRUST_PROXY` off). The production compose fails if it is missing. |
 | `EDITOR_ENABLED` | no | `true` | `false` disables the in-process daily editor (manual runs still work). It checks every 5 minutes which users are due. |
 | `EDITOR_HOUR` | no | `5` | Default **Daily article from** hour (0–23) for users who have not set their own in Settings; it is read in each user's own time zone. |
 | `CONTENT_DIR` | no | repo `content/` | Content root (units, authored content, images, eval samples). Relative paths resolve from the working directory. |
@@ -159,6 +159,8 @@ APP_USER_EMAIL=you@example.com
 APP_USER_PASSWORD=<8+ characters>
 APP_SECRET=<openssl rand -hex 32, generated on the server>
 TRUST_PROXY=true            # behind a TLS reverse proxy
+APP_BIND=127.0.0.1
+APP_PORT=3000
 # optional
 OPENROUTER_API_KEY=
 OLLAMA_API_KEY=
@@ -170,7 +172,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml ps    # wait for "healthy"
 ```
 
-The app is published on `127.0.0.1:3000` by default (`APP_BIND`, `APP_PORT`). Keep `APP_SECRET`
+The compose file has no defaults: `APP_BIND` and `APP_PORT` must be set, or it fails. Keep `APP_SECRET`
 stable: changing it signs everyone out and makes saved AI keys unreadable.
 
 **On Dokploy**: create a Compose service with `docker-compose.prod.yml`, put the variables above

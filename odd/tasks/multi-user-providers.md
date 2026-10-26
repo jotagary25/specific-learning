@@ -61,6 +61,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L18 (user): "te fui claro que cuando despliego en producción lo hago en mi propia database, que parte no entiendes?" → bundled `db` service, `with-db` profile, `pgdata` volume and `depends_on` removed from `docker-compose.prod.yml`; README production/backup/env rows updated (POSTGRES_* are dev only).
 
+- L19 (user): "nada por defecto en producción si algo no esta en los "envs" debe fallar." → prod compose `APP_BIND`/`APP_PORT` now required (`${VAR:?…}`), verified: `docker compose config` fails with "required variable APP_BIND is missing a value"; README env table + example updated.
+
 ## Next step
 
-Feature complete. User: update `.env.example`; push/PR/merge are user decisions.
+Ask the user whether "no defaults" also applies to the app config defaults in `apps/api/src/shared/config.ts`.

@@ -14,9 +14,9 @@ services:
       # Always UTC, whatever `.env` says: each user picks their own zone in Settings.
       TZ: UTC
     ports:
-      # Loopback by default: reach it through a reverse proxy. Set APP_BIND=0.0.0.0 to expose it
-      # directly (and keep TRUST_PROXY off then).
-      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
+      # No defaults: both must be set in `.env`. Use APP_BIND=127.0.0.1 behind a reverse proxy,
+      # or 0.0.0.0 to expose the app directly (and keep TRUST_PROXY off then).
+      - "${APP_BIND:?Set APP_BIND in .env}:${APP_PORT:?Set APP_PORT in .env}:3000"
     extra_hosts:
       # Lets DATABASE_URL use host.docker.internal for a PostgreSQL installed on the host.
       - "host.docker.internal:host-gateway"
