@@ -97,12 +97,6 @@ describe("auth routes", () => {
     }
   });
 
-  it("honors an explicit cookieSecure override", async () => {
-    const { app } = await setup({ cookieSecure: true });
-    const res = await login(app, PASSWORD);
-    expect(res.headers.get("set-cookie")).toMatch(/Secure/i);
-  });
-
   it("answers a wrong password and an unknown email the same way, without a cookie", async () => {
     const { app } = await setup();
 

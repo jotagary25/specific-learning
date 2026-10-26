@@ -65,6 +65,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L20 (user): "si algo no esta en envirotments debe fallar, que es lo que estas preguntando? eres tonto? porque hay un espacio para apykey en lo envs si te dije que eso se configura desde la app?" → env AI keys removed (keys only per user in Settings; `AiKeyStatus.source` is `"db" | null`); api config has no defaults (13 required vars, aggregated startup error; WEB_DIST_DIR optional mode switch; Dockerfile sets CONTENT_DIR/WEB_DIST_DIR); dev compose `${PORT:?}`; Vite requires API_URL for the dev server; README/spec updated. Tests: api 614 (+32 skipped), web 116, config RED→GREEN (43). Docker build + fail-fast startup verified. User must rewrite `.env` and `.env.example`.
 
+- L21 (user): "porque demonios hay las credenciales de postgres por separado y el ulr por separado con lo mismo? porque no puedes organizarte bien?" → env trimmed: removed APP_PUBLIC_URL, OLLAMA_BASE_URL, OPENROUTER_BASE_URL (adapter constants), COOKIE_SECURE (always automatic); DATABASE_URL/CONTENT_DIR set by dev compose, CONTENT_DIR/WEB_DIST_DIR by Dockerfile. Dev `.env`: 10 vars; production: 9 vars. test:db builds its URL from POSTGRES_*. Tests: api 607 (+32 skipped), all green; compose configs valid with exactly those sets.
+
 ## Next step
 
-Feature complete. User: update `.env` (dev) and `.env.example`; push/PR/merge are user decisions.
+Feature complete. User: write `.env` and `.env.example` with the final lists; push/PR/merge are user decisions.

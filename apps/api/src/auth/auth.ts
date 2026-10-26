@@ -25,13 +25,8 @@ export type AuthOptions = {
   /** APP_SECRET (64 hex chars). */
   appSecret: string;
   /**
-   * `auto` (default): Secure for https requests; plain http gets a non-Secure cookie only on a
-   * local host (loopback, `*.localhost`, single-label) so http dev works.
-   */
-  cookieSecure?: "auto" | boolean;
-  /**
-   * Behind a TLS-terminating reverse proxy: `X-Forwarded-Proto` decides `auto` (Secure when it
-   * is missing) and the last `X-Forwarded-For` entry keys the login rate limit. Both headers
+   * Behind a TLS-terminating reverse proxy: `X-Forwarded-Proto` decides the cookie `Secure`
+   * flag (Secure when it is missing) and the last `X-Forwarded-For` entry keys the login rate limit. Both headers
    * are honored only when the socket peer is loopback or private (the proxy); any other peer
    * falls back to its own address and the request protocol.
    */
@@ -120,9 +115,12 @@ export function createAuth(options: AuthOptions): Auth {
     return forwarded || (socketAddress(c) ?? "unknown");
   };
 
+  /**
+   * Session cookie `Secure` flag: a trusted proxy's `X-Forwarded-Proto` decides; otherwise
+   * https is Secure and plain http drops it only on a local host (loopback, `*.localhost`,
+   * single-label) so http dev works.
+   */
   const secureFor = (c: Context) => {
-    const setting = options.cookieSecure ?? "auto";
-    if (setting !== "auto") return setting;
     if (fromTrustedProxy(c)) {
       const forwardedProto = c.req.header("x-forwarded-proto")?.split(",")[0]?.trim();
       // A trusted proxy must say how the client connected; without it, fail closed.

@@ -58,7 +58,6 @@ const settingsStore = createDrizzleSettingsStore(database.db);
 const auth = createAuth({
   users,
   appSecret: config.APP_SECRET,
-  cookieSecure: config.COOKIE_SECURE,
   trustProxy: config.TRUST_PROXY,
   // Logout bumps the user's session epoch in `app_user`, revoking only that user's sessions.
   // Login rate limiting keys on the account plus the socket peer, or X-Forwarded-For when
@@ -67,15 +66,8 @@ const auth = createAuth({
 const settings = createSettings({
   store: settingsStore,
   appSecret: config.APP_SECRET,
-  createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
-  openrouter: {
-    createClient: (getApiKey) =>
-      createOpenRouterClient({
-        baseUrl: config.OPENROUTER_BASE_URL,
-        appUrl: config.APP_PUBLIC_URL,
-        getApiKey,
-      }),
-  },
+  createClient: (getApiKey) => createOllamaClient({ getApiKey }),
+  openrouter: { createClient: (getApiKey) => createOpenRouterClient({ getApiKey }) },
 });
 
 const preferences = createPreferences(settingsStore, {

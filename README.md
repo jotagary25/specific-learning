@@ -23,32 +23,24 @@ openssl rand -hex 32   # paste as APP_SECRET
 openssl rand -hex 16   # a strong APP_USER_PASSWORD (or choose your own, 8+ characters)
 ```
 
-Nothing has a default: `.env` must hold every variable below, or the api (and `docker compose`)
-refuses to start and names what is missing. Use a real `POSTGRES_PASSWORD` and the same password
-inside `DATABASE_URL`:
+Nothing has a default: `.env` must hold every variable below, or `docker compose` (and the api)
+refuses to start and names what is missing. Use a real `POSTGRES_PASSWORD`:
 
 ```env
 POSTGRES_USER=english
 POSTGRES_PASSWORD=<a real password>
 POSTGRES_DB=english_course
-DATABASE_URL=postgres://english:<the same password>@localhost:5432/english_course
 PORT=3000
 APP_USER_EMAIL=you@example.com
 APP_USER_PASSWORD=<8+ characters>
 APP_SECRET=<openssl rand -hex 32>
-OLLAMA_BASE_URL=https://ollama.com
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-APP_PUBLIC_URL=http://localhost:5173
-COOKIE_SECURE=auto
 TRUST_PROXY=false
 EDITOR_ENABLED=true
 EDITOR_HOUR=5
-CONTENT_DIR=../../content
 ```
 
-In compose, the api gets `DATABASE_URL` (service `db`) and `CONTENT_DIR` (`/app/content`) from
-`docker-compose.yml` and the web gets `API_URL`; `.env` values serve host runs (`pnpm dev`, where
-the api runs in `apps/api`, so `CONTENT_DIR` is relative to it). Then:
+Compose builds the api's `DATABASE_URL` from the `POSTGRES_*` values (service `db`) and sets
+`CONTENT_DIR` (`/app/content`); the web gets `API_URL`. Then:
 
 ```sh
 docker compose up
@@ -83,31 +75,53 @@ zone in Settings, and every local day or hour is computed in that zone.
 ## Environment variables
 
 The api validates its variables on start and refuses to boot when one is missing or invalid,
-with one message naming every offending variable. **Every variable has no default**; empty values
-count as missing. The only optional one is `WEB_DIST_DIR`, a mode switch rather than a default.
-AI provider keys are not environment variables: each user saves their own in **Settings**.
+with one message naming every offending variable. **Nothing has a default**; empty values count
+as missing. AI provider keys are not environment variables: each user saves their own in
+**Settings**. The tables list only what you write yourself.
 
-| Name | Required | Description |
-|------|----------|-------------|
-| `DATABASE_URL` | yes | PostgreSQL 18 URL, `postgres://user:pass@host:5432/db`. |
-| `PORT` | yes | API listen port. The image sets `3000` and the production compose pins it, so production `.env` does not need it. |
-| `APP_USER_EMAIL` | yes | Email of the admin account, used to log in (case-insensitive). See [Users](#users). |
-| `APP_USER_PASSWORD` | yes | Admin password, at least 8 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
-| `APP_SECRET` | yes | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored provider keys unreadable (save them again). |
-| `OLLAMA_BASE_URL` | yes | Ollama API base URL (chat, tags, show), e.g. `https://ollama.com`. |
-| `OPENROUTER_BASE_URL` | yes | OpenRouter API base URL (chat/completions, models, key), e.g. `https://openrouter.ai/api/v1`. |
-| `APP_PUBLIC_URL` | yes | Public URL of this app, sent to OpenRouter as `HTTP-Referer` (with the title `English Course`) for app attribution. |
-| `COOKIE_SECURE` | yes | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
-| `TRUST_PROXY` | yes | `true` or `false`. `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting (per account and client) uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
-| `EDITOR_ENABLED` | yes | `true` or `false`; `false` disables the in-process daily editor (manual runs still work). It checks every 5 minutes which users are due. |
-| `EDITOR_HOUR` | yes | **Daily article from** hour (0–23) for users who have not set their own in Settings; it is read in each user's own time zone. |
-| `CONTENT_DIR` | yes | Content root (units, authored content, images, eval samples). Relative paths resolve from the working directory. The image sets `/app/content` and dev compose sets it for the api container, so only host runs read it from `.env`. |
-| `WEB_DIST_DIR` | no (mode switch) | When set, the api also serves the built web app from that folder with SPA fallback; unset, it does not (development, where Vite serves the web). The image sets `/app/apps/web/dist`. |
-| `APP_PORT` | prod | Host port published for the app. The production compose fails if it is missing. |
-| `APP_BIND` | prod | Host address to publish on: `127.0.0.1` behind a reverse proxy, `0.0.0.0` to expose the app directly (then set `TRUST_PROXY=false`). The production compose fails if it is missing. |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | dev | Credentials of the local development `postgres:18` service (`docker-compose.yml`). Production uses your own database via `DATABASE_URL`. |
-| `API_URL` | dev server | Where the Vite dev server proxies `/api` and `/content`; it fails to start without it. Dev compose sets `http://api:$PORT`; on the host run `API_URL=http://localhost:3000 pnpm dev`. Builds and tests do not use it. |
-| `DATABASE_URL_TEST` | no (tests) | Database for `pnpm --filter @english-course/api test:db`; when unset it uses `DATABASE_URL` with `_test` appended to the db name (created if missing; name must end in `_test`). |
+**Development `.env`** (`docker-compose.yml`):
+
+| Name | What it is |
+|------|------------|
+| `POSTGRES_USER` | User name of the local development database. |
+| `POSTGRES_PASSWORD` | Password of that user; pick a real one. |
+| `POSTGRES_DB` | Name of the local development database. |
+| `PORT` | Port the api listens on and is published on (`3000`). |
+| `APP_USER_EMAIL` | Email you log in with; it is the admin account (case-insensitive). See [Users](#users). |
+| `APP_USER_PASSWORD` | Admin password, at least 8 characters. Changing it logs the admin out everywhere. |
+| `APP_SECRET` | 64 hex chars (`openssl rand -hex 32`) that encrypt saved AI keys and sign sessions. Changing it logs everyone out and makes saved keys unreadable. |
+| `TRUST_PROXY` | `true` only behind a TLS reverse proxy (see below); `false` in development. |
+| `EDITOR_ENABLED` | `true` runs the daily article editor automatically; `false` leaves only manual runs. |
+| `EDITOR_HOUR` | Hour (0–23) from which a user's daily article is prepared, until they pick their own in Settings; read in each user's time zone. |
+
+**Production environment** (`docker-compose.prod.yml`, or your host's Environment tab):
+
+| Name | What it is |
+|------|------------|
+| `DATABASE_URL` | Your PostgreSQL 18 database, `postgres://user:pass@host:5432/db`. |
+| `APP_USER_EMAIL` | Email you log in with; it is the admin account (case-insensitive). |
+| `APP_USER_PASSWORD` | Admin password, at least 8 characters. |
+| `APP_SECRET` | 64 hex chars (`openssl rand -hex 32`), generated once on the server and kept stable. |
+| `TRUST_PROXY` | `true` behind a TLS reverse proxy, `false` when the app is reached directly. |
+| `EDITOR_ENABLED` | `true` runs the daily article editor automatically; `false` leaves only manual runs. |
+| `EDITOR_HOUR` | Default hour (0–23) for the daily article, read in each user's time zone. |
+| `APP_BIND` | Host address the app is published on: `127.0.0.1` behind a proxy, `0.0.0.0` to expose it. |
+| `APP_PORT` | Host port the app is published on. |
+
+**Set for you**: `PORT`, `CONTENT_DIR` (content root) and `WEB_DIST_DIR` (serve the built web)
+come from the `Dockerfile` in production; in development, compose sets `CONTENT_DIR` and builds
+`DATABASE_URL`, and the web gets `API_URL`. `pnpm --filter @english-course/api test:db` uses
+`DATABASE_URL_TEST` when set, otherwise `<POSTGRES_DB>_test` on the dev database at
+`localhost:5432` (created if missing).
+
+**Session cookie and proxy.** The session cookie's `Secure` flag is automatic: with
+`TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides
+(missing header → Secure); otherwise https → Secure, and plain http drops it only for local hosts
+(`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). With
+`TRUST_PROXY=true`, login rate limiting (per account and client) also uses the last
+`X-Forwarded-For` entry. Forwarded headers are honored only from a loopback or private peer
+(`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); keep the app
+unreachable from clients except through the proxy.
 
 ## AI providers
 
@@ -179,8 +193,8 @@ The user must own the database: the app creates its tables on start. In `DATABAS
 
 ### 2. Environment and start
 
-Every line is required (no defaults); `PORT`, `CONTENT_DIR` and `WEB_DIST_DIR` are image
-internals and are set by the image, so leave them out. AI keys are not here: each user saves
+Every line is required (no defaults); `PORT`, `CONTENT_DIR` and `WEB_DIST_DIR` are set by the
+image, so leave them out. AI keys are not here: each user saves
 theirs in Settings.
 
 ```env
@@ -188,10 +202,6 @@ DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
 APP_USER_EMAIL=you@example.com
 APP_USER_PASSWORD=<8+ characters>
 APP_SECRET=<openssl rand -hex 32, generated on the server>
-OLLAMA_BASE_URL=https://ollama.com
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-APP_PUBLIC_URL=https://english.example.com
-COOKIE_SECURE=auto
 TRUST_PROXY=true            # behind a TLS reverse proxy; false without one
 EDITOR_ENABLED=true
 EDITOR_HOUR=5
@@ -277,14 +287,14 @@ that writes (answers, reviews, writing, AI help) needs a connection; nothing is 
 | Command | What |
 |---------|------|
 | `docker compose up` | Postgres + api (watch) + web (Vite) |
-| `API_URL=http://localhost:3000 pnpm dev` | api + web on the host (needs a reachable `DATABASE_URL`) |
+| `API_URL=http://localhost:3000 pnpm dev` | api + web on the host (also export `DATABASE_URL` and `CONTENT_DIR=../../content`) |
 | `pnpm -r test` | All unit tests (vitest) |
-| `pnpm --filter @english-course/api test:db` | DB integration tests against `DATABASE_URL_TEST` |
+| `pnpm --filter @english-course/api test:db` | DB integration tests (`DATABASE_URL_TEST`, or `<POSTGRES_DB>_test` on the dev db) |
 | `pnpm typecheck` | TypeScript in every package |
 | `pnpm lint` / `pnpm format` | Biome check / fix |
 | `pnpm build` | Production web build (`apps/web/dist`) |
 | `pnpm --filter @english-course/api db:generate` | New Drizzle migration from schema changes |
-| `pnpm --filter @english-course/api db:seed` | Re-run the content seed |
+| `docker compose exec api corepack pnpm --filter @english-course/api db:seed` | Re-run the content seed (inside the api container, which has `DATABASE_URL` and `CONTENT_DIR`) |
 | `pnpm import:book -- --units 1-6` | Import book units into `content/` |
 | `apps/web/icons/generate.sh` | Regenerate PWA icons from the SVG sources (Inkscape) |
 

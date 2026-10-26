@@ -1,19 +1,11 @@
 // `pnpm --filter @english-course/api test:db`: runs the DB integration tests against the
-// local Postgres. Uses DATABASE_URL_TEST, or derives `<db>_test` from DATABASE_URL and
-// creates that database when it is missing.
+// local Postgres. Uses DATABASE_URL_TEST, or `<POSTGRES_DB>_test` on the dev compose database
+// (localhost:5432, credentials from the root `.env`), and creates that database when missing.
 import postgres from "postgres";
 import { startVitest } from "vitest/node";
+import { testDatabaseUrl } from "./test-db-url.ts";
 
-function testUrl(): string {
-  if (process.env.DATABASE_URL_TEST) return process.env.DATABASE_URL_TEST;
-  const base = process.env.DATABASE_URL;
-  if (!base) throw new Error("Set DATABASE_URL_TEST or DATABASE_URL");
-  const url = new URL(base);
-  url.pathname = `${url.pathname.slice(1)}_test`;
-  return url.toString();
-}
-
-const url = new URL(testUrl());
+const url = new URL(testDatabaseUrl(process.env));
 const name = url.pathname.slice(1);
 if (!/^[a-z0-9_]+_test$/.test(name)) {
   throw new Error(`Test database name must match [a-z0-9_]+_test, got "${name}"`);

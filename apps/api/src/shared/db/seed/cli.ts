@@ -1,4 +1,6 @@
-// `pnpm --filter @english-course/api db:seed`: upserts CONTENT_DIR into DATABASE_URL.
+// `pnpm --filter @english-course/api db:seed`: upserts CONTENT_DIR into DATABASE_URL. In
+// development run it inside the api container, where compose sets both:
+//   docker compose exec api corepack pnpm --filter @english-course/api db:seed
 import { resolveContentDir } from "../../../content/content-dir.ts";
 import { createDb } from "../client.ts";
 import { formatSeedResult, seed } from "./index.ts";

@@ -70,12 +70,11 @@ const MODELS = {
   ],
 };
 
-const client = (fetchFn: typeof fetch, extra: { apiKey?: string; appUrl?: string } = {}) =>
+const client = (fetchFn: typeof fetch, extra: { apiKey?: string } = {}) =>
   createOpenRouterClient({
     baseUrl: "https://openrouter.example/api/v1/",
     getApiKey: async () => ("apiKey" in extra ? extra.apiKey : "sk-or-test-1234"),
     fetch: fetchFn,
-    appUrl: extra.appUrl,
   });
 
 async function collect(iter: AsyncIterable<ChatDelta>): Promise<ChatDelta[]> {
@@ -94,7 +93,7 @@ describe("openrouter adapter: chat (streaming)", () => {
   it("sends the OpenAI request shape with auth, attribution, reasoning, tools and ids", async () => {
     const { fetchFn, calls } = mockFetch(sse(delta({}, "stop"), "data: [DONE]"));
     await collect(
-      client(fetchFn, { appUrl: "https://english.example" }).chat({
+      client(fetchFn).chat({
         model: "openai/gpt-oss-120b",
         think: "high",
         options: { temperature: 0.2, numPredict: 100 },
@@ -116,8 +115,8 @@ describe("openrouter adapter: chat (streaming)", () => {
     const headers = call?.init.headers as Record<string, string>;
     expect(headers.authorization).toBe("Bearer sk-or-test-1234");
     expect(headers["content-type"]).toBe("application/json");
-    expect(headers["http-referer"]).toBe("https://english.example");
     expect(headers["x-openrouter-title"]).toBe("English Course");
+    expect(headers).not.toHaveProperty("http-referer");
     expect(call?.body).toEqual({
       model: "openai/gpt-oss-120b",
       stream: true,
@@ -148,7 +147,7 @@ describe("openrouter adapter: chat (streaming)", () => {
     });
   });
 
-  it("maps think: false to effort none, true to enabled, null to nothing, and omits attribution", async () => {
+  it("maps think: false to effort none, true to enabled, and null to nothing", async () => {
     const { fetchFn, calls } = mockFetch(
       sse(delta({}, "stop"), "data: [DONE]"),
       sse(delta({}, "stop"), "data: [DONE]"),
@@ -161,8 +160,13 @@ describe("openrouter adapter: chat (streaming)", () => {
     expect(calls[0]?.body.reasoning).toEqual({ effort: "none" });
     expect(calls[1]?.body.reasoning).toEqual({ enabled: true });
     expect(calls[2]?.body).not.toHaveProperty("reasoning");
-    const headers = calls[0]?.init.headers as Record<string, string>;
-    expect(headers).not.toHaveProperty("http-referer");
+  });
+
+  it("calls the public OpenRouter API when no base URL is given", async () => {
+    const { fetchFn, calls } = mockFetch(sse(delta({}, "stop"), "data: [DONE]"));
+    const c = createOpenRouterClient({ getApiKey: async () => "sk-or-test-1234", fetch: fetchFn });
+    await collect(c.chat({ model: "m", messages: [] }));
+    expect(calls[0]?.url).toBe("https://openrouter.ai/api/v1/chat/completions");
   });
 
   it("parses SSE: comments, reasoning, content chunks, streamed tool calls and final usage", async () => {

@@ -19,23 +19,11 @@ const EnvSchema = z.object({
   APP_SECRET: env(
     z.string().regex(/^[0-9a-fA-F]{64}$/, "APP_SECRET must be 32 bytes encoded as 64 hex chars"),
   ),
-  OLLAMA_BASE_URL: env(z.url()),
-  OPENROUTER_BASE_URL: env(z.url()),
-  /** Public URL of this app, sent to OpenRouter as `HTTP-Referer` for attribution. */
-  APP_PUBLIC_URL: env(z.url()),
   /**
-   * Session cookie `Secure` flag: `auto` = Secure for https (or `X-Forwarded-Proto: https`
-   * with TRUST_PROXY); plain http drops it only on local dev hosts.
-   */
-  COOKIE_SECURE: env(
-    z
-      .enum(["auto", "true", "false"])
-      .transform((value) => (value === "auto" ? value : value === "true")),
-  ),
-  /**
-   * Trust `X-Forwarded-*` headers from a reverse proxy (TLS termination): the cookie `Secure`
-   * flag follows `X-Forwarded-Proto` and login rate limiting keys on `X-Forwarded-For`. Only
-   * loopback/private socket peers are believed (see auth/trusted-proxy.ts).
+   * Trust `X-Forwarded-*` headers from a reverse proxy (TLS termination): the session cookie
+   * `Secure` flag follows `X-Forwarded-Proto` and login rate limiting keys on `X-Forwarded-For`.
+   * Only loopback/private socket peers are believed (see auth/trusted-proxy.ts). Without it,
+   * https requests get a Secure cookie and plain http drops it only on local dev hosts.
    */
   TRUST_PROXY: flag(),
   /** Daily reading editor job; `false` disables the in-process scheduler (manual runs still work). */

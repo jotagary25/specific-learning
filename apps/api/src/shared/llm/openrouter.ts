@@ -14,15 +14,17 @@ import type {
   Usage,
 } from "./types.ts";
 
+/** App title sent as `X-OpenRouter-Title` for attribution. */
 const APP_TITLE = "English Course";
 
+/** The OpenRouter API (chat/completions, models, key). */
+export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1";
+
 export type OpenRouterClientOptions = {
-  /** OpenRouter API base URL (the configured `OPENROUTER_BASE_URL`). */
-  baseUrl: string;
+  /** API base URL; only tests override it to point at a mock (default {@link OPENROUTER_API_URL}). */
+  baseUrl?: string;
   /** Resolved on every call so a key change takes effect immediately. */
   getApiKey: () => Promise<string | undefined>;
-  /** Public app URL sent as `HTTP-Referer` (with the app title) for attribution; omitted when unset. */
-  appUrl?: string;
   fetch?: typeof fetch;
   timeouts?: { chatMs?: number; metadataMs?: number };
   /** How long the model catalog is reused (default 10 min). */
@@ -278,7 +280,7 @@ const chunkError = (chunk: WireChunk) =>
   new LlmError("upstream", `OpenRouter error: ${chunk.error?.message ?? "unknown"}`);
 
 export function createOpenRouterClient(opts: OpenRouterClientOptions): LlmClient {
-  const baseUrl = opts.baseUrl.replace(/\/+$/, "");
+  const baseUrl = (opts.baseUrl ?? OPENROUTER_API_URL).replace(/\/+$/, "");
   const fetchFn = opts.fetch ?? fetch;
   const chatMs = opts.timeouts?.chatMs ?? 180_000;
   const metadataMs = opts.timeouts?.metadataMs ?? 15_000;
@@ -297,12 +299,11 @@ export function createOpenRouterClient(opts: OpenRouterClientOptions): LlmClient
 
     const timeout = AbortSignal.timeout(init.timeoutMs);
     const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
-    const headers: Record<string, string> = { authorization: `Bearer ${apiKey}` };
+    const headers: Record<string, string> = {
+      authorization: `Bearer ${apiKey}`,
+      "x-openrouter-title": APP_TITLE,
+    };
     if (init.body !== undefined) headers["content-type"] = "application/json";
-    if (opts.appUrl) {
-      headers["http-referer"] = opts.appUrl;
-      headers["x-openrouter-title"] = APP_TITLE;
-    }
     let res: Response;
     try {
       res = await fetchFn(`${baseUrl}${path}`, {
