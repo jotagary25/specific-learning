@@ -24,17 +24,47 @@ openssl rand -hex 16   # a strong APP_USER_PASSWORD (or choose your own, 8+ char
 ```
 
 Nothing has a default: `.env` must hold every variable below, or `docker compose` (and the api)
-refuses to start and names what is missing. Use a real `POSTGRES_PASSWORD`:
+refuses to start and names what is missing. A ready-to-copy development `.env` (use a real
+`POSTGRES_PASSWORD`):
 
 ```env
+# ============================================================
+# PostgreSQL — local development database (compose service `db`).
+# Compose builds the api's DATABASE_URL from these three values.
+# ============================================================
 POSTGRES_USER=english
 POSTGRES_PASSWORD=<a real password>
 POSTGRES_DB=english_course
+
+# ============================================================
+# API — port it listens on, the public address of the app (sent
+# to OpenRouter as HTTP-Referer) and whether a TLS proxy sits in
+# front (false in development).
+# ============================================================
 PORT=3000
+APP_PUBLIC_URL=http://localhost:5173
+TRUST_PROXY=false
+
+# ============================================================
+# Admin account — created or updated on every start. APP_SECRET
+# (openssl rand -hex 32) encrypts saved AI keys and signs
+# sessions: keep it stable.
+# ============================================================
 APP_USER_EMAIL=you@example.com
 APP_USER_PASSWORD=<8+ characters>
 APP_SECRET=<openssl rand -hex 32>
-TRUST_PROXY=false
+
+# ============================================================
+# AI providers — API addresses only. The API keys are saved by
+# each user in Settings, never here.
+# ============================================================
+OLLAMA_BASE_URL=https://ollama.com
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+
+# ============================================================
+# Daily reading editor — turn the automatic daily article on/off
+# and the hour (0-23) new users get until they pick their own.
+# ============================================================
 EDITOR_ENABLED=true
 EDITOR_HOUR=5
 ```
@@ -90,6 +120,9 @@ as missing. AI provider keys are not environment variables: each user saves thei
 | `APP_USER_EMAIL` | Email you log in with; it is the admin account (case-insensitive). See [Users](#users). |
 | `APP_USER_PASSWORD` | Admin password, at least 8 characters. Changing it logs the admin out everywhere. |
 | `APP_SECRET` | 64 hex chars (`openssl rand -hex 32`) that encrypt saved AI keys and sign sessions. Changing it logs everyone out and makes saved keys unreadable. |
+| `APP_PUBLIC_URL` | Address you open the app at (`http://localhost:5173`); sent to OpenRouter as `HTTP-Referer` so it can attribute the requests. |
+| `OLLAMA_BASE_URL` | Ollama API address the app calls (`https://ollama.com`). |
+| `OPENROUTER_BASE_URL` | OpenRouter API address the app calls (`https://openrouter.ai/api/v1`). |
 | `TRUST_PROXY` | `true` only behind a TLS reverse proxy (see below); `false` in development. |
 | `EDITOR_ENABLED` | `true` runs the daily article editor automatically; `false` leaves only manual runs. |
 | `EDITOR_HOUR` | Hour (0–23) from which a user's daily article is prepared, until they pick their own in Settings; read in each user's time zone. |
@@ -102,6 +135,9 @@ as missing. AI provider keys are not environment variables: each user saves thei
 | `APP_USER_EMAIL` | Email you log in with; it is the admin account (case-insensitive). |
 | `APP_USER_PASSWORD` | Admin password, at least 8 characters. |
 | `APP_SECRET` | 64 hex chars (`openssl rand -hex 32`), generated once on the server and kept stable. |
+| `APP_PUBLIC_URL` | Public address of the app (`https://english.example.com`); sent to OpenRouter as `HTTP-Referer` for attribution. |
+| `OLLAMA_BASE_URL` | Ollama API address the app calls (`https://ollama.com`). |
+| `OPENROUTER_BASE_URL` | OpenRouter API address the app calls (`https://openrouter.ai/api/v1`). |
 | `TRUST_PROXY` | `true` behind a TLS reverse proxy, `false` when the app is reached directly. |
 | `EDITOR_ENABLED` | `true` runs the daily article editor automatically; `false` leaves only manual runs. |
 | `EDITOR_HOUR` | Default hour (0–23) for the daily article, read in each user's time zone. |
@@ -198,15 +234,42 @@ image, so leave them out. AI keys are not here: each user saves
 theirs in Settings.
 
 ```env
+# ============================================================
+# Database — your own PostgreSQL 18 (the user must own the db).
+# ============================================================
 DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
+
+# ============================================================
+# Admin account — created or updated on every start. Generate
+# APP_SECRET on the server (openssl rand -hex 32), keep it stable.
+# ============================================================
 APP_USER_EMAIL=you@example.com
 APP_USER_PASSWORD=<8+ characters>
-APP_SECRET=<openssl rand -hex 32, generated on the server>
-TRUST_PROXY=true            # behind a TLS reverse proxy; false without one
-EDITOR_ENABLED=true
-EDITOR_HOUR=5
+APP_SECRET=<openssl rand -hex 32>
+
+# ============================================================
+# App and network — public HTTPS address, a TLS proxy in front
+# (Traefik on Dokploy: true), and where the container port is
+# published on the host.
+# ============================================================
+APP_PUBLIC_URL=https://english.example.com
+TRUST_PROXY=true
 APP_BIND=127.0.0.1
 APP_PORT=3000
+
+# ============================================================
+# AI providers — API addresses only; keys are saved per user in
+# Settings.
+# ============================================================
+OLLAMA_BASE_URL=https://ollama.com
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+
+# ============================================================
+# Daily reading editor — automatic daily article on/off and the
+# hour (0-23) new users get until they pick their own.
+# ============================================================
+EDITOR_ENABLED=true
+EDITOR_HOUR=5
 ```
 
 ```sh

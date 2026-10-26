@@ -13,12 +13,9 @@ import type {
   Usage,
 } from "./types.ts";
 
-/** The hosted Ollama API (chat, tags, show). */
-export const OLLAMA_API_URL = "https://ollama.com";
-
 export type OllamaClientOptions = {
-  /** API base URL; only tests override it to point at a mock (default {@link OLLAMA_API_URL}). */
-  baseUrl?: string;
+  /** Ollama API base URL (the configured `OLLAMA_BASE_URL`). */
+  baseUrl: string;
   /** Resolved on every call so a key change takes effect immediately. */
   getApiKey: () => Promise<string | undefined>;
   fetch?: typeof fetch;
@@ -161,7 +158,7 @@ async function* ndjsonLines(body: ReadableStream<Uint8Array>): AsyncGenerator<Wi
 }
 
 export function createOllamaClient(opts: OllamaClientOptions): LlmClient {
-  const baseUrl = (opts.baseUrl ?? OLLAMA_API_URL).replace(/\/+$/, "");
+  const baseUrl = opts.baseUrl.replace(/\/+$/, "");
   const fetchFn = opts.fetch ?? fetch;
   const chatMs = opts.timeouts?.chatMs ?? 180_000;
   const metadataMs = opts.timeouts?.metadataMs ?? 15_000;

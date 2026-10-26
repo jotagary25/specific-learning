@@ -19,6 +19,10 @@ const EnvSchema = z.object({
   APP_SECRET: env(
     z.string().regex(/^[0-9a-fA-F]{64}$/, "APP_SECRET must be 32 bytes encoded as 64 hex chars"),
   ),
+  /** Public URL of this app, sent to OpenRouter as `HTTP-Referer` for attribution. */
+  APP_PUBLIC_URL: env(z.url()),
+  OLLAMA_BASE_URL: env(z.url()),
+  OPENROUTER_BASE_URL: env(z.url()),
   /**
    * Trust `X-Forwarded-*` headers from a reverse proxy (TLS termination): the session cookie
    * `Secure` flag follows `X-Forwarded-Proto` and login rate limiting keys on `X-Forwarded-For`.

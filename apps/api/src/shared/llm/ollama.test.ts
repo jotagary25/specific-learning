@@ -259,13 +259,6 @@ describe("ollama adapter: error mapping", () => {
     await expect(slow.listModels()).rejects.toMatchObject({ code: "timeout" });
   });
 
-  it("calls the public Ollama API when no base URL is given", async () => {
-    const { fetchFn, calls } = mockFetch(Response.json({ models: [] }));
-    const c = createOllamaClient({ getApiKey: async () => "k".repeat(10), fetch: fetchFn });
-    await c.listModels();
-    expect(calls[0]?.url).toBe("https://ollama.com/api/tags");
-  });
-
   it("never puts the API key in error messages", async () => {
     const { fetchFn } = mockFetch(Response.json({ error: "unauthorized" }, { status: 401 }));
     const error = await client(fetchFn)

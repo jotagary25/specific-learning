@@ -8,6 +8,9 @@ const base: Record<string, string> = {
   APP_USER_EMAIL: "admin@example.com",
   APP_USER_PASSWORD: "a long enough passphrase",
   APP_SECRET: "ab".repeat(32),
+  APP_PUBLIC_URL: "https://english.example.com",
+  OLLAMA_BASE_URL: "https://ollama.com",
+  OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
   TRUST_PROXY: "false",
   EDITOR_ENABLED: "true",
   EDITOR_HOUR: "5",
@@ -27,6 +30,9 @@ describe("loadConfig", () => {
       APP_USER_EMAIL: "admin@example.com",
       APP_USER_PASSWORD: "a long enough passphrase",
       APP_SECRET: "ab".repeat(32),
+      APP_PUBLIC_URL: "https://english.example.com",
+      OLLAMA_BASE_URL: "https://ollama.com",
+      OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
       TRUST_PROXY: false,
       EDITOR_ENABLED: true,
       EDITOR_HOUR: 5,
@@ -60,16 +66,9 @@ describe("loadConfig", () => {
     expect(config).not.toHaveProperty("OPENROUTER_API_KEY");
   });
 
-  it("ignores the removed provider URL, public URL and cookie variables", () => {
-    const removed = ["OLLAMA_BASE_URL", "OPENROUTER_BASE_URL", "APP_PUBLIC_URL", "COOKIE_SECURE"];
-    const config = loadConfig({
-      ...base,
-      OLLAMA_BASE_URL: "not a url",
-      OPENROUTER_BASE_URL: "not a url",
-      APP_PUBLIC_URL: "not a url",
-      COOKIE_SECURE: "yes",
-    });
-    for (const name of removed) expect(config).not.toHaveProperty(name);
+  it("ignores the removed COOKIE_SECURE variable: the cookie Secure flag is automatic", () => {
+    const config = loadConfig({ ...base, COOKIE_SECURE: "yes" });
+    expect(config).not.toHaveProperty("COOKIE_SECURE");
   });
 
   it("keeps WEB_DIST_DIR optional: unset means the api does not serve the web build", () => {
@@ -90,6 +89,9 @@ describe("loadConfig", () => {
     ["EDITOR_HOUR", "24"],
     ["EDITOR_HOUR", "-1"],
     ["PORT", "abc"],
+    ["APP_PUBLIC_URL", "not a url"],
+    ["OLLAMA_BASE_URL", "not a url"],
+    ["OPENROUTER_BASE_URL", "not a url"],
     ["DATABASE_URL", "mysql://u:p@localhost/db"],
   ])("rejects an invalid %s (%s)", (name, value) => {
     expect(() => loadConfig({ ...base, [name]: value })).toThrow(new RegExp(`\\b${name}\\b`));

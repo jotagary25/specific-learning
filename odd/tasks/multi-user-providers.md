@@ -67,6 +67,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L21 (user): "porque demonios hay las credenciales de postgres por separado y el ulr por separado con lo mismo? porque no puedes organizarte bien?" → env trimmed: removed APP_PUBLIC_URL, OLLAMA_BASE_URL, OPENROUTER_BASE_URL (adapter constants), COOKIE_SECURE (always automatic); DATABASE_URL/CONTENT_DIR set by dev compose, CONTENT_DIR/WEB_DIST_DIR by Dockerfile. Dev `.env`: 10 vars; production: 9 vars. test:db builds its URL from POSTGRES_*. Tests: api 607 (+32 skipped), all green; compose configs valid with exactly those sets.
 
+- L22 (user): "quita solo cookie_secure y content_dir. las demás se quedan, no vuelvas a entregarme "envirotments" sin explicación" / "no te pedi una explicación por cada una, pero si por segmento, y bien dividido." → APP_PUBLIC_URL, OLLAMA_BASE_URL, OPENROUTER_BASE_URL restored as required; COOKIE_SECURE removed; CONTENT_DIR set by compose/Dockerfile. README dev + production env examples commented per section. Tests: api 614 (+32 skipped), web 116, all green; lint clean.
+
 ## Next step
 
-Feature complete. User: write `.env` and `.env.example` with the final lists; push/PR/merge are user decisions.
+Feature complete. User: write `.env` / `.env.example` from the sectioned examples; push/PR/merge are user decisions.

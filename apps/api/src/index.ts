@@ -66,8 +66,15 @@ const auth = createAuth({
 const settings = createSettings({
   store: settingsStore,
   appSecret: config.APP_SECRET,
-  createClient: (getApiKey) => createOllamaClient({ getApiKey }),
-  openrouter: { createClient: (getApiKey) => createOpenRouterClient({ getApiKey }) },
+  createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
+  openrouter: {
+    createClient: (getApiKey) =>
+      createOpenRouterClient({
+        baseUrl: config.OPENROUTER_BASE_URL,
+        appUrl: config.APP_PUBLIC_URL,
+        getApiKey,
+      }),
+  },
 });
 
 const preferences = createPreferences(settingsStore, {
