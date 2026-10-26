@@ -103,6 +103,9 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T17: PWA (icons incl. maskable/apple, shortcuts, prompt update toast, offline banner, install hint; precache shell; CacheFirst content images; NetworkFirst units + reading today/articles; never caches auth/settings/tutor/POST), single production image (368 MB, non-root, healthcheck) with api serving web build + SPA fallback when `WEB_DIST_DIR` set, `docker-compose.prod.yml` (external PG18 by default, `with-db` profile), `TRUST_PROXY` for Secure cookies behind TLS proxy, README with full env table and deploy/backup docs. Tests: api 479 (+14 skipped), web 101; build 10 precache entries; prod compose smoke verified, cleaned. Pending for user: add README-listed lines to `.env.example`.
 
+- T17 RDD assess: `high` (auth change, executable scripts) → review due; not started because reviewer transport (claude CLI) is unauthenticated.
+- Parent browser smoke test (dev compose, in-app browser): login → Today plan (10-min slump, Unit 1 story, teaser, parking list) → Unit 1 story with highlighted grammar spans → exercises with word bank, blanks, Check/Hint → Reading empty state on mobile viewport. Console: only the expected pre-login 401. Findings to polish: Today's story card labels the current chapter but shows its end-of-chapter cliffhanger (teaser of the next chapter); mobile header nav wraps to two rows (consider a bottom tab bar); tutor button overlaps the footer on mobile. Not exercised: AI flows with a real Ollama key.
+
 ## Next step
 
-Parent browser smoke test of the UI; relaunch T06 review captures after user re-login; user decides on push/PR/merge.
+User: `claude /login`, then relaunch T06 review captures (lineage review-aea7ddcc064c2612) and start the T17 review; set Ollama key + TZ; polish findings above; push/PR/merge remain user decisions.
