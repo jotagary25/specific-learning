@@ -50,7 +50,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T05 | DB schema + migrations (all features) | delegated writer | multi-file | [x] | see evidence |
 | T06 | LLM port + Ollama adapter + settings (key, model, effort) | delegated writer | multi-file | [x] | see evidence |
 | T07 | System prompts per AI function | delegated writer | multi-file | [x] | see evidence |
-| T08 | Authored content: block 1 serial story, puzzles, ES contrast notes, analogies | delegated writer | content files | [ ] | |
+| T08 | Authored content: block 1 serial story, puzzles, ES contrast notes, analogies | delegated writer | content files | [x] | see evidence |
 | T09 | Units UI: list, unit flow, exercises, hints, timeline drag, completion | delegated writer | multi-file | [ ] | |
 | T10 | Reading: AI editor pipeline + 6-step flow + next-day recall | delegated writer | multi-file | [ ] | |
 | T11 | Vocabulary + SRS (incl. own-error cards) | delegated writer | multi-file | [ ] | |
@@ -80,6 +80,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 - T06 review: full slice 47ab8cf..4f35cb9 → `lens_context_budget_exceeded`; reduced to T06 commit (base 9e85d9e), consent granted, lineage `review-aea7ddcc064c2612` (4 lenses, correction budget 200). Captures blocked: claude CLI OAuth session expired (client runtime). Waiting for user re-login to relaunch.
 - T07: 13 prompt modules in `apps/api/src/prompts/` (system prompt + zod schema + pure builder, injection guard, hints never reveal answers, review ≤3 focused errors with Spanish hints and no corrections), output schemas in `packages/shared/src/ai/`, eval samples `content/eval/writing-samples.json` (5 texts). Tests: shared 157, api 127 (+5 skipped), all green; lint clean. Parent spot check: read `review-writing.ts`. Spec §4 updated with prompt location.
 
+- T08: authored block 1 — Apollo 13 serial story (6 chapters, 201–229 words, 10–14 grammar spans each, facts checked against NASA sources listed in story.json), unit extras (puzzle, analogyEs, pitfalls, canDoEs) and 30 timeline items; schemas in `packages/shared/src/content/authored.ts`; seed extended (42 rows, idempotent 0 on restart). Tests: shared 181, api 134 (+6 skipped), test:db 6/6; lint clean. Parent spot check: chapter 1 text + unit 1 puzzle.
+
 ## Next step
 
-T08 — authored content (block 1 story, puzzles, ES contrasts, analogies, timeline items); relaunch T06 review captures after user re-login.
+T09 — Units UI; relaunch T06 review captures after user re-login.

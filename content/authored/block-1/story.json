@@ -1,0 +1,144 @@
+{
+  "blockId": 1,
+  "title": "Apollo 13: The Successful Failure",
+  "pitchEs": "Abril de 1970: tres astronautas van camino a la Luna cuando algo explota a 320.000 km de casa. Una historia real en seis capítulos, uno por unidad.",
+  "sources": [
+    { "title": "NASA — Apollo 13: Mission Details", "url": "https://www.nasa.gov/missions/apollo/apollo-13-mission-details/" },
+    { "title": "NASA — Detailed Chronology of Events Surrounding the Apollo 13 Accident", "url": "https://www.nasa.gov/history/detailed-chronology-of-events-surrounding-the-apollo-13-accident/" },
+    { "title": "NASA — “Houston, We’ve Had a Problem”", "url": "https://www.nasa.gov/history/houston-weve-had-a-problem/" },
+    { "title": "NASA — Apollo 13 Crew Returns Safely to Earth", "url": "https://www.nasa.gov/history/apollo-13-crew-returns-safely-to-earth/" },
+    { "title": "NASA — 50 Years Ago: Apollo 13 Review Board Report", "url": "https://www.nasa.gov/history/50-years-ago-apollo-13-review-board-report/" },
+    { "title": "NASA — Apollo 13 Flight Journal, Day 3: Aquarius Becomes a Lifeboat", "url": "https://www.hq.nasa.gov/pao/History/afj/ap13fj/09day3-lifeboat.html" }
+  ],
+  "chapters": [
+    {
+      "id": "b1-c1",
+      "position": 1,
+      "unitId": 1,
+      "title": "Live from Space",
+      "body": "It’s Monday evening, April 13, 1970, and three American astronauts are flying to the Moon. Their spacecraft is traveling through the dark at thousands of kilometers per hour, and the Earth is getting smaller in the window every hour.\n\nThe crew is finishing a live TV broadcast. Fred Haise is floating in the lunar module, Aquarius, and he is showing the camera how astronauts eat, sleep and move without gravity. Commander Jim Lovell and Jack Swigert are working in the command module, Odyssey. Swigert is smiling, but this week he is living a strange adventure: he is replacing Ken Mattingly, a crew member who was removed from the flight only days before launch because he had no immunity to German measles.\n\nIn Houston, Mission Control is following every detail. Flight director Gene Kranz and his White Team are working the evening shift. Engineers are checking numbers on their screens, and somebody is drinking cold coffee. Back home, the world is changing too: for many people, trips to the Moon are becoming routine, and public interest is falling.\n\nNow the broadcast is over. Haise is closing up Aquarius, and Lovell is tidying up in Odyssey. Then the radio comes to life. Capcom Jack Lousma is asking for something ordinary: the crew should stir up the oxygen and hydrogen tanks. Swigert is reaching for the switches.",
+      "grammarSpans": [
+        { "text": "are flying to the Moon", "unitId": 1, "note": "Action in progress at the moment of the story." },
+        { "text": "is traveling through the dark", "unitId": 1, "note": "In the middle of the action: started, not finished." },
+        { "text": "is getting smaller", "unitId": 1, "note": "get + adjective in the continuous: a change happening now." },
+        { "text": "is floating in the lunar module", "unitId": 1, "note": "What he is doing right now." },
+        { "text": "he is living a strange adventure", "unitId": 1, "note": "Temporary situation around now (this week)." },
+        { "text": "he is replacing Ken Mattingly", "unitId": 1, "note": "Temporary situation, not a permanent job." },
+        { "text": "are working the evening shift", "unitId": 1, "note": "Activity in progress around now." },
+        { "text": "the world is changing too", "unitId": 1, "note": "A general change happening in this period." },
+        { "text": "are becoming routine", "unitId": 1, "note": "become in the continuous: a gradual change." },
+        { "text": "public interest is falling", "unitId": 1, "note": "A trend happening around now." },
+        { "text": "Swigert is reaching for the switches", "unitId": 1, "note": "The action is happening as we speak." }
+      ],
+      "teaser": "It is the most ordinary request of the whole trip. Two minutes later, nothing will be ordinary again."
+    },
+    {
+      "id": "b1-c2",
+      "position": 2,
+      "unitId": 2,
+      "title": "How a Spaceship Stays Alive",
+      "body": "Before the next two minutes begin, let’s pause the story. How does a spaceship keep three people alive?\n\nApollo 13 has two spacecraft that fly together. Odyssey, the command module, carries the crew, and for most of the trip it depends on the service module behind it. Inside the service module, two oxygen tanks and two hydrogen tanks feed three fuel cells. The fuel cells combine oxygen and hydrogen, and they produce electricity and drinking water. The same oxygen tanks also give the astronauts the air they breathe.\n\nAquarius, the lunar module, has a different job. It only lands on the Moon and takes off again, so it carries batteries and a small supply of oxygen and water. It supports two men for about two days. Nobody expects more from it.\n\nOn Earth, Mission Control never sleeps. Teams of flight controllers work in shifts, and a flight director leads each team. Usually only one person, the capcom, talks to the astronauts, so the crew doesn’t hear ten voices at once. Every few hours, the controllers ask for routine tasks. One of them is the “cryo stir”: small fans inside the tanks mix the super-cold liquid, so the sensors measure the quantity correctly.\n\nIt is a simple procedure, and crews do it many times during a mission. Does anybody worry about it? No. Why would they?",
+      "grammarSpans": [
+        { "text": "How does a spaceship keep three people alive?", "unitId": 2, "note": "Question with does + base form: a general truth." },
+        { "text": "carries the crew", "unitId": 2, "note": "A permanent fact about the spacecraft (third person -s)." },
+        { "text": "depends on the service module", "unitId": 2, "note": "How the system works in general." },
+        { "text": "feed three fuel cells", "unitId": 2, "note": "A fact about the design, not an action now." },
+        { "text": "they produce electricity and drinking water", "unitId": 2, "note": "Things in general: always true." },
+        { "text": "Mission Control never sleeps", "unitId": 2, "note": "Frequency word (never) with the simple present." },
+        { "text": "work in shifts", "unitId": 2, "note": "A routine." },
+        { "text": "doesn’t hear ten voices at once", "unitId": 2, "note": "Negative with doesn’t + base form (no -s)." },
+        { "text": "the controllers ask for routine tasks", "unitId": 2, "note": "Something that happens repeatedly." },
+        { "text": "crews do it many times during a mission", "unitId": 2, "note": "How often something happens." },
+        { "text": "Does anybody worry about it?", "unitId": 2, "note": "Question with does + base form." }
+      ],
+      "teaser": "But tonight, inside oxygen tank number 2, a damaged wire is waiting for the fans to start."
+    },
+    {
+      "id": "b1-c3",
+      "position": 3,
+      "unitId": 3,
+      "title": "We’ve Had a Problem",
+      "body": "Normally, the crew works quietly at this point of the evening, and the controllers in Houston watch numbers that rarely change. Tonight, things are changing fast.\n\nSwigert turns on the fans. Seconds later, all three men hear a loud bang. Warning lights are flashing. Swigert speaks first: “Okay, Houston, we’ve had a problem here.” Lovell repeats the message a few seconds later.\n\nAt first, the astronauts think it is a small electrical problem. But the numbers on the panel are telling a different story. One oxygen tank shows zero. The other one is losing pressure, minute by minute. The fuel cells are dying.\n\nLovell looks out of the window and sees a cloud of gas around the ship. “We are venting something out into space,” he reports. Oxygen, which gives them power, water and air, is escaping.\n\nIn Mission Control, the controllers usually speak calmly and slowly. Now many of them are talking at the same time, and the flight director is trying to keep the room focused. The experts estimate that the fuel cells have less than two hours of life.\n\nThe command module is the crew’s home, and it always brings astronauts back to Earth. But this time, Odyssey is slowly losing power, and the mission is no longer a trip to the Moon. It is a fight to get home.",
+      "grammarSpans": [
+        { "text": "the crew works quietly", "unitId": 3, "note": "Simple present for what normally happens." },
+        { "text": "watch numbers that rarely change", "unitId": 3, "note": "Normal situation, repeated routine." },
+        { "text": "Tonight, things are changing fast", "unitId": 3, "note": "Continuous for what is happening around now, unlike normal." },
+        { "text": "Warning lights are flashing", "unitId": 3, "note": "In progress at this moment." },
+        { "text": "are telling a different story", "unitId": 3, "note": "Happening now, temporary." },
+        { "text": "One oxygen tank shows zero", "unitId": 3, "note": "Simple present for a state shown on the panel." },
+        { "text": "is losing pressure, minute by minute", "unitId": 3, "note": "A process in progress." },
+        { "text": "the controllers usually speak calmly", "unitId": 3, "note": "Usually + simple present: the normal behavior." },
+        { "text": "many of them are talking at the same time", "unitId": 3, "note": "Now + continuous: different from usual." },
+        { "text": "it always brings astronauts back to Earth", "unitId": 3, "note": "Always + simple present: every time (not a complaint)." },
+        { "text": "Odyssey is slowly losing power", "unitId": 3, "note": "Temporary process happening this time." }
+      ],
+      "teaser": "Odyssey has only minutes of power left. Where can three men go when their home is dying?"
+    },
+    {
+      "id": "b1-c4",
+      "position": 4,
+      "unitId": 4,
+      "title": "The Lifeboat",
+      "body": "The answer is attached to Odyssey: Aquarius. The lunar module has its own batteries, oxygen and water. But nobody wants to land on the Moon now. The crew wants one thing: to go home.\n\nThere is a problem, of course. Aquarius normally needs several hours to wake up, and Odyssey has only about fifteen minutes of power left. Mission Control needs a shortcut, and the engineers find one. Haise knows the lunar module better than anybody, and he moves quickly through the switches. Swigert is being extremely careful as he shuts down Odyssey, because its batteries must survive for the return to Earth.\n\n“What are you thinking about?” a controller might ask his neighbor. Everybody is thinking about the same numbers. Aquarius supports two men for two days. Now it has to keep three men alive for about four days. It seems impossible. Some people in the room think the plan can work; others honestly don’t know.\n\nInside Aquarius, the astronauts are having a strange night. They hear the hum of the fans. Through the small windows, they see the Moon. It looks enormous, and they don’t feel like explorers anymore. They feel like passengers in a lifeboat, far from any shore.\n\nThe Moon is still in front of them, and they can’t simply turn around: the big engine of the service module is too risky to use now.",
+      "grammarSpans": [
+        { "text": "nobody wants to land on the Moon now", "unitId": 4, "note": "want is a state verb: no continuous, even “now”." },
+        { "text": "The crew wants one thing", "unitId": 4, "note": "State verb in the simple present." },
+        { "text": "Aquarius normally needs several hours", "unitId": 4, "note": "need is a state verb." },
+        { "text": "Haise knows the lunar module", "unitId": 4, "note": "know is never continuous." },
+        { "text": "Swigert is being extremely careful", "unitId": 4, "note": "is being = is behaving (temporary behavior)." },
+        { "text": "What are you thinking about?", "unitId": 4, "note": "think = consider (mental activity): continuous is OK." },
+        { "text": "Everybody is thinking about the same numbers", "unitId": 4, "note": "think about = considering now." },
+        { "text": "It seems impossible", "unitId": 4, "note": "seem is a state verb." },
+        { "text": "think the plan can work", "unitId": 4, "note": "think = have an opinion: simple present only." },
+        { "text": "others honestly don’t know", "unitId": 4, "note": "know in the negative, simple present." },
+        { "text": "the astronauts are having a strange night", "unitId": 4, "note": "have = experience: continuous is OK." },
+        { "text": "They hear the hum of the fans", "unitId": 4, "note": "hear: normally simple present." },
+        { "text": "It looks enormous", "unitId": 4, "note": "look (appear) + adjective." },
+        { "text": "They feel like passengers", "unitId": 4, "note": "feel: simple present for how somebody feels now." }
+      ],
+      "teaser": "To get home, they must first go all the way around the Moon, and survive the cold, the darkness and an invisible poison in the air."
+    },
+    {
+      "id": "b1-c5",
+      "position": 5,
+      "unitId": 5,
+      "title": "Around the Moon",
+      "body": "The next days tested everything. On April 14, Apollo 13 swung behind the Moon. For a while, the radio went silent, and the astronauts saw the far side with their own eyes. They traveled farther from Earth than any humans before them. About two hours later, they fired the lunar module’s engine for about five minutes. The burn worked: it made the trip home faster.\n\nThen a new danger appeared. Every breath the men took added carbon dioxide to the air, and the filters in Aquarius couldn’t remove it all. The command module had extra filters, but they were square, and the openings in Aquarius were round. So engineers in Houston found a solution with materials the crew had on board: plastic bags, cardboard and tape. They read the instructions to the astronauts over the radio, and the crew built a strange box they called the “mailbox.” The air became safe again.\n\nTo save power, the crew turned off almost everything. In Odyssey, the temperature dropped to about 3 degrees Celsius, and drops of water covered the walls. Nobody slept well. Did they give up? They didn’t. One man always stayed awake and kept watch while the others tried to rest.",
+      "grammarSpans": [
+        { "text": "The next days tested everything", "unitId": 5, "note": "Regular verb in the simple past (-ed)." },
+        { "text": "swung behind the Moon", "unitId": 5, "note": "Irregular past: swing → swung." },
+        { "text": "the radio went silent", "unitId": 5, "note": "Irregular past: go → went." },
+        { "text": "saw the far side", "unitId": 5, "note": "Irregular past: see → saw." },
+        { "text": "They traveled farther from Earth", "unitId": 5, "note": "Regular past (American spelling: traveled)." },
+        { "text": "The burn worked", "unitId": 5, "note": "Finished action at a past time." },
+        { "text": "couldn’t remove it all", "unitId": 5, "note": "Past of can: could/couldn’t." },
+        { "text": "but they were square", "unitId": 5, "note": "Past of be: were." },
+        { "text": "found a solution", "unitId": 5, "note": "Irregular past: find → found." },
+        { "text": "the crew built a strange box", "unitId": 5, "note": "Irregular past: build → built." },
+        { "text": "The air became safe again", "unitId": 5, "note": "Irregular past: become → became." },
+        { "text": "Did they give up? They didn’t.", "unitId": 5, "note": "Question and short answer with did + base form." }
+      ],
+      "teaser": "But one huge question remained: would frozen Odyssey wake up again for the most dangerous part of the trip?"
+    },
+    {
+      "id": "b1-c6",
+      "position": 6,
+      "unitId": 6,
+      "title": "Silence",
+      "body": "On April 17, the crew was flying toward Earth at enormous speed. While Swigert was bringing Odyssey back to life, Lovell and Haise were preparing to say goodbye to their lifeboat. The cold command module worked.\n\nAbout five hours before reentry, they released the service module. As it was drifting away, the astronauts saw the damage for the first time. Lovell was looking out of the window when he reported the shocking news: one whole side of the module was missing.\n\nAbout an hour before reentry, they let Aquarius go. The little spacecraft that was never meant to carry them home was floating away into the dark.\n\nThen Odyssey hit the atmosphere. While the capsule was falling through the air, a layer of hot gas surrounded it, and the radio went silent, as it always does during reentry. In Mission Control, many people were waiting in silence. The minutes passed slowly.\n\nFinally, a voice came through the speakers. The parachutes were opening. Minutes later, Odyssey splashed down in the Pacific Ocean, near Samoa, and the USS Iwo Jima picked up the crew. When the astronauts arrived on the ship, people in Mission Control were cheering.\n\nApollo 13 never landed on the Moon. Lovell later called it a “successful failure.”",
+      "grammarSpans": [
+        { "text": "the crew was flying toward Earth", "unitId": 6, "note": "In the middle of an action at a past time." },
+        { "text": "While Swigert was bringing Odyssey back to life", "unitId": 6, "note": "while + past continuous: two actions in progress at the same time." },
+        { "text": "were preparing to say goodbye", "unitId": 6, "note": "Action in progress in the past." },
+        { "text": "As it was drifting away, the astronauts saw the damage", "unitId": 6, "note": "Longer action (continuous) + shorter event (simple past)." },
+        { "text": "Lovell was looking out of the window when he reported", "unitId": 6, "note": "Past continuous interrupted by a simple past with when." },
+        { "text": "was floating away into the dark", "unitId": 6, "note": "Scene in progress (background)." },
+        { "text": "While the capsule was falling through the air", "unitId": 6, "note": "Background action with while." },
+        { "text": "many people were waiting in silence", "unitId": 6, "note": "What people were doing at that time." },
+        { "text": "The parachutes were opening", "unitId": 6, "note": "In progress when the voice came through." },
+        { "text": "When the astronauts arrived on the ship, people in Mission Control were cheering", "unitId": 6, "note": "when + simple past, with a continuous action around it." }
+      ],
+      "teaser": "Odyssey was home. But what caused the explosion? The answer began on the ground, long before launch, and that is another story."
+    }
+  ]
+}

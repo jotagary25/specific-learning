@@ -1,0 +1,36 @@
+{
+  "unitId": 1,
+  "puzzle": {
+    "sentenceA": "I’m reading a great book about the Apollo missions.",
+    "sentenceB": "(Said at a party, with a drink in one hand and no book anywhere.)",
+    "question": "The speaker is not holding a book. Is the sentence still correct? Why?",
+    "revealEs": "Sí, es correcta. El present continuous no solo describe lo que haces en este segundo: también lo que está en curso «estos días». Empezaste el libro y no lo has terminado, aunque ahora mismo no lo estés leyendo."
+  },
+  "analogyEs": "El present continuous es como un proceso con estado RUNNING: ya arrancó y todavía no terminó. Da igual si en este milisegundo está usando CPU o esperando I/O; sigue «en ejecución». Y con get, become, increase o change es como una barra de progreso que avanza: algo está cambiando mientras hablas.",
+  "pitfalls": [
+    {
+      "wrong": "Look! It rains.",
+      "right": "Look! It’s raining.",
+      "explanationEs": "En español «llueve» sirve para ahora mismo; en inglés, lo que pasa en este momento va en present continuous."
+    },
+    {
+      "wrong": "I am study English this year.",
+      "right": "I’m studying English this year.",
+      "explanationEs": "El present continuous necesita am/is/are + verbo con -ing; no basta con el verbo base."
+    },
+    {
+      "wrong": "What do you do right now?",
+      "right": "What are you doing right now?",
+      "explanationEs": "«What do you do?» pregunta por tu trabajo; para lo que haces en este momento se usa el continuous."
+    },
+    {
+      "wrong": "She working from home today.",
+      "right": "She’s working from home today.",
+      "explanationEs": "No olvides el auxiliar be (is): el -ing solo no forma un tiempo verbal."
+    }
+  ],
+  "canDoEs": [
+    "Puedo contar lo que está pasando ahora o estos días (I’m working on a new project).",
+    "Puedo describir cambios en curso (prices are going up, my English is getting better)."
+  ]
+}

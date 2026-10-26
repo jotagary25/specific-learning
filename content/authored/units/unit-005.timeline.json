@@ -1,0 +1,57 @@
+{
+  "unitId": 5,
+  "items": [
+    {
+      "id": "tl-5-1",
+      "sentence": "The oxygen tank exploded on April 13.",
+      "expected": {
+        "kind": "point",
+        "start": -0.6
+      },
+      "explanationEs": "Un evento terminado en un momento concreto del pasado.",
+      "tolerance": 0.2
+    },
+    {
+      "id": "tl-5-2",
+      "sentence": "They lived in the lunar module for four days.",
+      "expected": {
+        "kind": "span",
+        "start": -0.7,
+        "end": -0.4
+      },
+      "explanationEs": "Un periodo terminado del pasado: tuvo principio y fin.",
+      "tolerance": 0.2
+    },
+    {
+      "id": "tl-5-3",
+      "sentence": "Did you see the news yesterday?",
+      "expected": {
+        "kind": "point",
+        "start": -0.2
+      },
+      "explanationEs": "Pregunta por un momento concreto y terminado (yesterday).",
+      "tolerance": 0.15
+    },
+    {
+      "id": "tl-5-4",
+      "sentence": "I worked at home last year.",
+      "expected": {
+        "kind": "span",
+        "start": -0.6,
+        "end": -0.3
+      },
+      "explanationEs": "Un periodo que ya terminó (last year).",
+      "tolerance": 0.2
+    },
+    {
+      "id": "tl-5-5",
+      "sentence": "The engineers built an adapter with tape and cardboard.",
+      "expected": {
+        "kind": "point",
+        "start": -0.5
+      },
+      "explanationEs": "Una acción completa en el pasado, contada como un solo evento.",
+      "tolerance": 0.25
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "unitId": 4,
+  "puzzle": {
+    "sentenceA": "I think you’re right.",
+    "sentenceB": "I’m thinking about changing jobs.",
+    "question": "Why can the second sentence use -ing, but the first one can’t?",
+    "revealEs": "Cuando think significa «opinar, creer», es un estado y va en simple present (I think you’re right). Cuando significa «considerar, darle vueltas a algo», es una actividad mental en curso y admite el continuous (I’m thinking about…)."
+  },
+  "analogyEs": "Los verbos de estado (know, want, need, seem, believe) son como el valor de una variable: no se «ejecutan», simplemente tienen un valor. Por eso no van con -ing. En cambio, «I’m having lunch» es una función que se está ejecutando (have = comer), mientras que «I have a laptop» es solo un dato guardado (have = poseer).",
+  "pitfalls": [
+    {
+      "wrong": "I’m knowing the answer.",
+      "right": "I know the answer.",
+      "explanationEs": "Know es un verbo de estado: nunca va en continuous."
+    },
+    {
+      "wrong": "Are you understanding?",
+      "right": "Do you understand?",
+      "explanationEs": "Understand es un verbo de estado; la pregunta natural es con do."
+    },
+    {
+      "wrong": "I’m wanting a coffee.",
+      "right": "I want a coffee.",
+      "explanationEs": "Want no se usa en continuous, aunque hables de ahora mismo."
+    },
+    {
+      "wrong": "I’m having a new car.",
+      "right": "I have a new car.",
+      "explanationEs": "Have como «poseer» es un estado. Solo va en continuous cuando significa una experiencia o acción (having lunch, having a good time)."
+    },
+    {
+      "wrong": "This plan is seeming difficult.",
+      "right": "This plan seems difficult.",
+      "explanationEs": "Seem describe un estado, así que va en simple present."
+    }
+  ],
+  "canDoEs": [
+    "Puedo usar verbos de estado (know, want, need, seem) sin forma -ing.",
+    "Distingo «I think» (opino) de «I’m thinking» (lo estoy pensando) y «I have» (tengo) de «I’m having» (estoy comiendo, pasando)."
+  ]
+}

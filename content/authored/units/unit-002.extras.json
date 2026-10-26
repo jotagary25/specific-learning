@@ -1,0 +1,41 @@
+{
+  "unitId": 2,
+  "puzzle": {
+    "sentenceA": "Water boils at 100 degrees Celsius.",
+    "sentenceB": "The water is boiling. Can you turn it off?",
+    "question": "Both talk about boiling water. Why do they use different verb forms?",
+    "revealEs": "La primera es un hecho general, siempre verdadero: simple present. La segunda describe algo que está ocurriendo ahora mismo en tu cocina: present continuous."
+  },
+  "analogyEs": "Piensa en la documentación de una API: «The endpoint returns 404 when the user does not exist». Está en simple present porque describe cómo se comporta el sistema siempre, no algo que ocurre una vez. Las rutinas son como un cron job: «I get up at 6» se ejecuta todos los días.",
+  "pitfalls": [
+    {
+      "wrong": "She work in a bank.",
+      "right": "She works in a bank.",
+      "explanationEs": "Con he/she/it el verbo lleva -s en el simple present. Es el error más típico."
+    },
+    {
+      "wrong": "Do she like coffee?",
+      "right": "Does she like coffee?",
+      "explanationEs": "Con he/she/it la pregunta usa does, no do."
+    },
+    {
+      "wrong": "He doesn’t works on Fridays.",
+      "right": "He doesn’t work on Fridays.",
+      "explanationEs": "Después de doesn’t el verbo va en forma base: la -s ya la lleva does."
+    },
+    {
+      "wrong": "What means this word?",
+      "right": "What does this word mean?",
+      "explanationEs": "En inglés las preguntas con verbos normales necesitan do/does; no basta con cambiar el orden como en español."
+    },
+    {
+      "wrong": "I am go to the gym every day.",
+      "right": "I go to the gym every day.",
+      "explanationEs": "Para hábitos no se usa am + verbo; es simplemente el verbo en presente."
+    }
+  ],
+  "canDoEs": [
+    "Puedo hablar de rutinas y hechos generales usando la -s de tercera persona sin dudar.",
+    "Puedo leer documentación técnica y entender por qué está escrita en simple present."
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "unitId": 3,
+  "puzzle": {
+    "sentenceA": "I live in Madrid.",
+    "sentenceB": "I’m living in Madrid.",
+    "question": "Both sentences are correct. What different idea does each one give?",
+    "revealEs": "«I live» presenta la situación como permanente: es tu casa. «I’m living» la presenta como temporal: estás allí por un tiempo (por trabajo, por unos meses) y probablemente te irás."
+  },
+  "analogyEs": "El simple present es la configuración por defecto del sistema: lo que pasa normalmente. El present continuous es un override temporal, como un feature flag activado solo esta semana. Y «He’s always breaking the build» con always + -ing es ese bug que se repite y te molesta: lo usas para quejarte.",
+  "pitfalls": [
+    {
+      "wrong": "Normally I’m working at home, but this week I work at the office.",
+      "right": "Normally I work at home, but this week I’m working at the office.",
+      "explanationEs": "Lo normal va en simple present; lo temporal (this week) va en continuous. Aquí están al revés."
+    },
+    {
+      "wrong": "He always is complaining.",
+      "right": "He’s always complaining.",
+      "explanationEs": "Always va entre is y el verbo con -ing: is always complaining."
+    },
+    {
+      "wrong": "The bus is leaving at 8:00 every morning.",
+      "right": "The bus leaves at 8:00 every morning.",
+      "explanationEs": "Un horario que se repite (every morning) va en simple present."
+    },
+    {
+      "wrong": "Why do you laugh? What’s so funny?",
+      "right": "Why are you laughing? What’s so funny?",
+      "explanationEs": "Preguntas por algo que está pasando ahora mismo, así que va en continuous."
+    }
+  ],
+  "canDoEs": [
+    "Puedo distinguir situaciones permanentes de temporales (I live / I’m living).",
+    "Puedo quejarme con naturalidad de algo que se repite (He’s always interrupting me)."
+  ]
+}

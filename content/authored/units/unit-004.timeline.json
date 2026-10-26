@@ -1,0 +1,59 @@
+{
+  "unitId": 4,
+  "items": [
+    {
+      "id": "tl-4-1",
+      "sentence": "Lovell knows the lunar module well.",
+      "expected": {
+        "kind": "state",
+        "start": -0.8,
+        "end": 0.8
+      },
+      "explanationEs": "Know es un estado: no es una acción que empiece y termine ahora.",
+      "tolerance": 0.25
+    },
+    {
+      "id": "tl-4-2",
+      "sentence": "They need more oxygen.",
+      "expected": {
+        "kind": "state",
+        "start": -0.2,
+        "end": 0.4
+      },
+      "explanationEs": "Need es un estado, aunque sea un estado de ahora mismo; por eso no va en continuous.",
+      "tolerance": 0.25
+    },
+    {
+      "id": "tl-4-3",
+      "sentence": "Kranz is thinking about a solution.",
+      "expected": {
+        "kind": "ongoing-now",
+        "start": -0.1,
+        "end": 0.1
+      },
+      "explanationEs": "Think = considerar: actividad mental en curso, admite continuous."
+    },
+    {
+      "id": "tl-4-4",
+      "sentence": "I think the plan will work.",
+      "expected": {
+        "kind": "state",
+        "start": -0.1,
+        "end": 0.1
+      },
+      "explanationEs": "Think = opinar: es un estado (tu opinión ahora), no una actividad.",
+      "tolerance": 0.2
+    },
+    {
+      "id": "tl-4-5",
+      "sentence": "The astronauts are having a terrible night.",
+      "expected": {
+        "kind": "ongoing-now",
+        "start": -0.3,
+        "end": 0.2
+      },
+      "explanationEs": "Have = experimentar algo: aquí sí es una acción en curso.",
+      "tolerance": 0.2
+    }
+  ]
+}

@@ -4,8 +4,18 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { resolveContentDir } from "../../content/content-dir.ts";
 import { createDb } from "./client.ts";
 import { runMigrations } from "./migrate.ts";
-import { attempt, block, exercise, exerciseItem, unit } from "./schema/index.ts";
+import {
+  attempt,
+  block,
+  exercise,
+  exerciseItem,
+  storyChapter,
+  timelineItem,
+  unit,
+} from "./schema/index.ts";
+import { loadAuthored } from "./seed/load-authored.ts";
 import { loadUnits } from "./seed/load-content.ts";
+import { seedAuthored } from "./seed/seed-authored.ts";
 import { seedContent } from "./seed/seed-content.ts";
 
 /**
@@ -82,6 +92,23 @@ describe.skipIf(!url)("migrations + content seed (real Postgres)", () => {
     const [u1] = await db.select().from(unit).where(eq(unit.id, 1));
     expect(u1).toMatchObject({ status: "completed", priority: 3 });
     expect((await db.select({ n: count() }).from(attempt))[0]?.n).toBe(1);
+  });
+
+  it("seeds authored story chapters, timeline items and unit extras idempotently", async () => {
+    const authored = await loadAuthored(resolveContentDir());
+
+    const first = await seedAuthored(db, authored);
+    expect(first).toMatchObject({ chapters: 6, timelineItems: 30, unitExtras: 6 });
+    expect(first.changed).toBe(6 + 30 + 6);
+    expect((await db.select({ n: count() }).from(storyChapter))[0]?.n).toBe(6);
+    expect((await db.select({ n: count() }).from(timelineItem))[0]?.n).toBe(30);
+
+    const again = await seedAuthored(db, authored);
+    expect(again.changed).toBe(0);
+    const [u1] = await db.select().from(unit).where(eq(unit.id, 1));
+    expect(u1?.extras).toMatchObject({ canDoEs: expect.any(Array) });
+    // Learner progress set earlier survives the authored seed too.
+    expect(u1).toMatchObject({ status: "completed", priority: 3 });
   });
 
   it("updates changed content fields in place", async () => {

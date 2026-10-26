@@ -18,11 +18,15 @@ export type SeedResult = {
  * ON CONFLICT update of the given content columns from `excluded`, applied only when one of
  * them actually differs, so an unchanged re-run writes nothing. Other columns are left alone.
  */
-function updateContent<T extends PgTable>(table: T, keys: (keyof T["$inferInsert"] & string)[]) {
+export function updateContent<T extends PgTable>(
+  table: T,
+  keys: (keyof T["$inferInsert"] & string)[],
+  { touchUpdatedAt = true } = {},
+) {
   const columns = getTableColumns(table);
   const current: SQL[] = [];
   const incoming: SQL[] = [];
-  const set: Record<string, SQL> = { updatedAt: sql`now()` };
+  const set: Record<string, SQL> = touchUpdatedAt ? { updatedAt: sql`now()` } : {};
   for (const key of keys) {
     const column = columns[key];
     if (!column) throw new Error(`Unknown column ${key}`);

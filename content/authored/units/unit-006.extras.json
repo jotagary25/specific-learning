@@ -1,0 +1,36 @@
+{
+  "unitId": 6,
+  "puzzle": {
+    "sentenceA": "When the phone rang, I was taking a shower.",
+    "sentenceB": "When the phone rang, I took a shower.",
+    "question": "In which sentence did the shower start before the phone rang?",
+    "revealEs": "En la primera: ya estabas en la ducha cuando sonó el teléfono (acción en curso interrumpida). En la segunda, primero sonó el teléfono y después te duchaste: dos acciones en secuencia."
+  },
+  "analogyEs": "El past continuous es un proceso de larga duración que estaba corriendo; el simple past es el evento o la excepción que llega en medio: «The deploy was running when the server crashed». Con while describes dos hilos ejecutándose en paralelo: «While I was coding, the tests were running».",
+  "pitfalls": [
+    {
+      "wrong": "While I watched TV, the phone was ringing.",
+      "right": "While I was watching TV, the phone rang.",
+      "explanationEs": "La acción larga de fondo va en past continuous; la corta que interrumpe, en simple past."
+    },
+    {
+      "wrong": "I was knowing the answer.",
+      "right": "I knew the answer.",
+      "explanationEs": "Know es un verbo de estado: tampoco va en continuous en pasado."
+    },
+    {
+      "wrong": "At 8 p.m. yesterday I had dinner, so I didn’t answer.",
+      "right": "At 8 p.m. yesterday I was having dinner, so I didn’t answer.",
+      "explanationEs": "Para decir qué estabas haciendo en un momento concreto del pasado se usa el past continuous."
+    },
+    {
+      "wrong": "When I was arriving, they left.",
+      "right": "When I arrived, they were leaving.",
+      "explanationEs": "Llegar es un evento corto (simple past); la acción en curso en ese momento era que ellos se estaban yendo."
+    }
+  ],
+  "canDoEs": [
+    "Puedo describir el fondo de una escena en pasado y la acción que la interrumpe.",
+    "Puedo usar while y when para contar dos acciones en el pasado."
+  ]
+}

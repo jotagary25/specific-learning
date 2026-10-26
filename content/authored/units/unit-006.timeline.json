@@ -1,0 +1,62 @@
+{
+  "unitId": 6,
+  "items": [
+    {
+      "id": "tl-6-1",
+      "sentence": "Haise was closing up Aquarius when they heard a bang.",
+      "expected": {
+        "kind": "interrupted",
+        "start": -0.7,
+        "end": -0.4,
+        "interruptAt": -0.55
+      },
+      "explanationEs": "La acción larga (was closing) estaba en curso cuando llegó el evento corto (heard).",
+      "tolerance": 0.2
+    },
+    {
+      "id": "tl-6-2",
+      "sentence": "At nine o’clock last night, I was watching a documentary.",
+      "expected": {
+        "kind": "span",
+        "start": -0.4,
+        "end": -0.2
+      },
+      "explanationEs": "Estabas en medio de la acción a esa hora: empezó antes y terminó después.",
+      "tolerance": 0.2
+    },
+    {
+      "id": "tl-6-3",
+      "sentence": "While I was cooking, the lights went out.",
+      "expected": {
+        "kind": "interrupted",
+        "start": -0.5,
+        "end": -0.2,
+        "interruptAt": -0.35
+      },
+      "explanationEs": "While + past continuous para el fondo; el apagón es el evento que interrumpe.",
+      "tolerance": 0.2
+    },
+    {
+      "id": "tl-6-4",
+      "sentence": "I was working from home when my boss called.",
+      "expected": {
+        "kind": "interrupted",
+        "start": -0.6,
+        "end": -0.3,
+        "interruptAt": -0.45
+      },
+      "explanationEs": "Trabajar estaba en curso; la llamada fue un momento dentro de ese periodo.",
+      "tolerance": 0.2
+    },
+    {
+      "id": "tl-6-5",
+      "sentence": "When the radio came back, everyone cheered.",
+      "expected": {
+        "kind": "point",
+        "start": -0.3
+      },
+      "explanationEs": "Dos eventos en secuencia: primero volvió la radio, luego todos aplaudieron. No hay acción de fondo.",
+      "tolerance": 0.2
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "unitId": 3,
+  "items": [
+    {
+      "id": "tl-3-1",
+      "sentence": "I live in Houston.",
+      "expected": {
+        "kind": "state",
+        "start": -0.9,
+        "end": 0.9
+      },
+      "explanationEs": "Situación permanente: es tu casa, empezó hace mucho y no tiene final previsto.",
+      "tolerance": 0.25
+    },
+    {
+      "id": "tl-3-2",
+      "sentence": "I’m living with my parents until I find an apartment.",
+      "expected": {
+        "kind": "ongoing-now",
+        "start": -0.3,
+        "end": 0.3
+      },
+      "explanationEs": "Situación temporal: empezó hace poco y terminará pronto.",
+      "tolerance": 0.25
+    },
+    {
+      "id": "tl-3-3",
+      "sentence": "Tonight the engineers are working late.",
+      "expected": {
+        "kind": "ongoing-now",
+        "start": -0.1,
+        "end": 0.2
+      },
+      "explanationEs": "Algo distinto de lo normal, en curso ahora mismo."
+    },
+    {
+      "id": "tl-3-4",
+      "sentence": "He’s always losing his keys.",
+      "expected": {
+        "kind": "habit",
+        "start": -0.7,
+        "end": 0.3
+      },
+      "explanationEs": "Always + -ing: algo que se repite una y otra vez (y molesta).",
+      "tolerance": 0.3
+    },
+    {
+      "id": "tl-3-5",
+      "sentence": "The engineers usually go home at six.",
+      "expected": {
+        "kind": "habit",
+        "start": -0.8,
+        "end": 0.8
+      },
+      "explanationEs": "Lo que pasa normalmente: un hábito en simple present.",
+      "tolerance": 0.25
+    }
+  ]
+}

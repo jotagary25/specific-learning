@@ -1,0 +1,60 @@
+{
+  "unitId": 2,
+  "items": [
+    {
+      "id": "tl-2-1",
+      "sentence": "Mission Control works 24 hours a day.",
+      "expected": {
+        "kind": "habit",
+        "start": -0.9,
+        "end": 0.9
+      },
+      "explanationEs": "Una rutina que se repite siempre: pasado, presente y futuro.",
+      "tolerance": 0.25
+    },
+    {
+      "id": "tl-2-2",
+      "sentence": "The Moon goes around the Earth.",
+      "expected": {
+        "kind": "state",
+        "start": -1,
+        "end": 1
+      },
+      "explanationEs": "Un hecho general: es verdad en todo momento.",
+      "tolerance": 0.3
+    },
+    {
+      "id": "tl-2-3",
+      "sentence": "Jim jogs every morning.",
+      "expected": {
+        "kind": "habit",
+        "start": -0.8,
+        "end": 0.8
+      },
+      "explanationEs": "Un hábito: se repite muchas veces, antes y después de ahora.",
+      "tolerance": 0.25
+    },
+    {
+      "id": "tl-2-4",
+      "sentence": "I usually drink coffee at nine.",
+      "expected": {
+        "kind": "habit",
+        "start": -0.8,
+        "end": 0.8
+      },
+      "explanationEs": "«Usually» indica repetición, no una acción concreta ahora.",
+      "tolerance": 0.25
+    },
+    {
+      "id": "tl-2-5",
+      "sentence": "Fuel cells produce electricity and water.",
+      "expected": {
+        "kind": "state",
+        "start": -1,
+        "end": 1
+      },
+      "explanationEs": "Cómo funciona algo en general: un hecho permanente.",
+      "tolerance": 0.3
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "unitId": 5,
+  "puzzle": {
+    "sentenceA": "I didn’t went to the meeting.",
+    "sentenceB": "I didn’t go to the meeting.",
+    "question": "Only one of these sentences is correct. Which one, and why?",
+    "revealEs": "La correcta es «I didn’t go». El auxiliar did ya marca el pasado, así que el verbo principal vuelve a su forma base. Si pones went, estás marcando el pasado dos veces."
+  },
+  "analogyEs": "El simple past es como un commit en el historial de git: algo terminado, con su momento concreto, que ya no cambia. Y did funciona como un wrapper que ya lleva la información de «pasado»: dentro, el verbo va en su forma base (Did you push? / I didn’t push).",
+  "pitfalls": [
+    {
+      "wrong": "Did you saw the news yesterday?",
+      "right": "Did you see the news yesterday?",
+      "explanationEs": "Después de did, el verbo va en forma base: did + see."
+    },
+    {
+      "wrong": "Yesterday I go to the office.",
+      "right": "Yesterday I went to the office.",
+      "explanationEs": "En español el contexto a veces basta; en inglés el verbo debe ir en pasado (go → went)."
+    },
+    {
+      "wrong": "I was work late last night.",
+      "right": "I worked late last night.",
+      "explanationEs": "Was no se usa para formar el pasado de verbos normales; el pasado de work es worked."
+    },
+    {
+      "wrong": "Where you went on vacation?",
+      "right": "Where did you go on vacation?",
+      "explanationEs": "Las preguntas en pasado necesitan did + verbo base."
+    }
+  ],
+  "canDoEs": [
+    "Puedo contar una historia terminada en pasado con los verbos irregulares más comunes.",
+    "Puedo hacer preguntas y negaciones en pasado con did / didn’t + verbo base."
+  ]
+}
