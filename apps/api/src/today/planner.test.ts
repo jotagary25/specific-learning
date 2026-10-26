@@ -2,8 +2,9 @@ import { type PlanBlockKind, TodayPlan } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { daypartOf, type PlannerSnapshot, planToday, suggestMode } from "./planner.ts";
 
-// 2026-10-26 is a Monday. Dates are built in local time, so the tests do not depend on TZ.
-const at = (day: number, hour: number, minute = 0) => new Date(2026, 9, day, hour, minute);
+// 2026-10-26 is a Monday. The snapshot zone is UTC, so `at` builds UTC wall times.
+const at = (day: number, hour: number, minute = 0) =>
+  new Date(Date.UTC(2026, 9, day, hour, minute));
 const MON = 26;
 const TUE = 27;
 const SAT = 31;
@@ -11,6 +12,7 @@ const SUN = 25;
 
 const base = (over: Partial<PlannerSnapshot> = {}): PlannerSnapshot => ({
   now: at(MON, 6, 30),
+  timeZone: "UTC",
   mode: "full",
   srs: { due: 12, fresh: 3 },
   reading: { title: "Why bees dance", step: "predict" },
@@ -54,7 +56,7 @@ describe("daypartOf / suggestMode", () => {
     [23, "evening"],
     [2, "evening"],
   ] as const)("%i:00 is %s", (hour, part) => {
-    expect(daypartOf(at(MON, hour))).toBe(part);
+    expect(daypartOf(at(MON, hour), "UTC")).toBe(part);
   });
 
   it.each([
@@ -65,7 +67,15 @@ describe("daypartOf / suggestMode", () => {
     [at(MON, 21), 0, "slump"],
     [at(MON, 21), 1, "minimum"],
   ] as const)("suggests the mode for %s with %i sessions done", (now, done, mode) => {
-    expect(suggestMode(now, done)).toBe(mode);
+    expect(suggestMode(now, "UTC", done)).toBe(mode);
+  });
+
+  it("reads the hour in the user's zone: one instant, two dayparts", () => {
+    const instant = at(MON, 13); // 09:00 in La Paz, 21:00 in Singapore
+    expect(daypartOf(instant, "America/La_Paz")).toBe("morning");
+    expect(daypartOf(instant, "Asia/Singapore")).toBe("evening");
+    expect(suggestMode(instant, "America/La_Paz", 0)).toBe("full");
+    expect(suggestMode(instant, "Asia/Singapore", 1)).toBe("minimum");
   });
 });
 
@@ -89,7 +99,7 @@ describe("planToday invariants", () => {
   for (const now of nows) {
     for (const mode of modes) {
       for (const [label, over] of states) {
-        it(`${now.toString().slice(0, 21)} × ${mode} × ${label}`, () => {
+        it(`${now.toISOString().slice(0, 16)} × ${mode} × ${label}`, () => {
           const plan = planToday(base({ ...over, now, mode }));
           expect(TodayPlan.parse(plan)).toEqual(plan);
           expect(plan.budgetMin).toBe(budgets[mode]);
@@ -117,6 +127,16 @@ describe("morning deep block (full mode before 12:00)", () => {
       "Saturday (writing day): writing main",
       { now: at(SAT, 7) },
       ["vocabulary", "writing", "unit"],
+    ],
+    [
+      "writing day in the user's zone: Friday 23:00 UTC is Saturday 08:00 in Tokyo",
+      { now: at(30, 23), timeZone: "Asia/Tokyo" },
+      ["vocabulary", "writing", "unit"],
+    ],
+    [
+      "Saturday 20:00 UTC is Sunday 05:00 in Tokyo: no writing day, Sunday rotation",
+      { now: at(SAT, 20), timeZone: "Asia/Tokyo" },
+      ["vocabulary", "reading", "unit"],
     ],
     [
       "open mission idle for 2 days: writing main",

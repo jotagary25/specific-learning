@@ -4,5 +4,5 @@ export {
   BONUS_STEP_MIN,
   bonusAllowed,
   bonusTotalValid,
-  isWeekend,
+  isWeekendDay,
 } from "./bonus.ts";

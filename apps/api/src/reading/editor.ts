@@ -8,10 +8,10 @@ import {
   type FocusUnit,
 } from "@english-course/shared";
 import type { ArticleCandidate } from "../prompts/index.ts";
+import { addDays } from "../shared/clock.ts";
 import type { NewsArticle, NewsCandidate, NewsSource } from "../shared/news/types.ts";
 import { normalizeUrl } from "../shared/news/types.ts";
 import { type ReadingAi, runReadingAi } from "./ai.ts";
-import { addDays } from "./dates.ts";
 import type { ReadingStore } from "./reading.store.ts";
 
 export const WORD_RANGE = { min: 500, max: 1200 } as const;
@@ -31,6 +31,9 @@ const GENERAL_FOCUS: FocusUnit = {
 };
 
 type Sourced = { candidate: NewsCandidate; source: NewsSource };
+
+/** Candidates gathered from every source; one pool can serve several users' runs. */
+export type CandidatePool = { items: Sourced[]; sources: EditorRunResponse["sources"] };
 
 /** The topic after the most recent one in the rotation tech → science → geopolitics. */
 export function nextTopic(recentTopics: ReadonlyArray<string | null>): ArticleTopic {
@@ -61,7 +64,7 @@ export function filterCandidates<T extends { candidate: NewsCandidate }>(
 ): T[] {
   const range = options.wordRange ?? WORD_RANGE;
   const cutoff = new Date(
-    `${addDays(options.date, -(options.maxAgeDays ?? MAX_AGE_DAYS))}T00:00:00`,
+    `${addDays(options.date, -(options.maxAgeDays ?? MAX_AGE_DAYS))}T00:00:00Z`,
   );
   const seen = new Set<string>();
   return items.filter(({ candidate }) => {
@@ -141,7 +144,28 @@ export function createEditor(deps: EditorDeps) {
     return result ?? null;
   }
 
-  async function run(userId: string, date: string): Promise<EditorRunResponse> {
+  /** 1. Gather: a failing source is reported, never fatal. */
+  async function gather(): Promise<CandidatePool> {
+    const pool: CandidatePool = { items: [], sources: [] };
+    for (const source of deps.sources) {
+      try {
+        const list = await source.candidates();
+        pool.items.push(...list.map((candidate) => ({ candidate, source })));
+        pool.sources.push({ name: source.name, candidates: list.length });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`editor: source ${source.name} failed: ${message}`);
+        pool.sources.push({ name: source.name, candidates: 0, error: message });
+      }
+    }
+    return pool;
+  }
+
+  async function run(
+    userId: string,
+    date: string,
+    candidates: () => Promise<CandidatePool>,
+  ): Promise<EditorRunResponse> {
     const base = {
       date,
       selection: null,
@@ -161,19 +185,9 @@ export function createEditor(deps: EditorDeps) {
       };
     }
 
-    // 1. Gather: a failing source is reported, never fatal.
-    const gathered: Sourced[] = [];
-    for (const source of deps.sources) {
-      try {
-        const list = await source.candidates();
-        gathered.push(...list.map((candidate) => ({ candidate, source })));
-        base.sources.push({ name: source.name, candidates: list.length });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.warn(`editor: source ${source.name} failed: ${message}`);
-        base.sources.push({ name: source.name, candidates: 0, error: message });
-      }
-    }
+    // 1. Gather (or reuse the pool the scheduler fetched for this tick).
+    const { items: gathered, sources } = await candidates();
+    base.sources.push(...sources);
 
     // 2. Filter: drop what this user already read (other users' picks stay eligible).
     const usedUrls = await store.usedUrls(
@@ -271,12 +285,20 @@ export function createEditor(deps: EditorDeps) {
 
   return {
     annotate,
-    /** Selects and stores the user's article for `date` (YYYY-MM-DD); idempotent per user and date. */
-    run(userId: string, date: string): Promise<EditorRunResponse> {
+    gather,
+    /**
+     * Selects and stores the user's article for `date` (YYYY-MM-DD); idempotent per user and
+     * date. `candidates` supplies a shared pool; without it the sources are queried.
+     */
+    run(
+      userId: string,
+      date: string,
+      candidates: () => Promise<CandidatePool> = gather,
+    ): Promise<EditorRunResponse> {
       const key = `${userId}/${date}`;
       const inFlight = running.get(key);
       if (inFlight) return inFlight;
-      const job = run(userId, date).finally(() => running.delete(key));
+      const job = run(userId, date, candidates).finally(() => running.delete(key));
       running.set(key, job);
       return job;
     },

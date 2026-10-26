@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { z } from "zod";
 import type { AppEnv } from "../auth/auth.ts";
-import { localDate, startOfDay } from "./dates.ts";
+import { isCalendarDay } from "../shared/clock.ts";
 import { type Progress, ProgressError } from "./progress.service.ts";
 
 const ERROR_STATUS: Record<ProgressError["code"], ContentfulStatusCode> = {
@@ -15,7 +15,7 @@ const ERROR_STATUS: Record<ProgressError["code"], ContentfulStatusCode> = {
 const Day = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((day) => localDate(startOfDay(day)) === day, "not a calendar day");
+  .refine(isCalendarDay, "not a calendar day");
 const TimelineQuery = z.object({ from: Day.optional(), to: Day.optional() });
 
 function handleError(error: Error, c: Context) {

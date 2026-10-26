@@ -6,7 +6,7 @@ import {
   AiKeyTestResult,
   ModelCapabilities,
   ModelsResponse,
-  Preferences,
+  PreferencesView,
   type UpdateAiFunctionRequest,
   type UpdatePreferencesRequest,
 } from "@english-course/shared";
@@ -47,7 +47,7 @@ export const saveAiFunction = (id: AiFunctionId, body: UpdateAiFunctionRequest) 
 
 export const preferencesKey = ["settings", "preferences"] as const;
 
-export const fetchPreferences = () => apiRequest(`${base}/preferences`, Preferences);
+export const fetchPreferences = () => apiRequest(`${base}/preferences`, PreferencesView);
 
 export const savePreferences = (body: UpdatePreferencesRequest) =>
-  apiRequest(`${base}/preferences`, Preferences, { method: "PUT", body });
+  apiRequest(`${base}/preferences`, PreferencesView, { method: "PUT", body });

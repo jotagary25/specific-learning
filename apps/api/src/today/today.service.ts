@@ -1,7 +1,7 @@
 import {
   bonusTotalValid,
   type EndSessionRequest,
-  isWeekend,
+  isWeekendDay,
   type ParkingItemView,
   type ParkingListResponse,
   type StoryTeaser,
@@ -9,6 +9,8 @@ import {
   type TodayMode,
   type TodayOverview,
 } from "@english-course/shared";
+import { type TimeZoneOf, utcTimeZone } from "../settings/preferences.ts";
+import { localDaysBetween, localWeekday, startOfLocalDay } from "../shared/clock.ts";
 import { daypartOf, type PlannerSnapshot, planToday, suggestMode } from "./planner.ts";
 import type { ParkingRecord, SessionRecord, TodayStore } from "./today.store.ts";
 
@@ -19,13 +21,15 @@ export type TodayState = Pick<PlannerSnapshot, "srs" | "reading" | "recallPendin
 };
 
 export interface TodaySources {
-  state(userId: string, now: Date): Promise<TodayState>;
+  state(userId: string, now: Date, timeZone: string): Promise<TodayState>;
 }
 
 export type TodayDeps = {
   store: TodayStore;
   sources: TodaySources;
   now?: () => Date;
+  /** The user's IANA zone (UTC by default): dayparts, days and weekends are local to it. */
+  timeZoneOf?: TimeZoneOf;
 };
 
 export class TodayError extends Error {
@@ -42,21 +46,9 @@ export class TodayError extends Error {
 export const ACTIVE_WINDOW_MIN = 180;
 const MINUTE = 60_000;
 
-const startOfLocalDay = (date: Date) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+const weekendAt = (at: Date, timeZone: string) => isWeekendDay(localWeekday(at, timeZone));
 
-/** Whole local calendar days between two instants (DST-safe). */
-function daysBetween(earlier: Date, later: Date): number {
-  const a = startOfLocalDay(earlier);
-  const b = startOfLocalDay(later);
-  return Math.round(
-    (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) -
-      Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
-      (24 * 60 * MINUTE),
-  );
-}
-
-export const sessionView = (s: SessionRecord): StudySessionView => ({
+export const sessionView = (s: SessionRecord, timeZone: string): StudySessionView => ({
   id: s.id,
   mode: s.mode,
   budgetMin: s.budgetMin,
@@ -64,6 +56,7 @@ export const sessionView = (s: SessionRecord): StudySessionView => ({
   startedAt: s.startedAt.toISOString(),
   endedAt: s.endedAt?.toISOString() ?? null,
   bonusMin: s.bonusMin,
+  weekend: weekendAt(s.startedAt, timeZone),
 });
 
 const parkingView = (p: ParkingRecord): ParkingItemView => ({
@@ -76,20 +69,23 @@ const parkingView = (p: ParkingRecord): ParkingItemView => ({
 export function createToday(deps: TodayDeps) {
   const { store, sources } = deps;
   const now = deps.now ?? (() => new Date());
+  const timeZoneOf = deps.timeZoneOf ?? utcTimeZone;
 
   async function snapshot(
     userId: string,
     at: Date,
+    zone: string,
     mode: TodayMode | undefined,
     sessionsDoneToday: number,
   ) {
     const [state, lastWriting] = await Promise.all([
-      sources.state(userId, at),
+      sources.state(userId, at, zone),
       store.lastWritingActivity(userId),
     ]);
-    const chosen = mode ?? suggestMode(at, sessionsDoneToday);
+    const chosen = mode ?? suggestMode(at, zone, sessionsDoneToday);
     const planner: PlannerSnapshot = {
       now: at,
+      timeZone: zone,
       mode: chosen,
       srs: state.srs,
       reading: state.reading,
@@ -97,7 +93,7 @@ export function createToday(deps: TodayDeps) {
       unit: state.unit,
       writing: {
         ...state.writing,
-        daysSinceLastWork: lastWriting ? daysBetween(lastWriting, at) : null,
+        daysSinceLastWork: lastWriting ? localDaysBetween(lastWriting, at, zone) : null,
       },
       sessionsDoneToday,
     };
@@ -110,29 +106,31 @@ export function createToday(deps: TodayDeps) {
   return {
     async overview(userId: string, mode?: TodayMode): Promise<TodayOverview> {
       const at = now();
+      const zone = await timeZoneOf(userId);
       const [today, parking] = await Promise.all([
-        store.listSessionsSince(userId, startOfLocalDay(at)),
+        store.listSessionsSince(userId, startOfLocalDay(at, zone)),
         store.listParking(userId),
       ]);
       const done = today.filter((s) => s.endedAt !== null).length;
-      const { plan, teaser } = await snapshot(userId, at, mode, done);
+      const { plan, teaser } = await snapshot(userId, at, zone, mode, done);
       const active = today.filter((s) => isActive(s, at)).at(-1);
       return {
         now: at.toISOString(),
-        daypart: daypartOf(at),
-        weekend: isWeekend(at),
-        suggestedMode: suggestMode(at, done),
+        daypart: daypartOf(at, zone),
+        weekend: weekendAt(at, zone),
+        suggestedMode: suggestMode(at, zone, done),
         plan,
         teaser,
         parkingOpen: parking.filter((p) => !p.done).length,
-        sessionsToday: today.map(sessionView),
-        activeSession: active ? sessionView(active) : null,
+        sessionsToday: today.map((s) => sessionView(s, zone)),
+        activeSession: active ? sessionView(active, zone) : null,
       };
     },
 
     /** Starts a session with a fresh plan; sessions left open earlier are closed silently. */
     async startSession(userId: string, mode: TodayMode): Promise<StudySessionView> {
       const at = now();
+      const zone = await timeZoneOf(userId);
       for (const open of await store.listOpenSessions(userId)) {
         const planned = open.startedAt.getTime() + open.budgetMin * MINUTE;
         await store.endSession(userId, open.id, {
@@ -142,17 +140,17 @@ export function createToday(deps: TodayDeps) {
           endReason: "superseded",
         });
       }
-      const done = (await store.listSessionsSince(userId, startOfLocalDay(at))).filter(
+      const done = (await store.listSessionsSince(userId, startOfLocalDay(at, zone))).filter(
         (s) => s.endedAt !== null,
       ).length;
-      const { plan } = await snapshot(userId, at, mode, done);
+      const { plan } = await snapshot(userId, at, zone, mode, done);
       const created = await store.createSession(userId, {
         mode,
         budgetMin: plan.budgetMin,
         plan,
         startedAt: at,
       });
-      return sessionView(created);
+      return sessionView(created, zone);
     },
 
     /** Ends an open session and writes one `session_completed` event. */
@@ -166,7 +164,8 @@ export function createToday(deps: TodayDeps) {
       if (!found) throw new TodayError("not_found", "Session not found");
       if (found.endedAt) throw new TodayError("already_ended", "This session has already ended");
       const bonusMin = request.bonusMinutes ?? 0;
-      const weekend = isWeekend(found.startedAt);
+      const zone = await timeZoneOf(userId);
+      const weekend = weekendAt(found.startedAt, zone);
       if (!bonusTotalValid(weekend, bonusMin)) {
         throw new TodayError(
           "invalid_bonus",
@@ -197,7 +196,7 @@ export function createToday(deps: TodayDeps) {
         },
       );
       if (!ended) throw new TodayError("already_ended", "This session has already ended");
-      return sessionView(ended);
+      return sessionView(ended, zone);
     },
 
     async listParking(userId: string): Promise<ParkingListResponse> {

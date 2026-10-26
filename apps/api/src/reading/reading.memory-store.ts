@@ -72,8 +72,8 @@ export function createMemoryReadingStore(
       articles.push(record);
       return { article: clone(record), created: true };
     },
-    async setAnnotations(id, annotations: ArticleAnnotations) {
-      const found = articles.find((a) => a.id === id);
+    async setAnnotations(_userId, articleId, annotations: ArticleAnnotations) {
+      const found = articles.find((a) => a.id === articleId);
       if (found) found.annotations = clone(annotations);
     },
     async currentUnit(_userId) {

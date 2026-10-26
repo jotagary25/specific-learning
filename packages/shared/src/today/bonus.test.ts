@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bonusAllowed, bonusTotalValid, isWeekend } from "./bonus.ts";
+import { bonusAllowed, bonusTotalValid, isWeekendDay } from "./bonus.ts";
 
 describe("bonus rule", () => {
   it("allows one 5-min bonus on weekdays", () => {
@@ -22,9 +22,9 @@ describe("bonus rule", () => {
     expect(bonusTotalValid(false, -5)).toBe(false);
   });
 
-  it("detects weekends in local time", () => {
-    expect(isWeekend(new Date(2026, 9, 24, 10))).toBe(true); // Saturday
-    expect(isWeekend(new Date(2026, 9, 25, 10))).toBe(true); // Sunday
-    expect(isWeekend(new Date(2026, 9, 26, 10))).toBe(false); // Monday
+  it("treats Saturday and Sunday as the weekend", () => {
+    expect(isWeekendDay(6)).toBe(true);
+    expect(isWeekendDay(0)).toBe(true);
+    for (const weekday of [1, 2, 3, 4, 5]) expect(isWeekendDay(weekday)).toBe(false);
   });
 });

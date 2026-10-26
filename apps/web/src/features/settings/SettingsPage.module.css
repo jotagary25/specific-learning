@@ -196,3 +196,27 @@
   border: 1px solid var(--color-primary);
   color: var(--color-primary);
 }
+
+/* One-time time-zone proposal, shown under the header after login. */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--color-highlight);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.banner p {
+  margin: 0;
+  flex: 1 1 16rem;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}

@@ -5,8 +5,8 @@
 export const BONUS_STEP_MIN = 5;
 export const BONUS_MAX_MIN = 120;
 
-/** Saturday (6) and Sunday (0) in the given date's local calendar. */
-export const isWeekend = (date: Date): boolean => date.getDay() === 0 || date.getDay() === 6;
+/** Saturday (6) or Sunday (0); the caller reads the weekday in the user's time zone. */
+export const isWeekendDay = (weekday: number): boolean => weekday === 0 || weekday === 6;
 
 /** Whether another bonus step may be taken after `bonusMinSoFar` bonus minutes. */
 export function bonusAllowed(weekend: boolean, bonusMinSoFar: number): boolean {

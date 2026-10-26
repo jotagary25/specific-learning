@@ -233,9 +233,9 @@ describe.skipIf(!url)("migration 0002_users_and_isolation over a database at 000
     await database.close();
   });
 
-  it("applies on top of 0001 and is a no-op when run again", async () => {
-    expect(await appliedMigrations(db)).toBe(3);
-    expect(await runMigrations(db)).toBe(3);
+  it("applies on top of 0001 (and the later ones) and is a no-op when run again", async () => {
+    expect(await appliedMigrations(db)).toBe(4);
+    expect(await runMigrations(db)).toBe(4);
   });
 
   it("empties learner data, settings and secrets but keeps shared content", async () => {
@@ -291,6 +291,49 @@ describe.skipIf(!url)("migration 0002_users_and_isolation over a database at 000
   });
 });
 
+describe.skipIf(!url)("migration 0003_user_timezone_annotations over a database at 0002", () => {
+  const database = createDb(url ?? "");
+  const { db } = database;
+  const ARTICLE = "00000000-0000-7000-8000-000000000051";
+
+  beforeAll(async () => {
+    await resetDatabase(db);
+    await migrateFirst(db, 3);
+    await db.execute(sql`
+      insert into app_user (id, email, password_hash, role) values
+        ('00000000-0000-7000-8000-000000000061', 'a@example.com', 'x', 'admin'),
+        ('00000000-0000-7000-8000-000000000062', 'b@example.com', 'x', 'learner')`);
+    await db.execute(sql`
+      insert into article (id, source, url, title, text, annotations) values
+        (${ARTICLE}, 'manual', 'https://example.com/a', 'A', 'text', '{"glossary": []}')`);
+    await db.execute(sql`
+      insert into daily_article (user_id, date, article_id) values
+        ('00000000-0000-7000-8000-000000000061', '2026-10-20', ${ARTICLE}),
+        ('00000000-0000-7000-8000-000000000062', '2026-10-21', ${ARTICLE})`);
+    await runMigrations(db);
+  });
+
+  afterAll(async () => {
+    await database.close();
+  });
+
+  it("applies on top of 0002 and is a no-op when run again", async () => {
+    expect(await appliedMigrations(db)).toBe(4);
+    expect(await runMigrations(db)).toBe(4);
+  });
+
+  it("moves the annotations from the shared article to each user's daily pick", async () => {
+    const columns = await db.execute<{ column_name: string }>(sql`
+      select column_name from information_schema.columns
+      where table_schema = 'public' and table_name = 'article' and column_name = 'annotations'`);
+    expect(columns).toEqual([]);
+    const rows = await db.execute<{ annotations: unknown }>(
+      sql`select annotations from daily_article order by date`,
+    );
+    expect(rows.map((r) => r.annotations)).toEqual([{ glossary: [] }, { glossary: [] }]);
+  });
+});
+
 describe.skipIf(!url)("migrations + content seed (real Postgres)", () => {
   const database = createDb(url ?? "");
   const { db } = database;
@@ -315,7 +358,7 @@ describe.skipIf(!url)("migrations + content seed (real Postgres)", () => {
 
   it("applies the migrations from scratch and again as a no-op", async () => {
     const applied = await runMigrations(db);
-    expect(applied).toBe(3);
+    expect(applied).toBe(4);
     expect(await runMigrations(db)).toBe(applied);
     learnerId = (await createDrizzleUserStore(db).insert(newUser("seed@example.com"))).id;
   });
@@ -781,10 +824,21 @@ describe.skipIf(!url)("data isolation between users (real Postgres)", () => {
     // A finished unit 1 earlier; B finished it too, so both point at unit 2 now.
     expect((await readingStore.currentUnit(a))?.id).toBe(2);
 
-    // B gets the same article: the pool row is reused with its annotations.
+    // B gets the same article: the pool row is reused, A's annotations are not.
     const second = await readingStore.insertArticle(b, { ...article, annotations: null });
     expect(second).toMatchObject({ created: true, article: { id: first.article.id } });
-    expect(second.article.annotations).toEqual(annotations);
+    expect(second.article.annotations).toBeNull();
+    expect((await readingStore.getArticle(a, first.article.id))?.annotations).toEqual(annotations);
+
+    // Each user annotates their own copy; nobody sees the other's.
+    const forB = { glossary: [{ term: "b" }], questions: [], grammarSpots: [] } as never;
+    await readingStore.setAnnotations(b, first.article.id, forB);
+    expect((await readingStore.getArticle(b, first.article.id))?.annotations).toEqual(forB);
+    expect((await readingStore.getArticleForDate(a, DATE))?.annotations).toEqual(annotations);
+    const forA = { glossary: [{ term: "a" }], questions: [], grammarSpots: [] } as never;
+    await readingStore.setAnnotations(a, first.article.id, forA);
+    expect((await readingStore.getArticleForDate(b, DATE))?.annotations).toEqual(forB);
+    expect((await readingStore.listDailyArticles(a))[0]?.annotations).toEqual(forA);
     expect(await readingStore.getSession(b, first.article.id)).toBeUndefined();
     const again = await readingStore.insertArticle(a, {
       ...article,
@@ -808,7 +862,13 @@ describe.skipIf(!url)("data isolation between users (real Postgres)", () => {
     expect(await settings.keyStatus(b)).toEqual({ configured: false, source: null, last4: null });
     expect(await settings.getApiKey(b)).toBeUndefined();
     expect(await settingsStore.getSetting(b, "ai_function:check_answer")).toBeUndefined();
-    expect(await preferences.get(b)).toEqual(PREFERENCE_DEFAULTS);
+    expect(await preferences.get(b)).toEqual({
+      ...PREFERENCE_DEFAULTS,
+      "clock.timeZoneChosen": false,
+    });
+    await preferences.update(a, { "clock.timeZone": "America/La_Paz" });
+    expect(await preferences.timeZoneOf(a)).toBe("America/La_Paz");
+    expect(await preferences.timeZoneOf(b)).toBe("UTC");
     expect(await settings.getApiKey(a)).toBe("ollama-key-of-a-1234");
     expect((await preferences.get(a))["srs.newPerDay" as never]).toBe(12);
   });

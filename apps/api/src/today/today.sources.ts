@@ -2,9 +2,9 @@
 // state the Today planner needs. No AI call happens here.
 
 import type { UnitDetail, UnitListEntry, UnitStep } from "@english-course/shared";
-import { addDays, localDate } from "../reading/dates.ts";
 import type { Reading } from "../reading/reading.service.ts";
 import type { ReadingStore } from "../reading/reading.store.ts";
+import { addDays, localDate } from "../shared/clock.ts";
 import type { Units } from "../units/units.service.ts";
 import type { Vocabulary } from "../vocabulary/vocabulary.service.ts";
 import type { Writing } from "../writing/writing.service.ts";
@@ -77,8 +77,9 @@ export function createTodaySources(deps: TodaySourcesDeps): TodaySources {
     };
   }
 
-  async function recallPending(userId: string, now: Date): Promise<boolean> {
-    const article = await deps.readingStore.getArticleForDate(userId, addDays(localDate(now), -1));
+  async function recallPending(userId: string, now: Date, zone: string): Promise<boolean> {
+    const yesterday = addDays(localDate(now, zone), -1);
+    const article = await deps.readingStore.getArticleForDate(userId, yesterday);
     const session = article ? await deps.readingStore.getSession(userId, article.id) : undefined;
     if (!session?.completedAt) return false;
     const questions = session.entries.filter((e) => e.type === "recall-questions").at(-1);
@@ -99,12 +100,12 @@ export function createTodaySources(deps: TodaySourcesDeps): TodaySources {
   }
 
   return {
-    async state(userId, now) {
+    async state(userId, now, zone) {
       const [units, srs, today, recall, writing, day] = await Promise.all([
         unitState(userId),
         srsState(userId),
         deps.reading.today(userId),
-        recallPending(userId, now),
+        recallPending(userId, now, zone),
         deps.writing.current(userId),
         writingDay(userId, deps.getSetting),
       ]);

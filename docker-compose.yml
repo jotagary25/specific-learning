@@ -6,7 +6,9 @@ x-node-dev: &node-dev
   image: node:24
   working_dir: /app
   env_file: .env
+  # TZ is always UTC (overrides `.env`): each user picks their own zone in Settings.
   environment: &node-env
+    TZ: UTC
     CI: "true"
     COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
     COREPACK_HOME: /corepack

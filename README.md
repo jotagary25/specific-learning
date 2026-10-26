@@ -23,7 +23,7 @@ openssl rand -hex 16   # a strong APP_USER_PASSWORD (or choose your own, 8+ char
 ```
 
 Edit `.env`: set `APP_SECRET`, `APP_USER_EMAIL`, `APP_USER_PASSWORD`, a real `POSTGRES_PASSWORD`
-(and the same password inside `DATABASE_URL`), and `TZ` to your timezone, then:
+(and the same password inside `DATABASE_URL`), then:
 
 ```sh
 docker compose up
@@ -43,10 +43,16 @@ First run:
    works as a bootstrap; a key saved in Settings wins.)
 3. **Settings → Open model evaluation** (`/settings/eval`): run the evaluation, compare models on
    quality, latency and cost, and apply the winner to each AI function.
-4. **Daily editor**: every day at `EDITOR_HOUR` (default 05:00, in `TZ`) the editor picks and
-   annotates an article. Before the first run, use **Reading → Run editor now**.
+4. **Time zone**: after the first login the app offers your browser's time zone; accept it or
+   keep UTC (change it any time in **Settings → Study preferences**). The Today plan, day
+   boundaries, weekly/monthly progress and your daily article all follow it.
+5. **Daily editor**: once your local hour reaches your **Daily article from** hour (Settings,
+   default `EDITOR_HOUR`), the editor picks and annotates an article from The Conversation for
+   you. Before the first run, use **Reading → Run editor now**.
 
-Set `TZ` to your timezone (e.g. `America/Santiago`) — the daily plan and editor use it.
+**Time zones.** The app and its containers always run in UTC (`TZ=UTC` is fixed in the image and
+both compose files, so a `TZ` in `.env` has no effect on the app). Each user picks their own IANA
+zone in Settings, and every local day or hour is computed in that zone.
 
 ## Environment variables
 
@@ -59,14 +65,13 @@ invalid. Empty values count as unset.
 | `APP_USER_EMAIL` | yes | — | Email of the admin account, used to log in (case-insensitive). See [Users](#users). |
 | `APP_USER_PASSWORD` | yes | — | Admin password, at least 8 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
 | `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored Ollama keys unreadable (save them again). |
-| `TZ` | no | system (`UTC` in the image) | IANA timezone, e.g. `America/Santiago`. Drives the Today plan, day boundaries and the editor hour. |
 | `PORT` | no | `3000` | API listen port. `docker-compose.prod.yml` pins it to 3000 inside the container. |
 | `OLLAMA_API_KEY` | no | — | Instance Ollama Cloud key, the fallback for every user; a key a user saves in Settings overrides it for that user. |
-| `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show, web search). |
+| `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show). |
 | `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
 | `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting (per account and client) uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
-| `EDITOR_ENABLED` | no | `true` | `false` disables the in-process daily editor (manual runs still work). |
-| `EDITOR_HOUR` | no | `5` | Local hour (0–23, in `TZ`) of the daily editor run, for every user. |
+| `EDITOR_ENABLED` | no | `true` | `false` disables the in-process daily editor (manual runs still work). It checks every 5 minutes which users are due. |
+| `EDITOR_HOUR` | no | `5` | Default **Daily article from** hour (0–23) for users who have not set their own in Settings; it is read in each user's own time zone. |
 | `CONTENT_DIR` | no | repo `content/` | Content root (units, authored content, images, eval samples). Relative paths resolve from the working directory. |
 | `WEB_DIST_DIR` | no | unset (`/app/apps/web/dist` in the image) | When set, the api also serves the built web app with SPA fallback. Leave unset in development. |
 | `DATABASE_URL_TEST` | no | `DATABASE_URL` with `_test` appended to the db name | Database for `pnpm --filter @english-course/api test:db` (created if missing; name must end in `_test`). |
@@ -115,7 +120,7 @@ Then, on the server:
 git clone <this repo> english-course && cd english-course
 cp .env.example .env
 # set DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
-# set APP_USER_EMAIL, APP_USER_PASSWORD, APP_SECRET (openssl rand -hex 32), TZ, and for a reverse proxy:
+# set APP_USER_EMAIL, APP_USER_PASSWORD, APP_SECRET (openssl rand -hex 32), and for a reverse proxy:
 #   TRUST_PROXY=true (APP_BIND already defaults to 127.0.0.1)
 docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml ps    # wait for "healthy"
@@ -231,8 +236,8 @@ english-course/
 ```
 
 **Architecture.** Light hexagonal, organized by feature ("screaming" folders). Ports exist only
-for external things — the LLM (Ollama native API), news sources (The Conversation feeds, Ollama
-web search) and persistence (Drizzle stores with in-memory test doubles). Domain rules (answer
+for external things — the LLM (Ollama native API), news sources (The Conversation feeds; the port
+stays open for more) and persistence (Drizzle stores with in-memory test doubles). Domain rules (answer
 normalization, session planning, completion, SRS, scoring) are pure functions with unit tests.
 The web app uses TanStack Query for server state; the service worker precaches the app shell,
 caches content images (cache-first) and unit/article reads (network-first), and never caches

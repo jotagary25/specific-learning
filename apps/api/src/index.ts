@@ -19,7 +19,6 @@ import { createDb } from "./shared/db/client.ts";
 import { runMigrations } from "./shared/db/migrate.ts";
 import { formatSeedResult, seed } from "./shared/db/seed/index.ts";
 import { createOllamaClient } from "./shared/llm/ollama.ts";
-import { createOllamaWebSearchSource } from "./shared/news/ollama-websearch.ts";
 import { createTheConversationSource } from "./shared/news/theconversation.ts";
 import { createToday } from "./today/today.service.ts";
 import { createTodaySources } from "./today/today.sources.ts";
@@ -40,7 +39,6 @@ const contentDir = resolveContentDir();
 const database = createDb(config.DATABASE_URL);
 const users = createDrizzleUserStore(database.db);
 
-let admin: Awaited<ReturnType<typeof bootstrapAdmin>>["user"];
 try {
   console.log(`db: migrations up to date (${await runMigrations(database.db)} applied)`);
   console.log(formatSeedResult(await seed(database.db, contentDir)));
@@ -48,8 +46,7 @@ try {
     email: config.APP_USER_EMAIL,
     password: config.APP_USER_PASSWORD,
   });
-  admin = bootstrap.user;
-  console.log(`users: admin ${admin.email} ${bootstrap.action}`);
+  console.log(`users: admin ${bootstrap.user.email} ${bootstrap.action}`);
 } catch (error) {
   console.error("db: startup failed", error);
   await database.close();
@@ -73,12 +70,18 @@ const settings = createSettings({
   createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
 });
 
-const preferences = createPreferences(settingsStore);
+const preferences = createPreferences(settingsStore, {
+  // New users get the instance editor hour until they pick their own in Settings.
+  defaults: { "reading.editorHour": config.EDITOR_HOUR },
+});
+// Every local day/hour is computed in the user's own zone (the process runs in UTC).
+const timeZoneOf = preferences.timeZoneOf;
 
 const vocabularyStore = createDrizzleVocabularyStore(database.db);
 const vocabulary = createVocabulary({
   store: vocabularyStore,
   settings: settingsStore,
+  timeZoneOf,
 });
 
 const units = createUnits({
@@ -91,40 +94,26 @@ const readingStore = createDrizzleReadingStore(database.db);
 const editor = createEditor({
   store: readingStore,
   ai: settings,
-  sources: [
-    createTheConversationSource(),
-    // Shared news source: searches with the admin's key (env key as fallback).
-    createOllamaWebSearchSource({
-      baseUrl: config.OLLAMA_BASE_URL,
-      getApiKey: () => settings.getApiKey(admin.id),
-    }),
-  ],
+  // The Conversation only (S5); the NewsSource port stays open for future sources.
+  sources: [createTheConversationSource()],
 });
 const reading = createReading({
   store: readingStore,
   editor,
   ai: settings,
+  timeZoneOf,
   editorEnabled: config.EDITOR_ENABLED,
 });
+// Each user gets their article once their local hour reaches their editor hour.
 const scheduler = config.EDITOR_ENABLED
   ? startEditorScheduler({
-      hour: config.EDITOR_HOUR,
-      // Every user gets their article at the same instance hour (per-user hours come later).
-      run: async (date) => {
-        for (const userId of await users.listIds()) {
-          try {
-            await editor.run(userId, date);
-          } catch (error) {
-            console.error(`editor: run for user ${userId} on ${date} failed`, error);
-          }
-        }
-      },
-      hasArticle: async (date) => {
-        for (const userId of await users.listIds()) {
-          if (!(await readingStore.getArticleForDate(userId, date))) return false;
-        }
-        return true;
-      },
+      listUserIds: () => users.listIds(),
+      timeZoneOf,
+      editorHour: preferences.editorHour,
+      hasArticle: async (userId, date) =>
+        (await readingStore.getArticleForDate(userId, date)) !== undefined,
+      gather: editor.gather,
+      run: editor.run,
     })
   : undefined;
 
@@ -137,6 +126,7 @@ const writing = createWriting({
 
 const today = createToday({
   store: createDrizzleTodayStore(database.db),
+  timeZoneOf,
   sources: createTodaySources({
     units,
     reading,
@@ -147,7 +137,7 @@ const today = createToday({
   }),
 });
 
-const progress = createProgress({ store: createDrizzleProgressStore(database.db) });
+const progress = createProgress({ store: createDrizzleProgressStore(database.db), timeZoneOf });
 
 const tutor = createTutor({
   store: createDrizzleTutorStore(database.db),

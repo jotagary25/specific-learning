@@ -14,6 +14,8 @@ services:
     environment:
       # The container always listens on 3000; publish it on APP_PORT.
       PORT: "3000"
+      # Always UTC, whatever `.env` says: each user picks their own zone in Settings.
+      TZ: UTC
     ports:
       # Loopback only by default: reach it through a reverse proxy on this host. Set
       # APP_BIND=0.0.0.0 to expose it directly (and keep TRUST_PROXY off then).
@@ -32,7 +34,7 @@ services:
       # Required with this profile: the postgres image refuses to start without it.
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
       POSTGRES_DB: ${POSTGRES_DB:-english_course}
-      TZ: ${TZ:-UTC}
+      TZ: UTC
     volumes:
       # postgres 18+ keeps versioned data under /var/lib/postgresql/<major>/docker.
       - pgdata:/var/lib/postgresql

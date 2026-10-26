@@ -23,10 +23,21 @@ const reviewWriting: AiFunctionConfig = {
   isDefault: true,
 };
 
-function settingsApi(aiKey: object = { configured: true, source: "db", last4: "WXYZ" }) {
+const DEFAULT_PREFERENCES = {
+  "today.writingDay": 6,
+  "srs.newPerDay": 5,
+  "clock.timeZone": "UTC",
+  "reading.editorHour": 5,
+  "clock.timeZoneChosen": true,
+};
+
+function settingsApi(
+  aiKey: object = { configured: true, source: "db", last4: "WXYZ" },
+  initialPreferences: Partial<typeof DEFAULT_PREFERENCES> = {},
+) {
   const puts: unknown[] = [];
   const preferencePuts: unknown[] = [];
-  let preferences = { "today.writingDay": 6, "srs.newPerDay": 5 };
+  let preferences = { ...DEFAULT_PREFERENCES, ...initialPreferences };
   const fetchMock = mockApi({
     "GET /api/auth/me": () =>
       Response.json({ authenticated: true, user: { email: "ana@example.com", role: "admin" } }),
@@ -55,7 +66,12 @@ function settingsApi(aiKey: object = { configured: true, source: "db", last4: "W
     "GET /api/settings/preferences": () => Response.json(preferences),
     "PUT /api/settings/preferences": ({ body }) => {
       preferencePuts.push(body);
-      preferences = { ...preferences, ...(body as object) };
+      const patch = body as Partial<typeof DEFAULT_PREFERENCES>;
+      preferences = {
+        ...preferences,
+        ...patch,
+        "clock.timeZoneChosen": preferences["clock.timeZoneChosen"] || "clock.timeZone" in patch,
+      };
       return Response.json(preferences);
     },
     "PUT /api/settings/ai-functions/check_answer": ({ body }) => {
@@ -66,10 +82,21 @@ function settingsApi(aiKey: object = { configured: true, source: "db", last4: "W
   return { fetchMock, puts, preferencePuts };
 }
 
+/** Makes the browser report `zone` as its time zone. */
+function browserZone(zone: string) {
+  const real = Intl.DateTimeFormat.prototype.resolvedOptions;
+  vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockImplementation(function (
+    this: Intl.DateTimeFormat,
+  ) {
+    return { ...real.call(this), timeZone: zone };
+  });
+}
+
 describe("SettingsPage", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("shows the signed-in account with its role", async () => {
@@ -182,7 +209,93 @@ describe("SettingsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save preferences" }));
 
     expect(await screen.findByText("Preferences saved.")).toBeTruthy();
-    expect(preferencePuts).toEqual([{ "today.writingDay": 3, "srs.newPerDay": 8 }]);
+    expect(preferencePuts).toEqual([
+      {
+        "today.writingDay": 3,
+        "srs.newPerDay": 8,
+        "clock.timeZone": "UTC",
+        "reading.editorHour": 5,
+      },
+    ]);
+  });
+
+  it("saves the time zone and the daily article hour", async () => {
+    const { preferencePuts } = settingsApi();
+    renderAt("/settings");
+
+    const zone = (await screen.findByLabelText("Time zone")) as HTMLInputElement;
+    expect(zone.value).toBe("UTC");
+    const hour = screen.getByLabelText("Daily article from") as HTMLSelectElement;
+    expect(hour.value).toBe("5");
+    expect(hour.options).toHaveLength(24);
+    expect(hour.options[7]?.textContent).toBe("07:00");
+
+    const saveButton = screen.getByRole("button", { name: "Save preferences" });
+    fireEvent.change(zone, { target: { value: "Mars/Olympus_Mons" } });
+    expect((saveButton as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.change(zone, { target: { value: "America/La_Paz" } });
+    fireEvent.change(hour, { target: { value: "7" } });
+    fireEvent.click(saveButton);
+
+    expect(await screen.findByText("Preferences saved.")).toBeTruthy();
+    expect(preferencePuts).toEqual([
+      {
+        "today.writingDay": 6,
+        "srs.newPerDay": 5,
+        "clock.timeZone": "America/La_Paz",
+        "reading.editorHour": 7,
+      },
+    ]);
+  });
+
+  it("proposes the browser's time zone once and saves Accept", async () => {
+    browserZone("America/La_Paz");
+    const { preferencePuts } = settingsApi(undefined, { "clock.timeZoneChosen": false });
+    renderAt("/settings");
+
+    const banner = await screen.findByRole("complementary", { name: "Time zone" });
+    expect(banner.textContent).toContain("Use America/La_Paz as your time zone?");
+    fireEvent.click(within(banner).getByRole("button", { name: "Accept" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("complementary", { name: "Time zone" })).toBeNull(),
+    );
+    expect(preferencePuts).toEqual([{ "clock.timeZone": "America/La_Paz" }]);
+
+    // A new visit reads the saved choice: no banner again.
+    cleanup();
+    renderAt("/settings");
+    expect(((await screen.findByLabelText("Time zone")) as HTMLInputElement).value).toBe(
+      "America/La_Paz",
+    );
+    expect(screen.queryByRole("complementary", { name: "Time zone" })).toBeNull();
+  });
+
+  it("saves Keep UTC as a choice so the banner does not come back", async () => {
+    browserZone("Asia/Tokyo");
+    const { preferencePuts } = settingsApi(undefined, { "clock.timeZoneChosen": false });
+    renderAt("/settings");
+
+    const banner = await screen.findByRole("complementary", { name: "Time zone" });
+    fireEvent.click(within(banner).getByRole("button", { name: "Keep UTC" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("complementary", { name: "Time zone" })).toBeNull(),
+    );
+    expect(preferencePuts).toEqual([{ "clock.timeZone": "UTC" }]);
+
+    cleanup();
+    renderAt("/settings");
+    await screen.findByLabelText("Time zone");
+    expect(screen.queryByRole("complementary", { name: "Time zone" })).toBeNull();
+  });
+
+  it("does not propose anything when the browser is already on UTC", async () => {
+    browserZone("UTC");
+    settingsApi(undefined, { "clock.timeZoneChosen": false });
+    renderAt("/settings");
+    await screen.findByLabelText("Time zone");
+    expect(screen.queryByRole("complementary", { name: "Time zone" })).toBeNull();
   });
 
   it("does not save an empty or fractional number of new cards", async () => {

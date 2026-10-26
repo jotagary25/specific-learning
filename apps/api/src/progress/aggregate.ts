@@ -22,8 +22,8 @@ import {
   type UnitErrors,
   type UnitRef,
 } from "@english-course/shared";
+import { localDate, localMonth, monthRange, previousMonth, weekStart } from "../shared/clock.ts";
 import { isMature, isNew, parseState } from "../vocabulary/srs.ts";
-import { daysBetween, localDate, monthOf, monthRange, previousMonth, weekStart } from "./dates.ts";
 import type {
   CanDoRecord,
   ErrorRecord,
@@ -37,6 +37,10 @@ import type {
 const DAY_MS = 86_400_000;
 
 /** Last reviewed texts shown per score dimension. */
+/** Whole days between two instants (floor, never negative). */
+const daysBetween = (from: Date, to: Date): number =>
+  Math.max(0, Math.floor((to.getTime() - from.getTime()) / DAY_MS));
+
 export const SCORE_TREND_SIZE = 10;
 /** The "recent" error window holds at most this many reviewed texts… */
 export const RECENT_WINDOW_MAX = 5;
@@ -283,6 +287,8 @@ export function buildTimeline(input: {
   units: readonly UnitRecord[];
   from: Date;
   to: Date;
+  /** The user's IANA zone: weeks start on its local Monday. */
+  timeZone: string;
 }): TimelineWeek[] {
   const units = new Map(input.units.map((u) => [u.id, u]));
   const inRange = (at: Date) => at >= input.from && at < input.to;
@@ -314,7 +320,7 @@ export function buildTimeline(input: {
 
   const weeks = new Map<string, TimelineWeek>();
   for (const { at, item, minutes } of items) {
-    const key = weekStart(at);
+    const key = weekStart(at, input.timeZone);
     const week = weeks.get(key) ?? { weekStart: key, minutes: 0, items: [] };
     week.minutes += minutes;
     week.items.push(item);
@@ -339,6 +345,8 @@ export function classifyErrors(input: {
   submissions: readonly SubmissionRecord[];
   errors: readonly ErrorRecord[];
   units: readonly UnitRecord[];
+  /** The user's IANA zone: errors are bucketed by its local month. */
+  timeZone: string;
 }): ErrorsResponse {
   const reviewed = reviewedSubmissions(input.submissions);
   const n = reviewed.length;
@@ -351,6 +359,7 @@ export function classifyErrors(input: {
     title: unitTitles.get(id) ?? `Unit ${id}`,
   });
 
+  const monthOf = (at: Date) => localMonth(at, input.timeZone);
   const months = [...new Set(input.errors.map((e) => monthOf(e.createdAt)))].sort();
   const monthSeries = (list: readonly ErrorRecord[]): MonthCount[] =>
     months.map((month) => ({
@@ -416,9 +425,10 @@ export function classifyErrors(input: {
 export function pickMirrorReading(
   readings: readonly ReadingRecord[],
   month: string,
+  timeZone: string,
 ): ReadingRecord | undefined {
-  const prev = monthRange(previousMonth(month));
-  const { end } = monthRange(month);
+  const prev = monthRange(previousMonth(month), timeZone);
+  const { end } = monthRange(month, timeZone);
   return (
     readings.find((r) => r.startedAt >= prev.start && r.startedAt < prev.end) ??
     readings.find((r) => r.startedAt < end)
@@ -456,11 +466,12 @@ export function mirrorArticle(
   text: string,
   cards: readonly WordCardRecord[],
   now: Date,
+  timeZone: string,
 ): MirrorArticle {
   return {
     articleId: reading.articleId,
     title: reading.title,
-    readOn: localDate(reading.startedAt),
+    readOn: localDate(reading.startedAt, timeZone),
     daysAgo: daysBetween(reading.startedAt, now),
     text,
     ...mirrorWords(reading, cards),
@@ -475,6 +486,7 @@ export function compareWriting(
   submissions: readonly SubmissionRecord[],
   errors: readonly ErrorRecord[],
   monthEnd: Date,
+  timeZone: string,
 ): MirrorWriting | null {
   const reviewed = reviewedSubmissions(submissions).filter((s) => s.createdAt < monthEnd);
   const posts = reviewed.some((s) => s.missionId) ? reviewed.filter((s) => s.missionId) : reviewed;
@@ -487,7 +499,7 @@ export function compareWriting(
       submissionId: s.id,
       title: s.title ?? "Reading retell",
       format: s.format,
-      writtenOn: localDate(s.createdAt),
+      writtenOn: localDate(s.createdAt, timeZone),
       text: s.text,
       scores: s.scores,
       overall: overallOf(s.scores),
@@ -511,12 +523,23 @@ export function compareWriting(
   };
 }
 
-export function mirrorUnits(units: readonly UnitRecord[], month: string): MirrorUnit[] {
-  const { start, end } = monthRange(month);
+export function mirrorUnits(
+  units: readonly UnitRecord[],
+  month: string,
+  timeZone: string,
+): MirrorUnit[] {
+  const { start, end } = monthRange(month, timeZone);
   return units
     .flatMap((u) =>
       u.completedAt && u.completedAt >= start && u.completedAt < end
-        ? [{ unit: u.id, title: u.title, completedOn: localDate(u.completedAt), canDo: u.canDo }]
+        ? [
+            {
+              unit: u.id,
+              title: u.title,
+              completedOn: localDate(u.completedAt, timeZone),
+              canDo: u.canDo,
+            },
+          ]
         : [],
     )
     .sort((a, b) => a.completedOn.localeCompare(b.completedOn) || a.unit - b.unit);
@@ -531,8 +554,9 @@ export function mirrorDue(
   now: Date,
   firstEventAt: Date | undefined,
   seenMonths: ReadonlySet<string>,
+  timeZone: string,
 ): MirrorDueResponse {
-  const month = monthOf(now);
+  const month = localMonth(now, timeZone);
   const historyDays = firstEventAt ? daysBetween(firstEventAt, now) : 0;
   if (seenMonths.has(month)) return { due: false, month, reason: "already_seen", historyDays };
   if (historyDays < MIRROR_MIN_HISTORY_DAYS) {

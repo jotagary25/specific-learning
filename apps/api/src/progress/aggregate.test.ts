@@ -48,6 +48,7 @@ describe("buildTimeline", () => {
       units,
       from: at(2026, 10, 1, 0),
       to: at(2026, 11, 1, 0),
+      timeZone: "UTC",
     });
 
     expect(weeks.map((w) => [w.weekStart, w.minutes, w.items.length])).toEqual([
@@ -71,6 +72,20 @@ describe("buildTimeline", () => {
     expect(second?.items[2]?.title).toBe("Now I can: order coffee");
   });
 
+  it("buckets weeks by the user's local Monday", () => {
+    // 02:00 UTC on Monday 2026-10-26 is still Sunday 22:00 in La Paz.
+    const input = {
+      events: [event("session_completed", new Date("2026-10-26T02:00:00Z"), { minutes: 10 })],
+      canDos: [],
+      units,
+      from: at(2026, 10, 1, 0),
+      to: at(2026, 11, 1, 0),
+    };
+    const weekOf = (timeZone: string) => buildTimeline({ ...input, timeZone })[0]?.weekStart;
+    expect(weekOf("UTC")).toBe("2026-10-26");
+    expect(weekOf("America/La_Paz")).toBe("2026-10-19");
+  });
+
   it("leaves out events outside the range", () => {
     const weeks = buildTimeline({
       events: [event("session_completed", at(2026, 9, 30), { minutes: 10 })],
@@ -78,6 +93,7 @@ describe("buildTimeline", () => {
       units,
       from: at(2026, 10, 1, 0),
       to: at(2026, 11, 1, 0),
+      timeZone: "UTC",
     });
     expect(weeks).toEqual([]);
   });
@@ -119,7 +135,7 @@ describe("classifyErrors", () => {
       unitRecord(5, { title: "Past simple" }),
     ];
 
-    const result = classifyErrors({ submissions: subs, errors, units });
+    const result = classifyErrors({ submissions: subs, errors, units, timeZone: "UTC" });
 
     expect(result.submissions).toBe(6);
     expect(result.recentWindow).toBe(3);
@@ -148,10 +164,25 @@ describe("classifyErrors", () => {
       submissions: [s],
       errors: [writingError(s, "articles"), writingError(s, "articles")],
       units: [],
+      timeZone: "UTC",
     });
     expect(result.recentWindow).toBe(0);
     expect(result.beating).toEqual([]);
     expect(result.recurring.map((t) => t.type)).toEqual(["articles"]);
+  });
+
+  it("buckets errors by the user's local month", () => {
+    // 02:00 UTC on 1 November is still 31 October in La Paz.
+    const s = submission(new Date("2026-11-01T02:00:00Z"), scores(50));
+    const monthsIn = (timeZone: string) =>
+      classifyErrors({
+        submissions: [s],
+        errors: [writingError(s, "articles")],
+        units: [],
+        timeZone,
+      }).months;
+    expect(monthsIn("UTC")).toEqual(["2026-11"]);
+    expect(monthsIn("America/La_Paz")).toEqual(["2026-10"]);
   });
 
   it("ignores texts that were never reviewed when sizing the windows", () => {
@@ -159,6 +190,7 @@ describe("classifyErrors", () => {
       submissions: [submission(at(2026, 10, 1), null)],
       errors: [],
       units: [],
+      timeZone: "UTC",
     });
     expect(result).toMatchObject({ submissions: 0, recentWindow: 0, types: [], months: [] });
   });
@@ -171,10 +203,10 @@ describe("monthly mirror", () => {
       reading("oct-1", at(2026, 10, 2)),
       reading("oct-2", at(2026, 10, 3)),
     ];
-    expect(pickMirrorReading(readings, "2026-11")?.articleId).toBe("oct-1");
-    expect(pickMirrorReading(readings, "2026-10")?.articleId).toBe("sept");
-    expect(pickMirrorReading(readings.slice(1), "2026-12")?.articleId).toBe("oct-1");
-    expect(pickMirrorReading(readings, "2026-08")).toBeUndefined();
+    expect(pickMirrorReading(readings, "2026-11", "UTC")?.articleId).toBe("oct-1");
+    expect(pickMirrorReading(readings, "2026-10", "UTC")?.articleId).toBe("sept");
+    expect(pickMirrorReading(readings.slice(1), "2026-12", "UTC")?.articleId).toBe("oct-1");
+    expect(pickMirrorReading(readings, "2026-08", "UTC")).toBeUndefined();
   });
 
   it("counts the words unknown then vs the words without a mature card now", () => {
@@ -206,6 +238,7 @@ describe("monthly mirror", () => {
       [first, retell, middle, latest, later],
       [writingError(first, "false_friend"), writingError(first, "false_friend")],
       at(2026, 11, 1, 0),
+      "UTC",
     );
     expect(result?.first).toMatchObject({
       submissionId: first.id,
@@ -226,32 +259,32 @@ describe("monthly mirror", () => {
 
   it("has no comparison with a single post and nothing without posts", () => {
     const only = submission(at(2026, 10, 1), scores(60));
-    expect(compareWriting([only], [], at(2026, 11, 1, 0))).toMatchObject({
+    expect(compareWriting([only], [], at(2026, 11, 1, 0), "UTC")).toMatchObject({
       latest: null,
       deltas: [],
     });
-    expect(compareWriting([], [], at(2026, 11, 1, 0))).toBeNull();
+    expect(compareWriting([], [], at(2026, 11, 1, 0), "UTC")).toBeNull();
   });
 
   it("is due once per month after two weeks of history", () => {
     const now = at(2026, 10, 25);
-    expect(mirrorDue(now, undefined, new Set())).toMatchObject({
+    expect(mirrorDue(now, undefined, new Set(), "UTC")).toMatchObject({
       due: false,
       reason: "not_enough_history",
       historyDays: 0,
     });
-    expect(mirrorDue(now, at(2026, 10, 12), new Set())).toMatchObject({
+    expect(mirrorDue(now, at(2026, 10, 12), new Set(), "UTC")).toMatchObject({
       due: false,
       reason: "not_enough_history",
       historyDays: 13,
     });
-    expect(mirrorDue(now, at(2026, 10, 11), new Set())).toEqual({
+    expect(mirrorDue(now, at(2026, 10, 11), new Set(), "UTC")).toEqual({
       due: true,
       month: "2026-10",
       reason: "due",
       historyDays: 14,
     });
-    expect(mirrorDue(now, at(2026, 9, 1), new Set(["2026-10"]))).toMatchObject({
+    expect(mirrorDue(now, at(2026, 9, 1), new Set(["2026-10"]), "UTC")).toMatchObject({
       due: false,
       reason: "already_seen",
     });

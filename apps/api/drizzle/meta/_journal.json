@@ -22,6 +22,13 @@
       "when": 1793021076261,
       "tag": "0002_users_and_isolation",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793027820829,
+      "tag": "0003_user_timezone_annotations",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router";
 import { HealthIndicator } from "../features/home/HealthIndicator.tsx";
+import { TimeZoneBanner } from "../features/settings/TimeZoneBanner.tsx";
 import { SessionBar } from "../features/today/SessionBar.tsx";
 import { SessionComplete } from "../features/today/SessionComplete.tsx";
 import { SessionProvider } from "../features/today/SessionContext.tsx";
@@ -46,6 +47,7 @@ export function Layout() {
           </header>
           <OfflineBanner />
           <InstallHint />
+          <TimeZoneBanner />
           <main className={styles.main}>
             <Outlet />
           </main>

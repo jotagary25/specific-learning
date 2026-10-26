@@ -68,7 +68,7 @@ describe("recall pending", () => {
     };
     return createTodaySources(deps);
   };
-  const now = new Date(2026, 9, 26, 7);
+  const now = new Date(Date.UTC(2026, 9, 26, 7));
   const question = { question: "What did bees do?", expected: "Dance" } as never;
 
   it.each([
@@ -95,10 +95,19 @@ describe("recall pending", () => {
     const state = await sourcesWith(readingSession as ReadingSession | undefined).state(
       "test-user",
       now,
+      "UTC",
     );
     expect(state.recallPending).toBe(expected);
     // New cards are limited by what is left of today's allowance (5 per day, 3 used).
     expect(state.srs).toEqual({ due: 0, fresh: 2 });
     expect(state.unit).toBeNull();
+  });
+
+  it("reads yesterday in the user's zone", async () => {
+    // 02:00 UTC on the 26th is the 25th in La Paz: yesterday there is the 24th (no article).
+    const sources = sourcesWith(session([]));
+    const at = new Date("2026-10-26T02:00:00Z");
+    expect((await sources.state("test-user", at, "UTC")).recallPending).toBe(true);
+    expect((await sources.state("test-user", at, "America/La_Paz")).recallPending).toBe(false);
   });
 });

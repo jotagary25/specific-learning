@@ -41,6 +41,8 @@ export const StudySessionView = z.object({
   startedAt: z.string(),
   endedAt: z.string().nullable(),
   bonusMin: z.number().int().nonnegative(),
+  /** Started on a Saturday or Sunday in the user's time zone (weekend bonus rules). */
+  weekend: z.boolean(),
 });
 export type StudySessionView = z.infer<typeof StudySessionView>;
 

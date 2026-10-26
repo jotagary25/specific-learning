@@ -135,3 +135,4 @@ export const UpdateAiFunctionRequest = z.object({
 });
 export type UpdateAiFunctionRequest = z.infer<typeof UpdateAiFunctionRequest>;
 export * from "./preferences.ts";
+export * from "./time-zone.ts";

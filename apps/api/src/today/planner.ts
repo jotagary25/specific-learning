@@ -2,7 +2,7 @@
 // snapshot of the learner's state; this module turns it into an ordered, time-boxed plan.
 //
 // Rules:
-// - Dayparts (local time of the process `TZ`): morning 05:00–11:59, afternoon 12:00–16:59,
+// - Dayparts (local time in the user's zone): morning 05:00–11:59, afternoon 12:00–16:59,
 //   evening otherwise.
 // - Mode suggestion: morning → `full` (`minimum` once a session is done today); afternoon →
 //   `slump`; evening → `slump` (`minimum` once a session is done today).
@@ -10,7 +10,7 @@
 //   everything else (afternoon, or `slump` in the morning) → light.
 // - Deep: an SRS warm-up (3–5 min) when reviews are due, then the main task, then secondaries.
 //   Main task: writing when a mission is open and idle ≥2 days (or never worked), or on the
-//   weekly writing day (default Saturday); otherwise rotate by day: odd turns → unit (default),
+//   weekly writing day (default Saturday, in the user's zone); otherwise rotate by day: odd turns → unit (default),
 //   even turns → today's article if unread. Turn = weekday + sessions already done today, so a
 //   second session the same morning switches the main task. Secondaries, in order: yesterday's
 //   recall, the unit, today's article (light), new SRS cards (when there was no warm-up).
@@ -30,9 +30,12 @@ import {
   type TodayPlan,
   type UnitStep,
 } from "@english-course/shared";
+import { localHour, localWeekday } from "../shared/clock.ts";
 
 export type PlannerSnapshot = {
   now: Date;
+  /** The user's IANA zone: dayparts and weekdays are read in it. */
+  timeZone: string;
   mode: TodayMode;
   /** Reviews due today and new cards still allowed today. */
   srs: { due: number; fresh: number };
@@ -67,15 +70,15 @@ const CARDS_PER_MIN = 2;
 const WRITING_IDLE_DAYS = 2;
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-export function daypartOf(now: Date): Daypart {
-  const hour = now.getHours();
+export function daypartOf(now: Date, timeZone: string): Daypart {
+  const hour = localHour(now, timeZone);
   if (hour >= 5 && hour < 12) return "morning";
   if (hour >= 12 && hour < 17) return "afternoon";
   return "evening";
 }
 
-export function suggestMode(now: Date, sessionsDoneToday: number): TodayMode {
-  const part = daypartOf(now);
+export function suggestMode(now: Date, timeZone: string, sessionsDoneToday: number): TodayMode {
+  const part = daypartOf(now, timeZone);
   if (part === "afternoon") return "slump";
   if (sessionsDoneToday > 0) return "minimum";
   return part === "morning" ? "full" : "slump";
@@ -171,7 +174,7 @@ function writingDue(s: PlannerSnapshot): "idle" | "day" | undefined {
   if (w.missionOpen && (w.daysSinceLastWork === null || w.daysSinceLastWork >= WRITING_IDLE_DAYS)) {
     return "idle";
   }
-  return s.now.getDay() === w.writingDay ? "day" : undefined;
+  return localWeekday(s.now, s.timeZone) === w.writingDay ? "day" : undefined;
 }
 
 function writingBlock(s: PlannerSnapshot, why: "idle" | "day"): Candidate {
@@ -211,7 +214,7 @@ const present = (list: Array<Candidate | undefined>): Candidate[] =>
 function deepCandidates(s: PlannerSnapshot): Candidate[] {
   const warmUp = s.srs.due > 0 ? srsBlock(s, 5, true) : undefined;
   const writing = writingDue(s);
-  const unitTurn = (s.now.getDay() + s.sessionsDoneToday) % 2 === 1;
+  const unitTurn = (localWeekday(s.now, s.timeZone) + s.sessionsDoneToday) % 2 === 1;
   const main =
     (writing ? writingBlock(s, writing) : undefined) ??
     (unitTurn
@@ -280,7 +283,7 @@ function fitToBudget(budget: number, candidates: Candidate[]): PlanBlock[] {
 
 export function planToday(s: PlannerSnapshot): TodayPlan {
   const budgetMin = MODE_MINUTES[s.mode];
-  const part = daypartOf(s.now);
+  const part = daypartOf(s.now, s.timeZone);
   let candidates: Candidate[];
   if (s.mode === "minimum") {
     candidates = present([minimumCandidate(s)]).slice(0, 1);

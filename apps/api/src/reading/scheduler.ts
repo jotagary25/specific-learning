@@ -1,57 +1,94 @@
-// In-process daily job: runs the editor at `hour`:00 local time (process TZ), no cron dependency.
-import { localDate, nextRunAt } from "./dates.ts";
+// In-process editor job, no cron: a periodic tick picks each user's daily article once their
+// local hour (in their own time zone) reaches their editor hour. A restart catches up on the
+// first tick, shortly after start.
+import { localDate, localHour } from "../shared/clock.ts";
+import type { CandidatePool } from "./editor.ts";
 
-export type SchedulerOptions = {
-  hour: number;
-  run: (date: string) => Promise<unknown>;
-  /** Today's article already exists? Used to catch up after a restart past the run hour. */
-  hasArticle: (date: string) => Promise<boolean>;
+/** How often the editor checks who is due. */
+export const EDITOR_TICK_MS = 5 * 60_000;
+/** Delay of the first tick after start (lets the server finish booting). */
+export const EDITOR_FIRST_TICK_MS = 15_000;
+
+export type EditorTickDeps = {
+  listUserIds(): Promise<string[]>;
+  timeZoneOf(userId: string): Promise<string>;
+  editorHour(userId: string): Promise<number>;
+  hasArticle(userId: string, date: string): Promise<boolean>;
+  /** Fetches the shared candidate pool; called at most once per tick. */
+  gather(): Promise<CandidatePool>;
+  run(
+    userId: string,
+    date: string,
+    candidates: () => Promise<CandidatePool>,
+  ): Promise<{ status: string }>;
   now?: () => Date;
-  setTimer?: (fn: () => void, ms: number) => { unref?: () => void } | unknown;
+  log?: Pick<Console, "log" | "error">;
+};
+
+export type TickResult = {
+  ran: Array<{ userId: string; date: string; status: string }>;
+  failed: Array<{ userId: string; date: string; error: string }>;
+};
+
+/** One pass over every user: runs the editor for whoever is due and has no article yet. */
+export async function editorTick(deps: EditorTickDeps): Promise<TickResult> {
+  const now = (deps.now ?? (() => new Date()))();
+  const log = deps.log ?? console;
+  const result: TickResult = { ran: [], failed: [] };
+  let pool: Promise<CandidatePool> | undefined;
+  const candidates = () => {
+    pool ??= deps.gather();
+    return pool;
+  };
+
+  for (const userId of await deps.listUserIds()) {
+    let date = "";
+    try {
+      const [zone, hour] = await Promise.all([deps.timeZoneOf(userId), deps.editorHour(userId)]);
+      date = localDate(now, zone);
+      if (localHour(now, zone) < hour || (await deps.hasArticle(userId, date))) continue;
+      const { status } = await deps.run(userId, date, candidates);
+      result.ran.push({ userId, date, status });
+      log.log(`editor: user ${userId} ${date} → ${status}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      result.failed.push({ userId, date, error: message });
+      log.error(`editor: run for user ${userId} on ${date || "?"} failed: ${message}`);
+    }
+  }
+  return result;
+}
+
+export type SchedulerOptions = EditorTickDeps & {
+  intervalMs?: number;
+  firstDelayMs?: number;
+  setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
 };
 
+/** Ticks shortly after start, then every `intervalMs`; ticks never overlap. */
 export function startEditorScheduler(options: SchedulerOptions) {
-  const now = options.now ?? (() => new Date());
   const setTimer = options.setTimer ?? ((fn: () => void, ms: number) => setTimeout(fn, ms));
   const clearTimer =
     options.clearTimer ?? ((handle: unknown) => clearTimeout(handle as NodeJS.Timeout));
+  const interval = options.intervalMs ?? EDITOR_TICK_MS;
   let handle: unknown;
   let stopped = false;
 
-  const runFor = async (date: string) => {
-    try {
-      await options.run(date);
-    } catch (error) {
-      console.error(`editor: run for ${date} failed`, error);
-    }
-  };
-
-  const schedule = () => {
+  const schedule = (ms: number) => {
     if (stopped) return;
-    const at = nextRunAt(now(), options.hour);
-    console.log(`editor: next run at ${at.toISOString()}`);
-    handle = setTimer(
-      () => {
-        void runFor(localDate(now())).finally(schedule);
-      },
-      Math.max(1_000, at.getTime() - now().getTime()),
-    );
+    handle = setTimer(() => {
+      void editorTick(options)
+        .catch((error: unknown) => console.error("editor: tick failed", error))
+        .finally(() => schedule(interval));
+    }, ms);
     (handle as { unref?: () => void } | undefined)?.unref?.();
   };
 
-  // Catch up: started after today's run hour without today's article.
-  const current = now();
-  const today = localDate(current);
-  const pending =
-    current.getHours() >= options.hour
-      ? options.hasArticle(today).then((has) => (has ? undefined : runFor(today)))
-      : Promise.resolve();
-  void pending.catch(() => undefined).finally(schedule);
+  schedule(options.firstDelayMs ?? EDITOR_FIRST_TICK_MS);
+  console.log(`editor: checking every ${Math.round(interval / 60_000)} min for due users`);
 
   return {
-    /** Resolves once the start-up catch-up check finished (for tests). */
-    ready: pending.catch(() => undefined),
     stop() {
       stopped = true;
       if (handle !== undefined) clearTimer(handle);

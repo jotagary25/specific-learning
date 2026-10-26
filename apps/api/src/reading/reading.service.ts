@@ -22,8 +22,9 @@ import {
   type SpotResponse,
   type TodayResponse,
 } from "@english-course/shared";
+import { type TimeZoneOf, utcTimeZone } from "../settings/preferences.ts";
+import { addDays, localDate } from "../shared/clock.ts";
 import { type ReadingAi, runReadingAi } from "./ai.ts";
-import { addDays, localDate } from "./dates.ts";
 import type { Editor } from "./editor.ts";
 import {
   type ArticleRecord,
@@ -37,8 +38,11 @@ export type ReadingDeps = {
   store: ReadingStore;
   editor: Editor;
   ai?: ReadingAi;
-  /** Today's date (YYYY-MM-DD) in server time. */
-  today?: () => string;
+  /** Overrides the user's local date (YYYY-MM-DD) for tests. */
+  today?: (userId: string) => string | Promise<string>;
+  /** The user's IANA zone (UTC by default): "today" is the local date in it. */
+  timeZoneOf?: TimeZoneOf;
+  now?: () => Date;
   editorEnabled?: boolean;
 };
 
@@ -132,7 +136,10 @@ function paragraphWith(text: string, quote: string): string {
 
 export function createReading(deps: ReadingDeps) {
   const { store, editor } = deps;
-  const today = deps.today ?? (() => localDate(new Date()));
+  const now = deps.now ?? (() => new Date());
+  const timeZoneOf = deps.timeZoneOf ?? utcTimeZone;
+  const today = async (userId: string): Promise<string> =>
+    deps.today ? deps.today(userId) : localDate(now(), await timeZoneOf(userId));
 
   async function articleOr404(userId: string, id: string): Promise<ArticleRecord> {
     const found = await store.getArticle(userId, id);
@@ -205,7 +212,7 @@ export function createReading(deps: ReadingDeps) {
   }
 
   async function recallState(userId: string) {
-    const date = addDays(today(), -1);
+    const date = addDays(await today(userId), -1);
     const article = await store.getArticleForDate(userId, date);
     const session = article ? await store.getSession(userId, article.id) : undefined;
     if (!article || !session?.completedAt) return undefined;
@@ -227,7 +234,7 @@ export function createReading(deps: ReadingDeps) {
 
   return {
     async today(userId: string): Promise<TodayResponse> {
-      const date = today();
+      const date = await today(userId);
       const article = await store.getArticleForDate(userId, date);
       return {
         date,
@@ -245,8 +252,8 @@ export function createReading(deps: ReadingDeps) {
       return detailOf(userId, await articleOr404(userId, id));
     },
 
-    runEditor(userId: string): Promise<EditorRunResponse> {
-      return editor.run(userId, today());
+    async runEditor(userId: string): Promise<EditorRunResponse> {
+      return editor.run(userId, await today(userId));
     },
 
     /** Retries annotation for an article stored without it. */
@@ -257,7 +264,7 @@ export function createReading(deps: ReadingDeps) {
         if (!annotations) {
           throw new ReadingError("ai-unavailable", "Annotations are unavailable right now");
         }
-        await store.setAnnotations(id, annotations);
+        await store.setAnnotations(userId, id, annotations);
         article.annotations = annotations;
       }
       return detailOf(userId, article);

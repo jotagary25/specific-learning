@@ -10,9 +10,9 @@ import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
 import { createMemoryTodayStore } from "./today.memory-store.ts";
 import { createToday, type TodayState } from "./today.service.ts";
 
-// 2026-10-26 is a Monday, 2026-10-31 a Saturday (local time).
-const MONDAY_MORNING = new Date(2026, 9, 26, 6, 30);
-const SATURDAY_MORNING = new Date(2026, 9, 31, 9, 0);
+// 2026-10-26 is a Monday, 2026-10-31 a Saturday (UTC, the default zone).
+const MONDAY_MORNING = new Date(Date.UTC(2026, 9, 26, 6, 30));
+const SATURDAY_MORNING = new Date(Date.UTC(2026, 9, 31, 9, 0));
 
 const state = (over: Partial<TodayState> = {}): TodayState => ({
   srs: { due: 8, fresh: 2 },
@@ -31,13 +31,14 @@ const state = (over: Partial<TodayState> = {}): TodayState => ({
   ...over,
 });
 
-async function setup(start = MONDAY_MORNING) {
+async function setup(start = MONDAY_MORNING, timeZone = "UTC") {
   const store = createMemoryTodayStore();
   const clock = { now: start };
   const today = createToday({
     store,
     sources: { state: async () => state() },
     now: () => clock.now,
+    timeZoneOf: async () => timeZone,
   });
   const { auth } = await createTestAuth();
   const app = createApp({ pingDb: async () => true, auth, today });
@@ -76,6 +77,15 @@ describe("today routes", () => {
     expect(overview.plan.blocks[1]?.deepLink).toBe("/units/1?step=story");
     expect(overview.teaser?.teaser).toBe("Then the alarm went off.");
     expect(overview.activeSession).toBeNull();
+  });
+
+  it("frames the same instant in the user's zone", async () => {
+    // Saturday 02:00 UTC: Friday 22:00 in La Paz, Saturday 11:00 in Tokyo.
+    const instant = new Date("2026-10-31T02:00:00Z");
+    const read = async (zone: string) =>
+      TodayOverview.parse(await (await (await setup(instant, zone)).call("")).json());
+    expect(await read("America/La_Paz")).toMatchObject({ daypart: "evening", weekend: false });
+    expect(await read("Asia/Tokyo")).toMatchObject({ daypart: "morning", weekend: true });
   });
 
   it("plans for a requested mode and rejects unknown modes", async () => {

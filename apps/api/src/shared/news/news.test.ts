@@ -3,7 +3,6 @@ import { countWords } from "@english-course/shared";
 import { describe, expect, it, vi } from "vitest";
 import { parseFeed } from "./feed.ts";
 import { decodeEntities, extractElement, htmlToParagraphs } from "./html-text.ts";
-import { createOllamaWebSearchSource, WEBSEARCH_LICENSE } from "./ollama-websearch.ts";
 import { createTheConversationSource, THE_CONVERSATION_LICENSE } from "./theconversation.ts";
 import { NewsError, normalizeUrl } from "./types.ts";
 
@@ -148,87 +147,5 @@ describe("theconversation source", () => {
       fetch: stubFetch({}),
     });
     await expect(down.candidates()).rejects.toBeInstanceOf(NewsError);
-  });
-});
-
-describe("ollama websearch source", () => {
-  const KEY = "secret-key-1234";
-
-  function setup(apiKey: string | undefined = KEY) {
-    const fetchFn = stubFetch({
-      "https://ollama.test/api/web_search": () =>
-        Response.json({
-          results: [
-            {
-              title: "Chip wars",
-              url: "https://www.example.com/chips/?utm_medium=x",
-              content: "word ".repeat(700),
-            },
-            { title: "", url: "ftp://bad", content: "" },
-          ],
-        }),
-      "https://ollama.test/api/web_fetch": () =>
-        Response.json({
-          title: "Chip wars, full",
-          content: "Para one.\r\n\r\n\r\nPara two.",
-          links: [],
-        }),
-    });
-    const source = createOllamaWebSearchSource({
-      baseUrl: "https://ollama.test/",
-      getApiKey: async () => apiKey,
-      fetch: fetchFn,
-      now: () => new Date("2026-10-25T05:00:00Z"),
-    });
-    return { source, fetchFn };
-  }
-
-  it("searches with the key and marks the license unknown", async () => {
-    const { source, fetchFn } = setup();
-    const candidates = await source.candidates();
-    expect(candidates).toEqual([
-      expect.objectContaining({
-        source: "websearch",
-        url: "https://www.example.com/chips",
-        title: "Chip wars",
-        outlet: "example.com",
-        license: WEBSEARCH_LICENSE,
-        wordCount: 700,
-        publishedAt: null,
-      }),
-    ]);
-    const [, init] = fetchFn.mock.calls[0] as [string, RequestInit];
-    expect((init.headers as Record<string, string>).authorization).toBe(`Bearer ${KEY}`);
-    expect(JSON.parse(String(init.body))).toMatchObject({ max_results: 5 });
-  });
-
-  it("fetches the full text unmodified apart from line endings", async () => {
-    const { source } = setup();
-    const [candidate] = await source.candidates();
-    if (!candidate) throw new Error("no candidate");
-    const article = await source.fetchFullText(candidate);
-    expect(article).toMatchObject({
-      title: "Chip wars, full",
-      text: "Para one.\n\nPara two.",
-      url: "https://www.example.com/chips",
-      license: WEBSEARCH_LICENSE,
-    });
-  });
-
-  it("fails as not configured without a key, never calling the network", async () => {
-    const { source, fetchFn } = setup("");
-    await expect(source.candidates()).rejects.toMatchObject({ code: "not_configured" });
-    expect(fetchFn).not.toHaveBeenCalled();
-  });
-
-  it("never puts the key in error messages", async () => {
-    const source = createOllamaWebSearchSource({
-      baseUrl: "https://ollama.test",
-      getApiKey: async () => KEY,
-      fetch: stubFetch({}),
-    });
-    const error = await source.candidates().catch((e: unknown) => e as Error);
-    expect(error).toBeInstanceOf(NewsError);
-    expect(String((error as Error).message)).not.toContain(KEY);
   });
 });

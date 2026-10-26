@@ -47,7 +47,7 @@ const EnvSchema = z.object({
       .default("true")
       .transform((value) => value === "true"),
   ),
-  /** Local hour (process `TZ`) of the daily editor run. */
+  /** Default editor hour for users who have not set theirs (read in each user's zone). */
   EDITOR_HOUR: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(23).default(5)),
 });
 

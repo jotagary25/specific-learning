@@ -3,7 +3,6 @@ import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { LlmError } from "../shared/llm/errors.ts";
 import { createFakeLlm, type FakeLlm } from "../shared/llm/fake.ts";
-import { addDays, nextRunAt } from "./dates.ts";
 import { createEditor, fallbackOrder, filterCandidates, nextTopic } from "./editor.ts";
 import { createMemoryReadingStore } from "./reading.memory-store.ts";
 import { type ArticleRecord, unitFocus } from "./reading.store.ts";
@@ -44,20 +43,6 @@ function storedArticle(overrides: Partial<ArticleRecord>): ArticleRecord {
   };
 }
 
-describe("dates", () => {
-  it("adds calendar days", () => {
-    expect(addDays("2026-03-01", -1)).toBe("2026-02-28");
-    expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
-  });
-
-  it("computes the next run hour strictly after now", () => {
-    const before = new Date(2026, 9, 25, 4, 30);
-    expect(nextRunAt(before, 5)).toEqual(new Date(2026, 9, 25, 5, 0));
-    const after = new Date(2026, 9, 25, 5, 0);
-    expect(nextRunAt(after, 5)).toEqual(new Date(2026, 9, 26, 5, 0));
-  });
-});
-
 describe("unitFocus", () => {
   it("does not double the subtitle's parentheses", () => {
     const base = { id: 1, title: "Present Continuous" };
@@ -96,8 +81,8 @@ describe("filters", () => {
         candidate({ url: "https://a.test/short", text: "word ".repeat(499) }),
         candidate({ url: "https://a.test/long", text: "word ".repeat(1201) }),
         candidate({ url: "https://a.test/edge", text: "word ".repeat(1200) }),
-        candidate({ url: "https://a.test/old", publishedAt: new Date(2026, 9, 17, 12) }),
-        candidate({ url: "https://a.test/week", publishedAt: new Date(2026, 9, 18, 12) }),
+        candidate({ url: "https://a.test/old", publishedAt: new Date(Date.UTC(2026, 9, 17, 12)) }),
+        candidate({ url: "https://a.test/week", publishedAt: new Date(Date.UTC(2026, 9, 18, 12)) }),
         candidate({ url: "https://a.test/undated", publishedAt: null }),
         candidate({ url: "https://a.test/estimate", text: undefined, wordCount: 90 }),
       ),
@@ -205,13 +190,13 @@ describe("runEditor", () => {
     const store = createMemoryReadingStore();
     const estimate = candidate({
       url: "https://web.test/a",
-      source: "websearch",
+      source: "theconversation",
       text: undefined,
       wordCount: 800,
     });
     const good = candidate({
       url: "https://web.test/b",
-      source: "websearch",
+      source: "theconversation",
       text: undefined,
       wordCount: 700,
       topicHint: "science",

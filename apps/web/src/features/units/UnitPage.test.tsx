@@ -78,7 +78,10 @@ describe("UnitsPage", () => {
     });
     renderAt("/units");
 
-    expect(await screen.findByRole("heading", { name: "Present and past" })).toBeTruthy();
+    // First render of the file pays the cold module load; allow for a busy machine.
+    expect(
+      await screen.findByRole("heading", { name: "Present and past" }, { timeout: 3000 }),
+    ).toBeTruthy();
     const first = screen.getByRole("link", { name: /Unit 1/ });
     expect(first.getAttribute("href")).toBe("/units/1");
     expect(within(first).getByText("Completed")).toBeTruthy();

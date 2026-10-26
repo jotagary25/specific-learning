@@ -16,8 +16,8 @@ export type ArticleSource = "theconversation" | "websearch" | "manual";
 
 /**
  * Shared article pool (candidates and picked articles). `text` is stored verbatim (CC BY-ND:
- * never rewritten). Which article a learner reads on a day lives in `daily_article`.
- * Annotation shape is refined by T10.
+ * never rewritten). Which article a learner reads on a day, and that learner's annotations,
+ * live in `daily_article`.
  */
 export const article = pgTable("article", {
   id: uuid("id").primaryKey().default(sql`uuidv7()`),
@@ -31,11 +31,13 @@ export const article = pgTable("article", {
   text: text("text").notNull(),
   topic: text("topic"),
   estLevel: text("est_level"),
-  annotations: jsonb("annotations").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** The article a learner gets on one local day (one per user and day). */
+/**
+ * The article a learner gets on one local day (one per user and day), with the annotations
+ * the editor personalised for them (their unit and known words); `null` until annotated.
+ */
 export const dailyArticle = pgTable(
   "daily_article",
   {
@@ -44,6 +46,7 @@ export const dailyArticle = pgTable(
     articleId: uuid("article_id")
       .notNull()
       .references(() => article.id, { onDelete: "cascade" }),
+    annotations: jsonb("annotations").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

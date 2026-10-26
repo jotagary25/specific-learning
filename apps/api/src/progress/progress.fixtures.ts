@@ -9,11 +9,11 @@ import type {
   WordCardRecord,
 } from "./progress.store.ts";
 
-/** Local-time date (month is 1-based). */
-export const at = (y: number, m: number, d: number, h = 9) => new Date(y, m - 1, d, h);
+/** UTC date (month is 1-based); the tests read days in UTC unless they pass another zone. */
+export const at = (y: number, m: number, d: number, h = 9) => new Date(Date.UTC(y, m - 1, d, h));
 
 const fsrs = (state: number, scheduledDays: number) => ({
-  due: new Date(2026, 11, 1).toISOString(),
+  due: new Date(Date.UTC(2026, 11, 1)).toISOString(),
   stability: scheduledDays,
   difficulty: 5,
   elapsed_days: 0,

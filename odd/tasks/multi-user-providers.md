@@ -25,7 +25,7 @@ Branch: `feat/multi-user-providers` (from `feat/english-course-mvp` @ `a4dde70`)
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
 | T1 | S1, S2 | delegated writer (context backstop: parent session is very long) | [x] | see Log |
-| T2 | S3, S5 | delegated writer (context backstop) | [ ] | |
+| T2 | S3, S5 | delegated writer (context backstop) | [x] | see Log |
 | T3 | S4 | delegated writer (context backstop) | [ ] | |
 | T4 | S6 | inline or delegated | [ ] | |
 
@@ -45,6 +45,9 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L9 (T1 verification): independent verifier — S1 pass, S2 pass, no blockers (bootstrap, uniform 401 + decoy hash, rate limit 5/burst, token tamper, logout scope, no user-creation routes, per-store user scoping, migration from 0001, seed idempotent, cascade delete). Advisories: shared article annotations (→ T2), two admins if new email belongs to a learner (fixed: other admins demoted + signed out; RED→GREEN in bootstrap.test.ts), nullable user_id on setting/secret (intentional for instance defaults), web search uses admin key (removed in T2).
 
+- L10 (user): "a quien se le ocurre poner ese limite de caracteres, que el minimo sea 8 y ya deja de molestar con eso." → admin password minimum lowered to 8 (`4338355`). User chose to skip native review of T1 (verifier evidence stands) and review T3 instead.
+- L11 (T2 evidence): `shared/clock.ts` (Intl, DST-correct) replaces every process-TZ usage; per-user prefs `clock.timeZone` (+ chosen flag) and `reading.editorHour`; Settings zone picker + one-time browser-zone banner; editor tick every 5 min per user at local hour (shared candidate fetch per tick, failure isolation); Ollama web-search source removed (S5); migration `0003_user_timezone_annotations` moves annotations to `daily_article`; TZ=UTC pinned in compose/Dockerfile. Tests: shared 224, importer 40, api 536 (+31 skipped, also green under TZ=Asia/Tokyo/Pacific/Honolulu), web 114; test:db 31/31; live: La Paz morning plan at 15:21Z, manual + tick editor runs, cleanup done. Remaining: own-error card dates and tutor tool dates still UTC; docs/spec.md + .env.example stale (T4). Risk: items 1, 3, 4, 5 → one independent verifier at feature end (T2–T4).
+
 ## Next step
 
-Native review of T1 range (a4dde70..HEAD), then T2.
+T3 (providers + OpenRouter), then T4, then one verifier for T2–T4 and native review of T3.

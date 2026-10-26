@@ -11,16 +11,17 @@ import type { NewCard } from "./vocabulary.store.ts";
 /** Memory fakes ignore the user; services still need one. */
 const USER = "test-user";
 
-const NOW = new Date("2026-10-25T13:30:00");
+const NOW = new Date("2026-10-25T13:30:00Z");
 const HOUR = 3_600_000;
 
-function setup(settings: Record<string, unknown> = {}) {
+function setup(settings: Record<string, unknown> = {}, timeZone = "UTC") {
   const store = createMemoryVocabularyStore();
   let now = NOW;
   const vocabulary = createVocabulary({
     store,
     settings: { getSetting: async (_userId, key) => settings[key] },
     now: () => now,
+    timeZoneOf: async () => timeZone,
   });
   return {
     store,
@@ -86,6 +87,27 @@ describe("queue", () => {
     const second = await vocabulary.queue(USER, 10);
     expect(second.newToday).toBe(2);
     expect(second.cards.filter((c) => c.phase === "new")).toHaveLength(3);
+  });
+
+  it("counts new cards per local day of the user's zone", async () => {
+    // 23:00 UTC on the 25th = 19:00 in La Paz; two hours later UTC is on the 26th.
+    const reviewedAt = new Date("2026-10-25T23:00:00Z");
+    const later = new Date("2026-10-26T01:00:00Z"); // 21:00 on the 25th in La Paz
+    for (const [zone, expected] of [
+      ["America/La_Paz", 1],
+      ["UTC", 0],
+    ] as const) {
+      const { store, vocabulary, setNow } = setup({}, zone);
+      await addNew(store, 3);
+      setNow(reviewedAt);
+      const [card] = (await vocabulary.queue(USER, 1)).cards;
+      await vocabulary.review(USER, card?.id ?? "", { rating: 3 });
+      setNow(later);
+      expect((await vocabulary.queue(USER, 10)).newToday).toBe(expected);
+      expect((await vocabulary.stats(USER)).reviewsByDay).toEqual([
+        { date: "2026-10-25", count: 1 },
+      ]);
+    }
   });
 
   it("reads the new-card allowance from the srs.newPerDay setting", async () => {

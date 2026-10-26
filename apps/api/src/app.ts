@@ -9,7 +9,11 @@ import { progressRoutes } from "./progress/progress.routes.ts";
 import type { Progress } from "./progress/progress.service.ts";
 import { readingRoutes } from "./reading/reading.routes.ts";
 import type { Reading } from "./reading/reading.service.ts";
-import { type PreferencesService, preferencesRoutes } from "./settings/preferences.ts";
+import {
+  type PreferencesService,
+  preferencesRoutes,
+  timeZoneScope,
+} from "./settings/preferences.ts";
 import { settingsRoutes } from "./settings/settings.routes.ts";
 import type { Settings } from "./settings/settings.service.ts";
 import { webRoutes } from "./static/web.routes.ts";
@@ -48,6 +52,8 @@ export function createApp(deps: AppDeps) {
   const api = new Hono<AppEnv>().route("/health", healthRoutes(deps));
   if (deps.auth) api.route("/auth", deps.auth.routes);
   api.use("*", requireSession(deps.auth));
+  // One time-zone lookup per request, shared by every module that computes local days.
+  api.use("*", timeZoneScope());
   if (deps.preferences) api.route("/settings/preferences", preferencesRoutes(deps.preferences));
   if (deps.settings) api.route("/settings", settingsRoutes(deps.settings));
   if (deps.units) api.route("/units", unitsRoutes(deps.units));

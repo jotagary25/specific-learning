@@ -10,6 +10,8 @@ import type {
   SessionResponse,
   StatsResponse,
 } from "@english-course/shared";
+import { type TimeZoneOf, utcTimeZone } from "../settings/preferences.ts";
+import { addDays, endOfLocalDay, localDate, startOfDay, startOfLocalDay } from "../shared/clock.ts";
 import { cardView, type OwnErrorInput, ownErrorCard, presentCard, unitItemCard } from "./cards.ts";
 import { isMature, isNew, phaseOf, review as scheduleReview } from "./srs.ts";
 import type { VocabularyStore } from "./vocabulary.store.ts";
@@ -19,6 +21,8 @@ export type VocabularyDeps = {
   /** Per-user key/value settings (`srs.newPerDay`). */
   settings?: { getSetting(userId: string, key: string): Promise<unknown> };
   now?: () => Date;
+  /** The user's IANA zone (UTC by default): "today" and the per-day counts are local to it. */
+  timeZoneOf?: TimeZoneOf;
 };
 
 export class VocabularyError extends Error {
@@ -37,26 +41,10 @@ export const DEFAULT_QUEUE_LIMIT = 10;
 export const MAX_QUEUE_LIMIT = 50;
 const STATS_DAYS = 30;
 
-/** Midnight of `now`'s day in server-local time (the process `TZ`). */
-export function startOfLocalDay(now: Date): Date {
-  const day = new Date(now);
-  day.setHours(0, 0, 0, 0);
-  return day;
-}
-
-function addLocalDays(day: Date, days: number): Date {
-  const next = new Date(day);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-const pad = (n: number) => String(n).padStart(2, "0");
-const localDate = (date: Date) =>
-  `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-
 export function createVocabulary(deps: VocabularyDeps) {
   const { store } = deps;
   const now = deps.now ?? (() => new Date());
+  const timeZoneOf = deps.timeZoneOf ?? utcTimeZone;
 
   async function newPerDay(userId: string): Promise<number> {
     const value = await deps.settings?.getSetting(userId, NEW_PER_DAY_KEY);
@@ -76,11 +64,12 @@ export function createVocabulary(deps: VocabularyDeps) {
     async queue(userId: string, limit = DEFAULT_QUEUE_LIMIT): Promise<QueueResponse> {
       const size = Math.min(Math.max(1, Math.trunc(limit)), MAX_QUEUE_LIMIT);
       const at = now();
+      const zone = await timeZoneOf(userId);
       const [due, dueTotal, perDay, newToday] = await Promise.all([
         store.dueCards(userId, at, size),
         store.countDue(userId, at),
         newPerDay(userId),
-        store.countFirstReviewsSince(userId, startOfLocalDay(at)),
+        store.countFirstReviewsSince(userId, startOfLocalDay(at, zone)),
       ]);
       const fresh = await store.newCards(userId, Math.min(size - due.length, perDay - newToday));
       return {
@@ -127,9 +116,10 @@ export function createVocabulary(deps: VocabularyDeps) {
 
     async stats(userId: string): Promise<StatsResponse> {
       const at = now();
-      const today = startOfLocalDay(at);
-      const endOfToday = addLocalDays(today, 1);
-      const since = addLocalDays(today, -(STATS_DAYS - 1));
+      const zone = await timeZoneOf(userId);
+      const today = startOfLocalDay(at, zone);
+      const endOfToday = endOfLocalDay(at, zone);
+      const since = startOfDay(addDays(localDate(at, zone), -(STATS_DAYS - 1)), zone);
       const [cards, newToday, reviewTimes] = await Promise.all([
         store.listCards(userId, {}),
         store.countFirstReviewsSince(userId, today),
@@ -137,7 +127,10 @@ export function createVocabulary(deps: VocabularyDeps) {
       ]);
       const active = cards.filter((c) => !c.suspended);
       const byDay = new Map<string, number>();
-      for (const t of reviewTimes) byDay.set(localDate(t), (byDay.get(localDate(t)) ?? 0) + 1);
+      for (const t of reviewTimes) {
+        const day = localDate(t, zone);
+        byDay.set(day, (byDay.get(day) ?? 0) + 1);
+      }
       return {
         dueToday: active.filter((c) => !isNew(c.state) && c.due < endOfToday).length,
         newToday,

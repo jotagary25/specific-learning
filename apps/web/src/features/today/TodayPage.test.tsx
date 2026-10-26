@@ -49,7 +49,7 @@ const overview = (over: Partial<TodayOverview> = {}): TodayOverview => ({
   ...over,
 });
 
-const session = (startedAt: Date): StudySessionView => ({
+const session = (startedAt: Date, weekend = false): StudySessionView => ({
   id: "0199f000-0000-7000-8000-000000000001",
   mode: "full",
   budgetMin: 25,
@@ -57,11 +57,12 @@ const session = (startedAt: Date): StudySessionView => ({
   startedAt: startedAt.toISOString(),
   endedAt: null,
   bonusMin: 0,
+  weekend,
 });
 
 /** Stores a session that started `ago` ms before the (faked) current time. */
-function seedSession(now: Date, agoMs: number) {
-  const view = session(new Date(now.getTime() - agoMs));
+function seedSession(now: Date, agoMs: number, weekend = false) {
+  const view = session(new Date(now.getTime() - agoMs), weekend);
   localStorage.setItem(
     STORAGE_KEY,
     JSON.stringify({ ...newActiveSession(view), teaser: overview().teaser }),
@@ -159,7 +160,7 @@ describe("TodayPage", () => {
 
   it("offers repeated bonuses on weekends", async () => {
     vi.useFakeTimers({ now: SATURDAY, toFake: ["Date"] });
-    seedSession(SATURDAY, 26 * 60_000);
+    seedSession(SATURDAY, 26 * 60_000, true);
     mockApi(baseApi({ "GET /api/today": () => Response.json(overview({ weekend: true })) }));
     renderAt("/");
 

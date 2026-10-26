@@ -2,7 +2,6 @@ import {
   BONUS_STEP_MIN,
   bonusAllowed,
   type Daypart,
-  isWeekend,
   type StudySessionView,
 } from "@english-course/shared";
 
@@ -40,8 +39,8 @@ export function formatClock(ms: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export const sessionOnWeekend = (active: ActiveSession) =>
-  isWeekend(new Date(active.session.startedAt));
+/** The api decides in the user's time zone; sessions saved before that field read as weekdays. */
+export const sessionOnWeekend = (active: ActiveSession) => active.session.weekend === true;
 
 export const canTakeBonus = (active: ActiveSession) =>
   bonusAllowed(sessionOnWeekend(active), active.bonusMin);
