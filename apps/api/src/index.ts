@@ -3,6 +3,10 @@ import { getConnInfo } from "@hono/node-server/conninfo";
 import { createApp } from "./app.ts";
 import { createAuth } from "./auth/auth.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
+import { createEditor } from "./reading/editor.ts";
+import { createReading } from "./reading/reading.service.ts";
+import { createDrizzleReadingStore } from "./reading/reading.store.ts";
+import { startEditorScheduler } from "./reading/scheduler.ts";
 import { createSettings } from "./settings/settings.service.ts";
 import { createDrizzleSettingsStore } from "./settings/settings.store.ts";
 import { loadConfig } from "./shared/config.ts";
@@ -10,6 +14,8 @@ import { createDb } from "./shared/db/client.ts";
 import { runMigrations } from "./shared/db/migrate.ts";
 import { formatSeedResult, seed } from "./shared/db/seed/index.ts";
 import { createOllamaClient } from "./shared/llm/ollama.ts";
+import { createOllamaWebSearchSource } from "./shared/news/ollama-websearch.ts";
+import { createTheConversationSource } from "./shared/news/theconversation.ts";
 import { createUnits } from "./units/units.service.ts";
 import { createDrizzleUnitsStore } from "./units/units.store.ts";
 
@@ -47,13 +53,37 @@ const settings = createSettings({
 
 const units = createUnits({ store: createDrizzleUnitsStore(database.db), ai: settings });
 
-const app = createApp({ pingDb: database.ping, contentDir, auth, settings, units });
+const readingStore = createDrizzleReadingStore(database.db);
+const editor = createEditor({
+  store: readingStore,
+  ai: settings,
+  sources: [
+    createTheConversationSource(),
+    createOllamaWebSearchSource({ baseUrl: config.OLLAMA_BASE_URL, getApiKey: settings.getApiKey }),
+  ],
+});
+const reading = createReading({
+  store: readingStore,
+  editor,
+  ai: settings,
+  editorEnabled: config.EDITOR_ENABLED,
+});
+const scheduler = config.EDITOR_ENABLED
+  ? startEditorScheduler({
+      hour: config.EDITOR_HOUR,
+      run: (date) => editor.run(date),
+      hasArticle: async (date) => (await readingStore.getArticleForDate(date)) !== undefined,
+    })
+  : undefined;
+
+const app = createApp({ pingDb: database.ping, contentDir, auth, settings, units, reading });
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`api listening on http://localhost:${info.port}`);
 });
 
 const shutdown = () => {
+  scheduler?.stop();
   server.close();
   void database.close();
 };

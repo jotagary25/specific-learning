@@ -52,7 +52,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T07 | System prompts per AI function | delegated writer | multi-file | [x] | see evidence |
 | T08 | Authored content: block 1 serial story, puzzles, ES contrast notes, analogies | delegated writer | content files | [x] | see evidence |
 | T09 | Units UI: list, unit flow, exercises, hints, timeline drag, completion | delegated writer | multi-file | [x] | see evidence |
-| T10 | Reading: AI editor pipeline + 6-step flow + next-day recall | delegated writer | multi-file | [ ] | |
+| T10 | Reading: AI editor pipeline + 6-step flow + next-day recall | delegated writer | multi-file | [x] | see evidence |
 | T11 | Vocabulary + SRS (incl. own-error cards) | delegated writer | multi-file | [ ] | |
 | T12 | Writing missions + review flow + error log | delegated writer | multi-file | [ ] | |
 | T13 | Today session engine (25 min, 5-min minimum, parking list) | delegated writer | multi-file | [ ] | |
@@ -60,7 +60,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T15 | Tutor agent ("I don't get it" + chat, tools) | delegated writer | multi-file | [ ] | |
 | T16 | Model eval tool | delegated writer | multi-file | [ ] | |
 | T17 | PWA polish, production Docker, README | delegated writer | multi-file | [ ] | |
-| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation | delegated writer | migration + units module | [ ] | |
+| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation; reading_session step/answers/retell/gloss cache/recall columns (now tagged entries in `answers` jsonb); srs_card.state nullable for unscheduled cards | delegated writer | migration + units module | [ ] | |
 
 ## Progress
 
@@ -85,6 +85,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T09: Units end to end — api `apps/api/src/units/` (list, detail without keys, attempts with server-side check + AI fallback for open items, graduated hints with key-leak guard and offline fallback, one-shot explain, timeline placement check, answers gated until all attempted, completion ≥80% over all graded items → event + can_do once); web stepper Story → Puzzle → Theory → Timeline → Exercises, direct-to-exercises, "I don't get it" sheet, drag timeline with keyboard alternative. Tests: shared 191, api 159 (+6 skipped), web 27; lint clean. Parent wired `createUnits` in `apps/api/src/index.ts` (writer surface gap) and verified live: unauthenticated 401, login 200, 6 units listed, 1.1-2 "am looking" correct (smoke attempt deleted afterwards). Schema gaps recorded as T18.
 
+- T10: reading end to end — news port with The Conversation Atom adapter (us/technology, environment, politics, world; full text in feed, CC BY-ND attribution kept) + Ollama web_search adapter; editor (filters 500–1,200 words, ≤7 days, dedupe, select_article + annotate_article, deterministic fallback), in-process 05:00 scheduler + manual run; 6-step reading API/UI, gloss + save-word (srs_card with `{}` placeholder state), recall. Tests: shared 199, api 196 (+6 skipped), web 38; lint clean. Live: 91 candidates from The Conversation, fallback selection without AI key; test article row deleted. Parent spot check: api tests. Added `settings.getApiKey`. Note: container TZ is UTC — user should set `TZ` in `.env`.
+
 ## Next step
 
-T10 — Reading pipeline + flow; relaunch T06 review captures after user re-login.
+T11 — Vocabulary + SRS; relaunch T06 review captures after user re-login.

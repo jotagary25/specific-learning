@@ -3,6 +3,8 @@ import { type Auth, requireSession } from "./auth/auth.ts";
 import { contentRoutes } from "./content/content.routes.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
 import { type HealthDeps, healthRoutes } from "./health/health.routes.ts";
+import { readingRoutes } from "./reading/reading.routes.ts";
+import type { Reading } from "./reading/reading.service.ts";
 import { settingsRoutes } from "./settings/settings.routes.ts";
 import type { Settings } from "./settings/settings.service.ts";
 import { unitsRoutes } from "./units/units.routes.ts";
@@ -15,6 +17,7 @@ export type AppDeps = HealthDeps & {
   auth?: Auth;
   settings?: Settings;
   units?: Units;
+  reading?: Reading;
 };
 
 export function createApp(deps: AppDeps) {
@@ -24,6 +27,7 @@ export function createApp(deps: AppDeps) {
   api.use("*", requireSession(deps.auth));
   if (deps.settings) api.route("/settings", settingsRoutes(deps.settings));
   if (deps.units) api.route("/units", unitsRoutes(deps.units));
+  if (deps.reading) api.route("/reading", readingRoutes(deps.reading));
 
   return new Hono()
     .route("/api", api)

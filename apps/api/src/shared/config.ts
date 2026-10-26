@@ -19,6 +19,16 @@ const EnvSchema = z.object({
       .default("auto")
       .transform((value) => (value === "auto" ? value : value === "true")),
   ),
+  /** Daily reading editor job; `false` disables the in-process scheduler (manual runs still work). */
+  EDITOR_ENABLED: z.preprocess(
+    emptyToUndefined,
+    z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((value) => value === "true"),
+  ),
+  /** Local hour (process `TZ`) of the daily editor run. */
+  EDITOR_HOUR: z.preprocess(emptyToUndefined, z.coerce.number().int().min(0).max(23).default(5)),
 });
 
 export type Config = z.infer<typeof EnvSchema>;

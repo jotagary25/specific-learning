@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom" xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <id>tag:theconversation.com,2011:/us/technology/articles</id>
+  <link rel="alternate" type="text/html" href="https://theconversation.com"/>
+  <link rel="self" type="application/atom+xml" href="https://theconversation.com/us/technology/articles.atom"/>
+  <title>Science + Tech – The Conversation</title>
+  <updated>2026-10-23T19:42:58Z</updated>
+  <entry>
+    <id>tag:theconversation.com,2011:article/1001</id>
+    <published>2026-10-23T19:42:58Z</published>
+    <updated>2026-10-23T19:42:58Z</updated>
+    <link rel="alternate" type="text/html" href="https://theconversation.com/robots-that-sort-recycling-1001"/>
+    <title>Robots that sort recycling – and what they get wrong</title>
+    <content type="html">&lt;figure&gt;&lt;img src=&quot;https://images.example/x.jpg&quot; /&gt;&lt;figcaption&gt;&lt;span class=&quot;caption&quot;&gt;A robot arm.&lt;/span&gt;&lt;/figcaption&gt;&lt;/figure&gt;&lt;p&gt;Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. The team&amp;#8217;s &lt;a href=&quot;https://example.org&quot;&gt;results&lt;/a&gt; look &amp;ldquo;promising&amp;rdquo;.&lt;/p&gt;
+&lt;p&gt;Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. The team&amp;#8217;s &lt;a href=&quot;https://example.org&quot;&gt;results&lt;/a&gt; look &amp;ldquo;promising&amp;rdquo;.&lt;/p&gt;
+&lt;p&gt;Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. The team&amp;#8217;s &lt;a href=&quot;https://example.org&quot;&gt;results&lt;/a&gt; look &amp;ldquo;promising&amp;rdquo;.&lt;/p&gt;
+&lt;p&gt;Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. The team&amp;#8217;s &lt;a href=&quot;https://example.org&quot;&gt;results&lt;/a&gt; look &amp;ldquo;promising&amp;rdquo;.&lt;/p&gt;
+&lt;p&gt;Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. The team&amp;#8217;s &lt;a href=&quot;https://example.org&quot;&gt;results&lt;/a&gt; look &amp;ldquo;promising&amp;rdquo;.&lt;/p&gt;
+&lt;p&gt;Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. The team&amp;#8217;s &lt;a href=&quot;https://example.org&quot;&gt;results&lt;/a&gt; look &amp;ldquo;promising&amp;rdquo;.&lt;/p&gt;
+&lt;p&gt;Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. The team&amp;#8217;s &lt;a href=&quot;https://example.org&quot;&gt;results&lt;/a&gt; look &amp;ldquo;promising&amp;rdquo;.&lt;/p&gt;
+&lt;p&gt;Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. Researchers are watching how small robots learn to sort recycling in busy city plants. The team&amp;#8217;s &lt;a href=&quot;https://example.org&quot;&gt;results&lt;/a&gt; look &amp;ldquo;promising&amp;rdquo;.&lt;/p&gt;
+&lt;h2&gt;What comes next&lt;/h2&gt;
+&lt;p&gt;&lt;iframe src=&quot;https://datawrapper.example/1/&quot; title=&quot;chart&quot;&gt;&lt;/iframe&gt;&lt;/p&gt;
+&lt;p&gt;Engineers have been testing the machines since spring.&lt;/p&gt;&lt;img src=&quot;https://counter.theconversation.com/content/1/count.gif&quot; alt=&quot;The Conversation&quot; width=&quot;1&quot; height=&quot;1&quot; /&gt;
+&lt;p class=&quot;fine-print&quot;&gt;&lt;em&gt;&lt;span&gt;The author does not work for any company that would benefit from this article.&lt;/span&gt;&lt;/em&gt;&lt;/p&gt;</content>
+    <summary>Sorting robots are learning fast.</summary>
+    <author>
+      <name>Ada Lovelace, Professor of Computing, Example University</name>
+      <foaf:homepage rdf:resource="https://theconversation.com/profiles/x-1"/>
+    </author>
+    <author>
+      <name>Grace Hopper, Researcher, Navy Lab</name>
+      <foaf:homepage rdf:resource="https://theconversation.com/profiles/x-1"/>
+    </author>
+    <rights>Licensed as Creative Commons – attribution, no derivatives.</rights>
+  </entry>
+  <entry>
+    <id>tag:theconversation.com,2011:article/1002</id>
+    <published>2026-10-22T10:00:00Z</published>
+    <updated>2026-10-22T10:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://theconversation.com/a-teaser-only-1002"/>
+    <title>A teaser only</title>
+    <content type="html">&lt;p&gt;Only a short teaser here.&lt;/p&gt;</content>
+    <summary>Short.</summary>
+    <author>
+      <name>Alan Turing, Fellow, King&#x27;s College</name>
+      <foaf:homepage rdf:resource="https://theconversation.com/profiles/x-1"/>
+    </author>
+    <rights>Licensed as Creative Commons – attribution, no derivatives.</rights>
+  </entry>
+</feed>

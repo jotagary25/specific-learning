@@ -2,6 +2,9 @@ import type { RouteObject } from "react-router";
 import { requireAuth } from "../features/auth/auth.api.ts";
 import { LoginPage } from "../features/auth/LoginPage.tsx";
 import { HomePage } from "../features/home/HomePage.tsx";
+import { ArticlePage } from "../features/reading/ArticlePage.tsx";
+import { HistoryPage } from "../features/reading/HistoryPage.tsx";
+import { ReadingPage } from "../features/reading/ReadingPage.tsx";
 import { SettingsPage } from "../features/settings/SettingsPage.tsx";
 import { UnitPage } from "../features/units/UnitPage.tsx";
 import { UnitsPage } from "../features/units/UnitsPage.tsx";
@@ -21,6 +24,9 @@ export const routes: RouteObject[] = [
       { index: true, element: <HomePage /> },
       { path: "units", element: <UnitsPage /> },
       { path: "units/:n", element: <UnitPage /> },
+      { path: "reading", element: <ReadingPage /> },
+      { path: "reading/history", element: <HistoryPage /> },
+      { path: "reading/:id", element: <ArticlePage /> },
       { path: "settings", element: <SettingsPage /> },
     ],
   },

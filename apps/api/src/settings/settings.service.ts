@@ -131,6 +131,11 @@ export function createSettings(options: SettingsOptions) {
 
   return {
     client,
+    /**
+     * Raw Ollama key for backend-only Ollama endpoints (web_search/web_fetch). Never send it to
+     * the browser and never log it.
+     */
+    getApiKey,
     keyStatus,
     listModels,
     capabilities,
