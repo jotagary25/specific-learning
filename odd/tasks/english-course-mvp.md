@@ -56,11 +56,11 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T11 | Vocabulary + SRS (incl. own-error cards) | delegated writer | multi-file | [x] | see evidence |
 | T12 | Writing missions + review flow + error log | delegated writer | multi-file | [x] | see evidence |
 | T13 | Today session engine (25 min, 5-min minimum, parking list) | delegated writer | multi-file | [x] | see evidence |
-| T14 | Progress timeline + monthly mirror + can-do log | delegated writer | multi-file | [ ] | |
+| T14 | Progress timeline + monthly mirror + can-do log | delegated writer | multi-file | [x] | see evidence |
 | T15 | Tutor agent ("I don't get it" + chat, tools) | delegated writer | multi-file | [ ] | |
 | T16 | Model eval tool | delegated writer | multi-file | [ ] | |
 | T17 | PWA polish, production Docker, README | delegated writer | multi-file | [ ] | |
-| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation; reading_session step/answers/retell/gloss cache/recall columns (now tagged entries in `answers` jsonb); srs_card.state nullable for unscheduled cards; srs_card.suspended column; srs_review.answer column; track hints per item so missed items create unit_item cards; writing_mission (topic, whyEs, constraints, inspiration, source) and writing_submission (status, round, strength, published_at/version, completed_at) columns + writing_error status/feedback fields (now tagged jsonb entries); study_session mode type (full/slump/minimum), blocks_done, end_reason; writing_mission updated_at; settings UI for today.writingDay | delegated writer | migration + units module | [ ] | |
+| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation; reading_session step/answers/retell/gloss cache/recall columns (now tagged entries in `answers` jsonb); srs_card.state nullable for unscheduled cards; srs_card.suspended column; srs_review.answer column; track hints per item so missed items create unit_item cards; writing_mission (topic, whyEs, constraints, inspiration, source) and writing_submission (status, round, strength, published_at/version, completed_at) columns + writing_error status/feedback fields (now tagged jsonb entries); study_session mode type (full/slump/minimum), blocks_done, end_reason; writing_mission updated_at; settings UI for today.writingDay; can_do source `mirror`; mirror seen/reflection storage (now events) | delegated writer | migration + units module | [ ] | |
 
 ## Progress
 
@@ -93,6 +93,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T13: Today — pure planner (time of day × mode × state; deep morning rotation unit/reading/writing with SRS warm-up, slump afternoon, light evening, minimum 5-min single block; 1–3 blocks ≥3 min summing to budget), sessions start/end (event once), weekday bonus once vs unlimited weekend, parking list CRUD; web home `/` = Today with persistent session bar, completion screen with story teaser, Park-it. Tests: shared 224, api 375 (+6 skipped), web 63; lint clean. Live: evening slump plan → unit 1 story; session + parking verified; rows cleaned. Parent spot check: shared tests.
 
+- T14: Progress — read-only aggregation (summary, weekly timeline from events, error trends beating/recurring/once with documented rule, monthly mirror: first article words then vs now (mature cards), first vs latest post, units + canDo, reflection as `mirror_reflection` event, due rule ≥14 days history excluding mirror events), can-do log; web `/progress` + `/progress/mirror/:month`; sparkline moved to `shared/ui`. Tests: api 395 (+6 skipped), web 73; lint clean. Live: empty states 200; test rows cleaned. Parent spot check: web tests 73.
+
 ## Next step
 
-T14 — Progress timeline + monthly mirror; relaunch T06 review captures after user re-login.
+T15 — Tutor agent; relaunch T06 review captures after user re-login.

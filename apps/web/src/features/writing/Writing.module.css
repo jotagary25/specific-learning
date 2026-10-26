@@ -263,10 +263,3 @@
   padding: 0;
   list-style: none;
 }
-
-.sparkline {
-  width: 100%;
-  max-width: 24rem;
-  height: 4rem;
-  color: var(--color-primary);
-}

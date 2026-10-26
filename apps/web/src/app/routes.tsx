@@ -1,6 +1,8 @@
 import type { RouteObject } from "react-router";
 import { requireAuth } from "../features/auth/auth.api.ts";
 import { LoginPage } from "../features/auth/LoginPage.tsx";
+import { MirrorPage } from "../features/progress/MirrorPage.tsx";
+import { ProgressPage } from "../features/progress/ProgressPage.tsx";
 import { ArticlePage } from "../features/reading/ArticlePage.tsx";
 import { HistoryPage } from "../features/reading/HistoryPage.tsx";
 import { ReadingPage } from "../features/reading/ReadingPage.tsx";
@@ -35,6 +37,8 @@ export const routes: RouteObject[] = [
       { path: "vocabulary/cards", element: <CardsPage /> },
       { path: "writing", element: <WritingPage /> },
       { path: "writing/history", element: <WritingHistoryPage /> },
+      { path: "progress", element: <ProgressPage /> },
+      { path: "progress/mirror/:month", element: <MirrorPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],
   },

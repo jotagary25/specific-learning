@@ -27,6 +27,9 @@ export function Layout() {
             <NavLink to="/writing" className={styles.link}>
               Writing
             </NavLink>
+            <NavLink to="/progress" className={styles.link}>
+              Progress
+            </NavLink>
             <NavLink to="/settings" className={styles.link}>
               Settings
             </NavLink>

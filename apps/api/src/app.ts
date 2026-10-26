@@ -3,6 +3,8 @@ import { type Auth, requireSession } from "./auth/auth.ts";
 import { contentRoutes } from "./content/content.routes.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
 import { type HealthDeps, healthRoutes } from "./health/health.routes.ts";
+import { progressRoutes } from "./progress/progress.routes.ts";
+import type { Progress } from "./progress/progress.service.ts";
 import { readingRoutes } from "./reading/reading.routes.ts";
 import type { Reading } from "./reading/reading.service.ts";
 import { settingsRoutes } from "./settings/settings.routes.ts";
@@ -27,6 +29,7 @@ export type AppDeps = HealthDeps & {
   vocabulary?: Vocabulary;
   writing?: Writing;
   today?: Today;
+  progress?: Progress;
 };
 
 export function createApp(deps: AppDeps) {
@@ -40,6 +43,7 @@ export function createApp(deps: AppDeps) {
   if (deps.vocabulary) api.route("/vocabulary", vocabularyRoutes(deps.vocabulary));
   if (deps.writing) api.route("/writing", writingRoutes(deps.writing));
   if (deps.today) api.route("/today", todayRoutes(deps.today));
+  if (deps.progress) api.route("/progress", progressRoutes(deps.progress));
 
   return new Hono()
     .route("/api", api)

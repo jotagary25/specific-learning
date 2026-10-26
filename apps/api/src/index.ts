@@ -3,6 +3,8 @@ import { getConnInfo } from "@hono/node-server/conninfo";
 import { createApp } from "./app.ts";
 import { createAuth } from "./auth/auth.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
+import { createProgress } from "./progress/progress.service.ts";
+import { createDrizzleProgressStore } from "./progress/progress.store.ts";
 import { createEditor } from "./reading/editor.ts";
 import { createReading } from "./reading/reading.service.ts";
 import { createDrizzleReadingStore } from "./reading/reading.store.ts";
@@ -108,6 +110,8 @@ const today = createToday({
   }),
 });
 
+const progress = createProgress({ store: createDrizzleProgressStore(database.db) });
+
 const app = createApp({
   pingDb: database.ping,
   contentDir,
@@ -118,6 +122,7 @@ const app = createApp({
   vocabulary,
   writing,
   today,
+  progress,
 });
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {

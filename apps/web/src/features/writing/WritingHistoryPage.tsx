@@ -1,13 +1,11 @@
 import { FORMAT_LABELS } from "@english-course/shared";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
+import { Sparkline } from "../../shared/ui/Sparkline.tsx";
 import { LevelLine } from "./MissionCard.tsx";
 import styles from "./Writing.module.css";
 import { fetchHistory, writingKeys } from "./writing.api.ts";
-import { flowLabel, sparklinePoints, versionLabel } from "./writing.model.ts";
-
-const W = 240;
-const H = 60;
+import { flowLabel, versionLabel } from "./writing.model.ts";
 
 export function WritingHistoryPage() {
   const history = useQuery({ queryKey: writingKeys.history, queryFn: fetchHistory });
@@ -34,20 +32,7 @@ export function WritingHistoryPage() {
       {history.data ? <LevelLine level={history.data.level} /> : null}
       {scores.length > 1 ? (
         <figure className={styles.card}>
-          <svg
-            className={styles.sparkline}
-            viewBox={`-4 -4 ${W + 8} ${H + 8}`}
-            role="img"
-            aria-label={`Overall scores over time: ${scores.join(", ")}`}
-          >
-            <polyline
-              points={sparklinePoints(scores, W, H)}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <Sparkline values={scores} label={`Overall scores over time: ${scores.join(", ")}`} />
           <figcaption className={styles.muted}>
             Overall score of completed missions, oldest to newest.
           </figcaption>
