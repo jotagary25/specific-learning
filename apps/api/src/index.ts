@@ -3,6 +3,9 @@ import { getConnInfo } from "@hono/node-server/conninfo";
 import { createApp } from "./app.ts";
 import { createAuth } from "./auth/auth.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
+import { createEval } from "./eval/eval.service.ts";
+import { createDrizzleEvalStore } from "./eval/eval.store.ts";
+import { loadEvalFixtures } from "./eval/fixtures.ts";
 import { createProgress } from "./progress/progress.service.ts";
 import { createDrizzleProgressStore } from "./progress/progress.store.ts";
 import { createEditor } from "./reading/editor.ts";
@@ -126,6 +129,16 @@ const tutor = createTutor({
   wordCards: vocabularyStore,
 });
 
+const evals = createEval({
+  store: createDrizzleEvalStore(database.db),
+  ai: settings,
+  fixtures: () => loadEvalFixtures(contentDir),
+});
+evals
+  .recover()
+  .then((count) => count > 0 && console.log(`eval: ${count} interrupted run(s) marked failed`))
+  .catch((error: unknown) => console.error("eval: recovery failed", error));
+
 const app = createApp({
   pingDb: database.ping,
   contentDir,
@@ -138,6 +151,7 @@ const app = createApp({
   today,
   progress,
   tutor,
+  evals,
 });
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {

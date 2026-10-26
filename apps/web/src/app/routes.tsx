@@ -1,6 +1,7 @@
 import type { RouteObject } from "react-router";
 import { requireAuth } from "../features/auth/auth.api.ts";
 import { LoginPage } from "../features/auth/LoginPage.tsx";
+import { EvalPage } from "../features/eval/EvalPage.tsx";
 import { MirrorPage } from "../features/progress/MirrorPage.tsx";
 import { ProgressPage } from "../features/progress/ProgressPage.tsx";
 import { ArticlePage } from "../features/reading/ArticlePage.tsx";
@@ -43,6 +44,7 @@ export const routes: RouteObject[] = [
       { path: "tutor", element: <TutorPage /> },
       { path: "tutor/:id", element: <TutorPage /> },
       { path: "settings", element: <SettingsPage /> },
+      { path: "settings/eval", element: <EvalPage /> },
     ],
   },
 ];

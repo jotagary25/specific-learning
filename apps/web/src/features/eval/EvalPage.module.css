@@ -1,0 +1,247 @@
+.page {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.title {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.section,
+.form {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.heading {
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.warning {
+  margin: 0;
+  color: var(--color-warn);
+}
+
+.message {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.fieldset {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  min-width: 0;
+}
+
+.legend {
+  font-weight: 600;
+  padding: 0 0.25rem;
+}
+
+.modelList,
+.plainList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.modelRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+}
+
+.effort {
+  min-width: 10rem;
+}
+
+.select {
+  font: inherit;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-muted);
+  border-radius: 0.5rem;
+  background: var(--color-bg);
+  color: inherit;
+}
+
+.actions,
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.primary,
+.secondary {
+  font: inherit;
+  font-weight: 600;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.secondary {
+  border: 1px solid var(--color-primary);
+  background: transparent;
+  color: inherit;
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Wide metric table: scrolls horizontally inside its own box on small screens. */
+.tableWrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.table {
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 100%;
+}
+
+.table th,
+.table td {
+  padding: 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.table td[colspan] {
+  white-space: normal;
+}
+
+.modelCell {
+  font-weight: 600;
+}
+
+.sortButton,
+.linkButton {
+  font: inherit;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.linkButton {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.details {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sample {
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.sample summary {
+  cursor: pointer;
+}
+
+.compare {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 48rem) {
+  .compare {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.compareTitle {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+}
+
+.found {
+  border-left: 3px solid var(--color-ok);
+  padding-left: 0.5rem;
+}
+
+.missed {
+  border-left: 3px solid var(--color-down);
+  padding-left: 0.5rem;
+}
+
+.flagged {
+  border-left: 3px solid var(--color-warn);
+  padding-left: 0.5rem;
+}
+
+.badgeBad {
+  color: var(--color-down);
+  font-weight: 600;
+}
+
+.badgeWarn {
+  color: var(--color-warn);
+  font-weight: 600;
+}
+
+.output {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem;
+  background: var(--color-surface);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-size: 0.8125rem;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,5 +1,6 @@
 export * from "./ai/index.ts";
 export * from "./content/index.ts";
+export * from "./eval/index.ts";
 export { HealthResponse } from "./health.ts";
 export * from "./progress/index.ts";
 export * from "./reading/index.ts";

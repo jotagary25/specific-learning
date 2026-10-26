@@ -58,9 +58,9 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T13 | Today session engine (25 min, 5-min minimum, parking list) | delegated writer | multi-file | [x] | see evidence |
 | T14 | Progress timeline + monthly mirror + can-do log | delegated writer | multi-file | [x] | see evidence |
 | T15 | Tutor agent ("I don't get it" + chat, tools) | delegated writer | multi-file | [x] | see evidence |
-| T16 | Model eval tool | delegated writer | multi-file | [ ] | |
+| T16 | Model eval tool | delegated writer | multi-file | [x] | see evidence |
 | T17 | PWA polish, production Docker, README | delegated writer | multi-file | [ ] | |
-| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation; reading_session step/answers/retell/gloss cache/recall columns (now tagged entries in `answers` jsonb); srs_card.state nullable for unscheduled cards; srs_card.suspended column; srs_review.answer column; track hints per item so missed items create unit_item cards; writing_mission (topic, whyEs, constraints, inspiration, source) and writing_submission (status, round, strength, published_at/version, completed_at) columns + writing_error status/feedback fields (now tagged jsonb entries); study_session mode type (full/slump/minimum), blocks_done, end_reason; writing_mission updated_at; settings UI for today.writingDay; can_do source `mirror`; mirror seen/reflection storage (now events); tutor_message.tool_name; vocabulary.createWordCard service method (tutor writes through store) | delegated writer | migration + units module | [ ] | |
+| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation; reading_session step/answers/retell/gloss cache/recall columns (now tagged entries in `answers` jsonb); srs_card.state nullable for unscheduled cards; srs_card.suspended column; srs_review.answer column; track hints per item so missed items create unit_item cards; writing_mission (topic, whyEs, constraints, inspiration, source) and writing_submission (status, round, strength, published_at/version, completed_at) columns + writing_error status/feedback fields (now tagged jsonb entries); study_session mode type (full/slump/minimum), blocks_done, end_reason; writing_mission updated_at; settings UI for today.writingDay; can_do source `mirror`; mirror seen/reflection storage (now events); tutor_message.tool_name; vocabulary.createWordCard service method (tutor writes through store); eval_run status/progress columns | delegated writer | migration + units module | [ ] | |
 
 ## Progress
 
@@ -97,6 +97,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T15: tutor agent — context-aware conversations, SSE streaming agent loop over LLM port (max 4 tool rounds, 9 zod-validated tools: 6 read incl. gated `get_item`, 3 safe writes), abort on disconnect, 503 ai-unavailable before stream; web global drawer with route-derived context, quick prompts, tool chips, back-to-task focus restore, `/tutor` history; units sheet "Ask a follow-up". Tests: api 412 (+6 skipped), web 79; lint clean (RED not observed; mutation checks instead). Live: 503 without key, store smoke test, rows cleaned. Not verified: drawer in a real browser, live LLM turn. Spec §3.9 tools updated by parent.
 
+- T16: model eval — background runner (2 concurrent runs), deterministic scoring for review_writing (recall, lenient precision, unit links, hint leak, Spanish hint, ≤3 rule), rewrite_natural (registers, meaning overlap, length), hint_exercise (leak on 5 fixed items); weights recall .30, leak-free .25, precision .10, units .10, others .05, renormalized; latency/tokens/JSON failure; apply-to-function; web `/settings/eval`. Tests: api 450 (+6 skipped), web 86; lint clean. Live: 409 not_configured without key, store round-trip, rows cleaned. Not verified against real Ollama. Gaps: naturalness 1–5 rating not built; eval samples reference units beyond 1–6.
+
 ## Next step
 
-T16 — Model eval tool; relaunch T06 review captures after user re-login.
+T17 — PWA polish, production Docker, README; then T18 schema gaps; relaunch T06 review captures after user re-login.

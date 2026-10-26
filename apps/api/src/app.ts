@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { type Auth, requireSession } from "./auth/auth.ts";
 import { contentRoutes } from "./content/content.routes.ts";
 import { resolveContentDir } from "./content/content-dir.ts";
+import { evalRoutes } from "./eval/eval.routes.ts";
+import type { Eval } from "./eval/eval.service.ts";
 import { type HealthDeps, healthRoutes } from "./health/health.routes.ts";
 import { progressRoutes } from "./progress/progress.routes.ts";
 import type { Progress } from "./progress/progress.service.ts";
@@ -33,6 +35,7 @@ export type AppDeps = HealthDeps & {
   today?: Today;
   progress?: Progress;
   tutor?: Tutor;
+  evals?: Eval;
 };
 
 export function createApp(deps: AppDeps) {
@@ -48,6 +51,7 @@ export function createApp(deps: AppDeps) {
   if (deps.today) api.route("/today", todayRoutes(deps.today));
   if (deps.progress) api.route("/progress", progressRoutes(deps.progress));
   if (deps.tutor) api.route("/tutor", tutorRoutes(deps.tutor));
+  if (deps.evals) api.route("/eval", evalRoutes(deps.evals));
 
   return new Hono()
     .route("/api", api)
