@@ -14,17 +14,17 @@ function renderAt(path: string) {
   );
 }
 
-describe("HomePage", () => {
+describe("HealthIndicator", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
   });
 
-  it("shows the api and database status from /api/health", async () => {
+  it("shows the api and database status from /api/health in the footer", async () => {
     const fetchMock = vi.fn(async () => Response.json({ status: "ok", db: "ok" }));
     vi.stubGlobal("fetch", fetchMock);
 
-    renderAt("/");
+    renderAt("/settings");
 
     expect(await screen.findByText("API: ok")).toBeTruthy();
     expect(screen.getByText("Database: ok")).toBeTruthy();

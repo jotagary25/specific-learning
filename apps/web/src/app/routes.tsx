@@ -1,11 +1,11 @@
 import type { RouteObject } from "react-router";
 import { requireAuth } from "../features/auth/auth.api.ts";
 import { LoginPage } from "../features/auth/LoginPage.tsx";
-import { HomePage } from "../features/home/HomePage.tsx";
 import { ArticlePage } from "../features/reading/ArticlePage.tsx";
 import { HistoryPage } from "../features/reading/HistoryPage.tsx";
 import { ReadingPage } from "../features/reading/ReadingPage.tsx";
 import { SettingsPage } from "../features/settings/SettingsPage.tsx";
+import { TodayPage } from "../features/today/TodayPage.tsx";
 import { UnitPage } from "../features/units/UnitPage.tsx";
 import { UnitsPage } from "../features/units/UnitsPage.tsx";
 import { CardsPage } from "../features/vocabulary/CardsPage.tsx";
@@ -25,7 +25,7 @@ export const routes: RouteObject[] = [
       currentUrl.pathname !== nextUrl.pathname && defaultShouldRevalidate,
     hydrateFallbackElement: null,
     children: [
-      { index: true, element: <HomePage /> },
+      { index: true, element: <TodayPage /> },
       { path: "units", element: <UnitsPage /> },
       { path: "units/:n", element: <UnitPage /> },
       { path: "reading", element: <ReadingPage /> },

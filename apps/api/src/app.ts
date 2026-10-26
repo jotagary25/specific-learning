@@ -7,6 +7,8 @@ import { readingRoutes } from "./reading/reading.routes.ts";
 import type { Reading } from "./reading/reading.service.ts";
 import { settingsRoutes } from "./settings/settings.routes.ts";
 import type { Settings } from "./settings/settings.service.ts";
+import { todayRoutes } from "./today/today.routes.ts";
+import type { Today } from "./today/today.service.ts";
 import { unitsRoutes } from "./units/units.routes.ts";
 import type { Units } from "./units/units.service.ts";
 import { vocabularyRoutes } from "./vocabulary/vocabulary.routes.ts";
@@ -24,6 +26,7 @@ export type AppDeps = HealthDeps & {
   reading?: Reading;
   vocabulary?: Vocabulary;
   writing?: Writing;
+  today?: Today;
 };
 
 export function createApp(deps: AppDeps) {
@@ -36,6 +39,7 @@ export function createApp(deps: AppDeps) {
   if (deps.reading) api.route("/reading", readingRoutes(deps.reading));
   if (deps.vocabulary) api.route("/vocabulary", vocabularyRoutes(deps.vocabulary));
   if (deps.writing) api.route("/writing", writingRoutes(deps.writing));
+  if (deps.today) api.route("/today", todayRoutes(deps.today));
 
   return new Hono()
     .route("/api", api)

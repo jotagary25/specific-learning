@@ -55,12 +55,12 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T10 | Reading: AI editor pipeline + 6-step flow + next-day recall | delegated writer | multi-file | [x] | see evidence |
 | T11 | Vocabulary + SRS (incl. own-error cards) | delegated writer | multi-file | [x] | see evidence |
 | T12 | Writing missions + review flow + error log | delegated writer | multi-file | [x] | see evidence |
-| T13 | Today session engine (25 min, 5-min minimum, parking list) | delegated writer | multi-file | [ ] | |
+| T13 | Today session engine (25 min, 5-min minimum, parking list) | delegated writer | multi-file | [x] | see evidence |
 | T14 | Progress timeline + monthly mirror + can-do log | delegated writer | multi-file | [ ] | |
 | T15 | Tutor agent ("I don't get it" + chat, tools) | delegated writer | multi-file | [ ] | |
 | T16 | Model eval tool | delegated writer | multi-file | [ ] | |
 | T17 | PWA polish, production Docker, README | delegated writer | multi-file | [ ] | |
-| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation; reading_session step/answers/retell/gloss cache/recall columns (now tagged entries in `answers` jsonb); srs_card.state nullable for unscheduled cards; srs_card.suspended column; srs_review.answer column; track hints per item so missed items create unit_item cards; writing_mission (topic, whyEs, constraints, inspiration, source) and writing_submission (status, round, strength, published_at/version, completed_at) columns + writing_error status/feedback fields (now tagged jsonb entries) | delegated writer | migration + units module | [ ] | |
+| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation; reading_session step/answers/retell/gloss cache/recall columns (now tagged entries in `answers` jsonb); srs_card.state nullable for unscheduled cards; srs_card.suspended column; srs_review.answer column; track hints per item so missed items create unit_item cards; writing_mission (topic, whyEs, constraints, inspiration, source) and writing_submission (status, round, strength, published_at/version, completed_at) columns + writing_error status/feedback fields (now tagged jsonb entries); study_session mode type (full/slump/minimum), blocks_done, end_reason; writing_mission updated_at; settings UI for today.writingDay | delegated writer | migration + units module | [ ] | |
 
 ## Progress
 
@@ -91,6 +91,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T12: writing — missions by format level (tweet→thread→linkedin→article; advance when last 3 in format average ≥75), AI mission with built-in fallback templates, state machine draft→reviewed→rechecked(≤2)→rewritten→completed (+skip), hints without corrections, writing-local reveal prompt after the last round, natural rewrites by register, unit priority +1 per linked error, own_error SRS cards for fixed errors, events for Progress, practice endpoint. Tests: shared 220, api 245 (+6 skipped), web 55; lint clean. Live (no key): fallback mission, draft saved, submit ai-unavailable keeps text; rows cleaned. Parent spot check: api tests.
 
+- T13: Today — pure planner (time of day × mode × state; deep morning rotation unit/reading/writing with SRS warm-up, slump afternoon, light evening, minimum 5-min single block; 1–3 blocks ≥3 min summing to budget), sessions start/end (event once), weekday bonus once vs unlimited weekend, parking list CRUD; web home `/` = Today with persistent session bar, completion screen with story teaser, Park-it. Tests: shared 224, api 375 (+6 skipped), web 63; lint clean. Live: evening slump plan → unit 1 story; session + parking verified; rows cleaned. Parent spot check: shared tests.
+
 ## Next step
 
-T13 — Today session engine; relaunch T06 review captures after user re-login.
+T14 — Progress timeline + monthly mirror; relaunch T06 review captures after user re-login.

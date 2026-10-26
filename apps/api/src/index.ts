@@ -16,6 +16,9 @@ import { formatSeedResult, seed } from "./shared/db/seed/index.ts";
 import { createOllamaClient } from "./shared/llm/ollama.ts";
 import { createOllamaWebSearchSource } from "./shared/news/ollama-websearch.ts";
 import { createTheConversationSource } from "./shared/news/theconversation.ts";
+import { createToday } from "./today/today.service.ts";
+import { createTodaySources } from "./today/today.sources.ts";
+import { createDrizzleTodayStore } from "./today/today.store.ts";
 import { createUnits } from "./units/units.service.ts";
 import { createDrizzleUnitsStore } from "./units/units.store.ts";
 import { createVocabulary } from "./vocabulary/vocabulary.service.ts";
@@ -93,6 +96,18 @@ const writing = createWriting({
   ownErrors: vocabulary,
 });
 
+const today = createToday({
+  store: createDrizzleTodayStore(database.db),
+  sources: createTodaySources({
+    units,
+    reading,
+    readingStore,
+    vocabulary,
+    writing,
+    getSetting: (key) => settingsStore.getSetting(key),
+  }),
+});
+
 const app = createApp({
   pingDb: database.ping,
   contentDir,
@@ -102,6 +117,7 @@ const app = createApp({
   reading,
   vocabulary,
   writing,
+  today,
 });
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
