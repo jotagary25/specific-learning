@@ -4,3 +4,4 @@ export { HealthResponse } from "./health.ts";
 export * from "./reading/index.ts";
 export * from "./settings/index.ts";
 export * from "./units/index.ts";
+export * from "./vocabulary/index.ts";

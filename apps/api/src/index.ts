@@ -18,6 +18,8 @@ import { createOllamaWebSearchSource } from "./shared/news/ollama-websearch.ts";
 import { createTheConversationSource } from "./shared/news/theconversation.ts";
 import { createUnits } from "./units/units.service.ts";
 import { createDrizzleUnitsStore } from "./units/units.store.ts";
+import { createVocabulary } from "./vocabulary/vocabulary.service.ts";
+import { createDrizzleVocabularyStore } from "./vocabulary/vocabulary.store.ts";
 
 const config = loadConfig();
 const contentDir = resolveContentDir();
@@ -44,8 +46,9 @@ const auth = createAuth({
     }
   },
 });
+const settingsStore = createDrizzleSettingsStore(database.db);
 const settings = createSettings({
-  store: createDrizzleSettingsStore(database.db),
+  store: settingsStore,
   appSecret: config.APP_SECRET,
   envApiKey: config.OLLAMA_API_KEY,
   createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
@@ -76,7 +79,20 @@ const scheduler = config.EDITOR_ENABLED
     })
   : undefined;
 
-const app = createApp({ pingDb: database.ping, contentDir, auth, settings, units, reading });
+const vocabulary = createVocabulary({
+  store: createDrizzleVocabularyStore(database.db),
+  settings: settingsStore,
+});
+
+const app = createApp({
+  pingDb: database.ping,
+  contentDir,
+  auth,
+  settings,
+  units,
+  reading,
+  vocabulary,
+});
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`api listening on http://localhost:${info.port}`);

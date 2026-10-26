@@ -8,6 +8,8 @@ import { ReadingPage } from "../features/reading/ReadingPage.tsx";
 import { SettingsPage } from "../features/settings/SettingsPage.tsx";
 import { UnitPage } from "../features/units/UnitPage.tsx";
 import { UnitsPage } from "../features/units/UnitsPage.tsx";
+import { CardsPage } from "../features/vocabulary/CardsPage.tsx";
+import { VocabularyPage } from "../features/vocabulary/VocabularyPage.tsx";
 import { Layout } from "./Layout.tsx";
 
 export const routes: RouteObject[] = [
@@ -27,6 +29,8 @@ export const routes: RouteObject[] = [
       { path: "reading", element: <ReadingPage /> },
       { path: "reading/history", element: <HistoryPage /> },
       { path: "reading/:id", element: <ArticlePage /> },
+      { path: "vocabulary", element: <VocabularyPage /> },
+      { path: "vocabulary/cards", element: <CardsPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],
   },

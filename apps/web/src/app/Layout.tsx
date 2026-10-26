@@ -16,6 +16,9 @@ export function Layout() {
           <NavLink to="/reading" className={styles.link}>
             Reading
           </NavLink>
+          <NavLink to="/vocabulary" className={styles.link}>
+            Vocabulary
+          </NavLink>
           <NavLink to="/settings" className={styles.link}>
             Settings
           </NavLink>
