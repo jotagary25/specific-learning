@@ -53,6 +53,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 - L13 (T3 review): `review-761a1e9b11b52faa` (risk, resilience, reliability) approved + burned. Advisories fixed in `8dfa15e` with RED→GREEN: env AI keys admin-only (`mayUseEnvKeys`), default provider prefers the user's stored key, strict-schema fallback only on 400s naming the schema (not 403/other 400s), per-provider row keys in Settings. Assess: medium, under_budget. Not fixed (advisory): none blocking.
 - L14 (T4, inline): `docker-compose.dokploy.yml` (expose 3000, env_file, TZ UTC, extra_hosts host-gateway), `extra_hosts` in prod compose, README "Deploying with Dokploy" (Application/Dockerfile recommended, Compose option, env block, DB host cases, pg_hba), docs/spec.md stale lines updated. Both compose files validate; lint clean.
 
+- L15 (T2–T4 verification): independent verifier — S3, S4, S5, S6 pass, no blockers (7-zone DST sweep, two-user live probe, tick isolation + concurrent manual runs idempotent, S4 fix commit behaviour, image builds and runs healthy with TRUST_PROXY=true, migration 0003 covered by test:db). Advisory fixed: editor retry capped at 3 attempts per user/day (`EDITOR_MAX_DAILY_ATTEMPTS`, RED→GREEN). Remaining advisories (display only): Node canonicalizes some zone names (Asia/Kolkata → Asia/Calcutta); tutor tool, own-error card dates and web progress labels not in user zone; prod compose keeps publishing 127.0.0.1:3000 (Dokploy uses its own compose).
+
 ## Next step
 
-One independent verifier for T2–T4 (high-risk items 1, 3, 4, 5), then close.
+Feature complete. User: update `.env.example` lines listed in the final report; push/PR/merge are user decisions.

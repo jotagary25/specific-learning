@@ -75,6 +75,15 @@ describe("editor tick", () => {
     expect(deps.run).toHaveBeenLastCalledWith("la-paz", "2026-10-25", expect.any(Function));
   });
 
+  it("stops retrying a failing user after 3 attempts on the same local date", async () => {
+    const { deps } = world([LA_PAZ], new Date("2026-10-26T01:00:00Z"), ["la-paz"]);
+    const attempts = new Map<string, number>();
+
+    for (let i = 0; i < 5; i++) await editorTick({ ...deps, attempts });
+
+    expect(deps.run).toHaveBeenCalledTimes(3);
+  });
+
   it("catches up soon after a restart mid-day, then ticks every 5 minutes", async () => {
     const timers: Array<{ fn: () => void; ms: number }> = [];
     // Restarted at 15:00 in La Paz, well past 05:00, with no article for today yet.

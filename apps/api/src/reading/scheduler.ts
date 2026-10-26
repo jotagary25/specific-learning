@@ -8,6 +8,8 @@ import type { CandidatePool } from "./editor.ts";
 export const EDITOR_TICK_MS = 5 * 60_000;
 /** Delay of the first tick after start (lets the server finish booting). */
 export const EDITOR_FIRST_TICK_MS = 15_000;
+/** Runs per user and local date before the tick gives up until the next day (each may call the AI). */
+export const EDITOR_MAX_DAILY_ATTEMPTS = 3;
 
 export type EditorTickDeps = {
   listUserIds(): Promise<string[]>;
@@ -23,6 +25,8 @@ export type EditorTickDeps = {
   ): Promise<{ status: string }>;
   now?: () => Date;
   log?: Pick<Console, "log" | "error">;
+  /** Attempts per `userId/date`, kept across ticks by the scheduler. */
+  attempts?: Map<string, number>;
 };
 
 export type TickResult = {
@@ -47,6 +51,10 @@ export async function editorTick(deps: EditorTickDeps): Promise<TickResult> {
       const [zone, hour] = await Promise.all([deps.timeZoneOf(userId), deps.editorHour(userId)]);
       date = localDate(now, zone);
       if (localHour(now, zone) < hour || (await deps.hasArticle(userId, date))) continue;
+      const key = `${userId}/${date}`;
+      const tried = deps.attempts?.get(key) ?? 0;
+      if (tried >= EDITOR_MAX_DAILY_ATTEMPTS) continue;
+      deps.attempts?.set(key, tried + 1);
       const { status } = await deps.run(userId, date, candidates);
       result.ran.push({ userId, date, status });
       log.log(`editor: user ${userId} ${date} → ${status}`);
@@ -74,11 +82,14 @@ export function startEditorScheduler(options: SchedulerOptions) {
   const interval = options.intervalMs ?? EDITOR_TICK_MS;
   let handle: unknown;
   let stopped = false;
+  let attempts = new Map<string, number>();
 
   const schedule = (ms: number) => {
     if (stopped) return;
     handle = setTimer(() => {
-      void editorTick(options)
+      // Old dates never come back: start a fresh map once it grows past one day of users.
+      if (attempts.size > 10_000) attempts = new Map();
+      void editorTick({ ...options, attempts })
         .catch((error: unknown) => console.error("editor: tick failed", error))
         .finally(() => schedule(interval));
     }, ms);
