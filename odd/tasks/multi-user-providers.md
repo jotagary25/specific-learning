@@ -55,6 +55,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L15 (T2–T4 verification): independent verifier — S3, S4, S5, S6 pass, no blockers (7-zone DST sweep, two-user live probe, tick isolation + concurrent manual runs idempotent, S4 fix commit behaviour, image builds and runs healthy with TRUST_PROXY=true, migration 0003 covered by test:db). Advisory fixed: editor retry capped at 3 attempts per user/day (`EDITOR_MAX_DAILY_ATTEMPTS`, RED→GREEN). Remaining advisories (display only): Node canonicalizes some zone names (Asia/Kolkata → Asia/Calcutta); tutor tool, own-error card dates and web progress labels not in user zone; prod compose keeps publishing 127.0.0.1:3000 (Dokploy uses its own compose).
 
+- L16 (user): "osea que ahora hay 3 composes? que basura es esta>" / "en que mundo vives si te estoy diciendo que quiero desplegar en compose en dokploy?" → S6 clarified: production deploys as a Docker Compose service on Dokploy. `docker-compose.dokploy.yml` removed; `docker-compose.prod.yml` is now the single production compose, Dokploy-ready (`expose: 3000`, no published ports, `env_file: .env`, TZ UTC, `extra_hosts`, optional `with-db` profile; dropped APP_BIND/APP_PORT/APP_IMAGE/ENV_FILE). README "Production deployment (Dokploy)" rewritten around Compose on Dokploy. Compose config validates; lint clean.
+
 ## Next step
 
-Feature complete. User: update `.env.example` lines listed in the final report; push/PR/merge are user decisions.
+Feature complete. User: update `.env.example`; push/PR/merge are user decisions.

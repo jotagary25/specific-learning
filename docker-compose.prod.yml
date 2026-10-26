@@ -1,27 +1,25 @@
-# Production stack: one `app` container (api + built web) against an external PostgreSQL 18.
-#   docker compose -f docker-compose.prod.yml up -d --build
-# No PostgreSQL server yet? Start the bundled one too and point DATABASE_URL at host `db`:
-#   docker compose -f docker-compose.prod.yml --profile with-db up -d --build
-# Settings come from `.env` (or the file named by ENV_FILE); see README "Environment variables".
-name: english-course-prod
+# Production stack for Dokploy (Docker Compose): one `app` container (api + built web).
+# - Dokploy writes the Environment tab to `.env` next to this file; `env_file` passes it in.
+# - Add the domain in Dokploy's Domains tab (service `app`, port 3000): Dokploy joins the service
+#   to `dokploy-network` and adds the Traefik labels, so no host port is published here.
+# - PostgreSQL 18: an existing server (DATABASE_URL) by default. Without one, enable the
+#   `with-db` profile and point DATABASE_URL at host `db`.
+# See README "Production deployment (Dokploy)".
 
 services:
   app:
-    image: ${APP_IMAGE:-english-course:latest}
     build: .
     restart: unless-stopped
-    env_file: ${ENV_FILE:-.env}
+    env_file: .env
     environment:
-      # The container always listens on 3000; publish it on APP_PORT.
+      # The container always listens on 3000.
       PORT: "3000"
       # Always UTC, whatever `.env` says: each user picks their own zone in Settings.
       TZ: UTC
-    ports:
-      # Loopback only by default: reach it through a reverse proxy on this host. Set
-      # APP_BIND=0.0.0.0 to expose it directly (and keep TRUST_PROXY off then).
-      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
+    expose:
+      - "3000"
     extra_hosts:
-      # Lets DATABASE_URL use host.docker.internal for a PostgreSQL installed on this host.
+      # Lets DATABASE_URL use host.docker.internal for a PostgreSQL installed on the server.
       - "host.docker.internal:host-gateway"
     depends_on:
       db:
@@ -39,7 +37,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-english_course}
       TZ: UTC
     volumes:
-      # postgres 18+ keeps versioned data under /var/lib/postgresql/<major>/docker.
+      # Named volume (Dokploy Volume Backups); postgres 18 keeps data under
+      # /var/lib/postgresql/<major>/docker.
       - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]

@@ -67,7 +67,7 @@ invalid. Empty values count as unset.
 | `APP_USER_EMAIL` | yes | — | Email of the admin account, used to log in (case-insensitive). See [Users](#users). |
 | `APP_USER_PASSWORD` | yes | — | Admin password, at least 8 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
 | `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored provider keys unreadable (save them again). |
-| `PORT` | no | `3000` | API listen port. `docker-compose.prod.yml` pins it to 3000 inside the container. |
+| `PORT` | no | `3000` | API listen port. The compose file pins it to 3000 inside the container. |
 | `OLLAMA_API_KEY` | no | — | Instance Ollama Cloud key. Only the admin falls back to it (it is the admin's spend); other users must save their own key in Settings. A saved key always wins. |
 | `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show). |
 | `OPENROUTER_API_KEY` | no | — | Instance OpenRouter key. Only the admin falls back to it; other users save their own key. A user who never chose a provider uses the provider whose key they saved, else OpenRouter when this is the only env key. |
@@ -82,10 +82,6 @@ invalid. Empty values count as unset.
 | `DATABASE_URL_TEST` | no | `DATABASE_URL` with `_test` appended to the db name | Database for `pnpm --filter @english-course/api test:db` (created if missing; name must end in `_test`). |
 | `API_URL` | no | `http://localhost:3000` | Dev only: where the Vite dev server proxies `/api` and `/content` (`http://api:3000` in compose). |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | dev; prod `with-db` | prod: `english` / — / `english_course` | Credentials for the bundled `postgres:18` service. Keep them in sync with `DATABASE_URL`. |
-| `APP_PORT` | no | `3000` | Prod compose: host port published for the app. |
-| `APP_BIND` | no | `127.0.0.1` | Prod compose: host address to publish on. The default only accepts a reverse proxy on the same host; set `0.0.0.0` to expose the app directly (then leave `TRUST_PROXY` off). |
-| `APP_IMAGE` | no | `english-course:latest` | Prod compose: image tag to build/run. |
-| `ENV_FILE` | no | `.env` | Prod compose: env file passed to the app container. |
 
 ## AI providers
 
@@ -129,13 +125,15 @@ signed-in user. Book content, the story, the timeline exercises and the article 
   Login attempts are limited per email and client address (5 per 15 minutes), and a wrong email
   or password get the same answer.
 
-## Production deployment
+## Production deployment (Dokploy)
 
-One image runs everything: the api (Node 24 running TypeScript directly) serves the built PWA,
-the content images and `/api`. It runs as a non-root user, with `NODE_ENV=production` and a
-healthcheck on `/api/health`.
+Production runs on [Dokploy](https://dokploy.com) as a **Docker Compose** service using
+`docker-compose.prod.yml` (the only production compose file). One image runs everything: the api
+(Node 24 running TypeScript directly) serves the built PWA, the content images and `/api`, as a
+non-root user with a healthcheck on `/api/health`. Migrations and the idempotent content seed run
+on every start.
 
-### With your existing PostgreSQL 18 (default)
+### 1. Database (PostgreSQL 18)
 
 Create a database and a user once (as a superuser, e.g. `psql -U postgres`):
 
@@ -144,99 +142,53 @@ CREATE ROLE english_course LOGIN PASSWORD 'use-a-long-random-password';
 CREATE DATABASE english_course OWNER english_course;
 ```
 
-Then, on the server:
+The user must own the database: the app creates its tables on start. `<db-host>` in
+`DATABASE_URL` depends on where PostgreSQL runs:
 
-```sh
-git clone <this repo> english-course && cd english-course
-cp .env.example .env
-# set DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
-# set APP_USER_EMAIL, APP_USER_PASSWORD, APP_SECRET (openssl rand -hex 32), and for a reverse proxy:
-#   TRUST_PROXY=true (APP_BIND already defaults to 127.0.0.1)
-docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml ps    # wait for "healthy"
-```
+- **A Dokploy database service**: its internal host shown in Dokploy (reachable on `dokploy-network`).
+- **PostgreSQL installed on the server**: `host.docker.internal` (mapped to the host by
+  `extra_hosts` in the compose file). Make PostgreSQL listen on the Docker bridge
+  (`listen_addresses` in `postgresql.conf`) and allow the Docker subnet in `pg_hba.conf`, for
+  example `host english_course english_course 172.16.0.0/12 scram-sha-256`.
+- **No PostgreSQL server**: enable the compose profile `with-db` (bundled `postgres:18`, named
+  volume `pgdata`, not published), set `POSTGRES_PASSWORD` and use host `db`.
 
-Migrations and the idempotent content seed run on every start. If the database runs on the same
-host outside Docker, `localhost` inside the container is the container itself: use
-`host.docker.internal` (mapped to the host by `extra_hosts` in the compose files), make
-PostgreSQL listen on the Docker bridge (`listen_addresses` in `postgresql.conf`) and allow the
-Docker subnet in `pg_hba.conf` (for example `host english_course english_course 172.16.0.0/12 scram-sha-256`).
+### 2. Compose service in Dokploy
 
-### Deploying with Dokploy
+1. Create a **Compose** service from this repository, compose path `docker-compose.prod.yml`.
+2. **Environment** tab (Dokploy writes it to `.env` next to the compose file; `env_file` passes
+   it to the container):
 
-The app is ready for [Dokploy](https://dokploy.com): one stateless container, configuration only
-through environment variables, health at `/api/health`, and Traefik (Dokploy's proxy) is trusted
-as a private-network peer. Two ways to deploy it:
+   ```env
+   DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
+   APP_USER_EMAIL=you@example.com
+   APP_USER_PASSWORD=<8+ characters>
+   APP_SECRET=<openssl rand -hex 32, generated on the server>
+   TRUST_PROXY=true
+   # optional
+   OPENROUTER_API_KEY=
+   OLLAMA_API_KEY=
+   APP_PUBLIC_URL=https://english.example.com
+   ```
 
-- **Application (recommended)**: create an Application from this repository with build type
-  **Dockerfile** (`Dockerfile` at the repo root). In **Environment**, set the variables below.
-  In **Domains**, add your domain pointing to container port **3000** with HTTPS (Let's Encrypt).
-  No host port is needed.
-- **Docker Compose**: create a Compose service using `docker-compose.dokploy.yml`. Dokploy
-  writes the Environment tab to `.env` next to the compose file, and `env_file` passes it to
-  the container. Add the domain in the **Domains** tab (service `app`, port 3000); Dokploy joins
-  the service to `dokploy-network` and adds the Traefik labels.
+3. **Domains** tab: service `app`, container port **3000**, HTTPS (Let's Encrypt). Dokploy joins
+   the service to `dokploy-network` and adds the Traefik labels; the compose file only `expose`s
+   port 3000 and publishes nothing on the host.
+4. Deploy, and check the service turns healthy.
 
-Environment for Dokploy (see the full table above):
-
-```env
-DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
-APP_USER_EMAIL=you@example.com
-APP_USER_PASSWORD=<8+ characters>
-APP_SECRET=<openssl rand -hex 32, generated on the server>
-TRUST_PROXY=true
-# optional
-OPENROUTER_API_KEY=
-OLLAMA_API_KEY=
-APP_PUBLIC_URL=https://english.example.com
-```
-
-`<db-host>` depends on where PostgreSQL 18 runs:
-
-- **A Dokploy database service**: use its internal host shown in Dokploy (it is reachable on
-  `dokploy-network`).
-- **PostgreSQL installed on the server**: `host.docker.internal` with the Compose deployment
-  (via `extra_hosts`); with an Application, use the Docker bridge gateway address (usually
-  `172.17.0.1`). In both cases allow the Docker subnet in `pg_hba.conf` as described above.
-
-`TRUST_PROXY=true` is safe here: forwarded headers are honored only from loopback or private
-peers, which is how Traefik reaches the container. Keep `APP_SECRET` stable: changing it signs
-everyone out and makes saved AI keys unreadable.
-
-### Without a PostgreSQL server
-
-Start the bundled `postgres:18` with the `with-db` profile (data in the `pgdata` volume, not
-published on any host port):
-
-```sh
-# .env: POSTGRES_PASSWORD=<secret> and DATABASE_URL=postgres://english:<secret>@db:5432/english_course
-docker compose -f docker-compose.prod.yml --profile with-db up -d --build
-```
-
-### Reverse proxy and TLS
-
-Put a TLS-terminating proxy in front and set `TRUST_PROXY=true` so the session cookie gets the
-`Secure` flag from `X-Forwarded-Proto` and login rate limiting keys on the client address. The
-app is published only on `127.0.0.1` by default (`APP_BIND`), and it honors forwarded headers
-only from loopback or private peers (a host proxy reaches the container from the Docker bridge,
-a proxy container from the compose network), so a client cannot spoof them. To reach the app
-without a proxy, set `APP_BIND=0.0.0.0` and keep `TRUST_PROXY` off. A
-service worker (offline support, install) requires HTTPS on any host other than `localhost`.
-
-- **Caddy**: `english.example.com { reverse_proxy 127.0.0.1:3000 }` (forwarded headers are set automatically).
-- **nginx**: `proxy_pass http://127.0.0.1:3000;` plus
-  `proxy_set_header Host $host;`, `proxy_set_header X-Forwarded-Proto $scheme;`,
-  `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`. Add `proxy_buffering off;`
-  so the tutor's streamed answers (SSE) arrive as they are written.
+`TRUST_PROXY=true` is safe here: forwarded headers (`X-Forwarded-Proto`, `X-Forwarded-For`) are
+honored only from loopback or private peers, which is how Traefik reaches the container, so the
+session cookie gets the `Secure` flag and login rate limiting keys on the real client. Keep
+`APP_SECRET` stable: changing it signs everyone out and makes saved AI keys unreadable. A service
+worker (offline support, install on the phone) requires HTTPS.
 
 ### Backups
 
 ```sh
 # External database
 pg_dump -Fc "$DATABASE_URL" > english-course-$(date +%F).dump
-# Bundled database (with-db profile)
-docker compose -f docker-compose.prod.yml exec -T db \
-  pg_dump -U english -Fc english_course > english-course-$(date +%F).dump
+# Bundled database (with-db profile): run inside the `db` container
+pg_dump -U english -Fc english_course > english-course-$(date +%F).dump
 # Restore into an empty database
 pg_restore --no-owner -d "$DATABASE_URL" english-course-YYYY-MM-DD.dump
 ```
@@ -245,12 +197,8 @@ Keep `APP_SECRET` with your backups: without it the stored provider keys cannot 
 
 ### Updating
 
-```sh
-git pull
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
-New migrations apply on start. Open apps show **New version available — Reload**.
+Redeploy the Compose service in Dokploy (or enable its auto-deploy on push). New migrations
+apply on start. Open apps show **New version available — Reload**.
 
 ### Installing on the phone
 
