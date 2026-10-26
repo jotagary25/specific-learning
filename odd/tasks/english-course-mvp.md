@@ -114,6 +114,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - Advisory follow-ups applied: TRUST_PROXY honors XFF/XFP only from loopback/private peers (`auth/trusted-proxy.ts`), prod compose binds `127.0.0.1` by default; logout + 401 clear the `api-study` SW cache and the query cache; epoch store failures → 503 `session-store-unavailable` (not 500), logout always clears the cookie (`revoked` flag). Tests: api 506 (+14 skipped), web 109; lint clean. Parent spot check: live login 200 → logout revoked → old cookie 401.
 
+- Review `review-54bf51f4cb391010` (base c6b483a → 5fbe2ac, high, 546 lines, consent granted): 4 lenses → **approved**, acknowledged, authority burned. Reviewed boundary → `5fbe2ac`. Advisory (non-blocking): web ignores `revoked:false` on logout (no warning shown); trust breadth = any private peer (consider a `TRUSTED_PROXIES` allowlist; also needed for proxies on public/CGNAT addresses); APP_BIND default flip (no existing deployments, documented); study cache name duplicated between vite config and session-cache; empty XFF tail; minor naming.
+
 ## Next step
 
-User: set Ollama key + TZ, add README lines to `.env.example`; UI polish from smoke test; remaining advisory suggestions (NetworkFirst staleness, update interval leak, dotted SPA routes); push/PR/merge remain user decisions.
+Optional: `TRUSTED_PROXIES` allowlist + show a notice when logout could not revoke other sessions + share the cache name constant. User: set Ollama key + TZ, add README lines to `.env.example`; UI polish from smoke test; push/PR/merge remain user decisions.
