@@ -213,16 +213,17 @@ describe("deployment config", () => {
     expect(() => loadConfig({ ...base, TRUST_PROXY: "yes" })).toThrow(/TRUST_PROXY/);
   });
 
-  it("requires the admin email and a password of at least 12 characters", () => {
+  it("requires the admin email and a password of at least 8 characters", () => {
     const { APP_USER_EMAIL: _email, ...noEmail } = base;
     const { APP_USER_PASSWORD: _password, ...noPassword } = base;
 
     expect(() => loadConfig(noEmail)).toThrow(/APP_USER_EMAIL/);
     expect(() => loadConfig(noPassword)).toThrow(/APP_USER_PASSWORD/);
     expect(() => loadConfig({ ...base, APP_USER_EMAIL: "not-an-email" })).toThrow(/APP_USER_EMAIL/);
-    expect(() => loadConfig({ ...base, APP_USER_PASSWORD: "elevenchars" })).toThrow(
-      /at least 12 characters/,
+    expect(() => loadConfig({ ...base, APP_USER_PASSWORD: "seven77" })).toThrow(
+      /at least 8 characters/,
     );
+    expect(() => loadConfig({ ...base, APP_USER_PASSWORD: "change-me" })).not.toThrow();
   });
 
   it("no longer accepts APP_PASSWORD in place of the admin credentials", () => {

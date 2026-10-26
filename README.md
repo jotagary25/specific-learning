@@ -19,7 +19,7 @@ instead of in containers: Node.js 24 and pnpm 11 (`corepack enable`).
 ```sh
 cp .env.example .env
 openssl rand -hex 32   # paste as APP_SECRET
-openssl rand -hex 16   # a strong APP_USER_PASSWORD (or choose your own, 12+ characters)
+openssl rand -hex 16   # a strong APP_USER_PASSWORD (or choose your own, 8+ characters)
 ```
 
 Edit `.env`: set `APP_SECRET`, `APP_USER_EMAIL`, `APP_USER_PASSWORD`, a real `POSTGRES_PASSWORD`
@@ -57,7 +57,7 @@ invalid. Empty values count as unset.
 |------|----------|---------|-------------|
 | `DATABASE_URL` | yes | — | PostgreSQL 18 URL, `postgres://user:pass@host:5432/db`. |
 | `APP_USER_EMAIL` | yes | — | Email of the admin account, used to log in (case-insensitive). See [Users](#users). |
-| `APP_USER_PASSWORD` | yes | — | Admin password, at least 12 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
+| `APP_USER_PASSWORD` | yes | — | Admin password, at least 8 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
 | `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored Ollama keys unreadable (save them again). |
 | `TZ` | no | system (`UTC` in the image) | IANA timezone, e.g. `America/Santiago`. Drives the Today plan, day boundaries and the editor hour. |
 | `PORT` | no | `3000` | API listen port. `docker-compose.prod.yml` pins it to 3000 inside the container. |

@@ -8,7 +8,7 @@ const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   /** The admin account, created or updated on every start (see users/bootstrap.ts). */
   APP_USER_EMAIL: z.email(),
-  APP_USER_PASSWORD: z.string().min(12, "APP_USER_PASSWORD must be at least 12 characters"),
+  APP_USER_PASSWORD: z.string().min(8, "APP_USER_PASSWORD must be at least 8 characters"),
   APP_SECRET: z
     .string()
     .regex(/^[0-9a-fA-F]{64}$/, "APP_SECRET must be 32 bytes encoded as 64 hex chars"),
