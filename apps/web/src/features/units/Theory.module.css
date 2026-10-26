@@ -1,0 +1,124 @@
+/* Styles for the book's semantic classes inside the imported theory HTML. */
+
+.section {
+  position: relative;
+  padding-left: 2rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.75rem;
+}
+
+.letter {
+  position: absolute;
+  left: 0;
+  top: 0.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.25rem;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.html {
+  overflow-wrap: anywhere;
+}
+
+.html p {
+  margin: 0.5rem 0;
+}
+
+.html img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.html :global(.section-intro) {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.html :global(.grammar-target) {
+  color: var(--color-primary);
+  background: var(--color-highlight);
+  padding: 0 0.15em;
+  border-radius: 0.2em;
+}
+
+.html :global(.rule-highlight) {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--color-primary);
+  border-radius: 0.3rem;
+}
+
+.html :global(.grammar-contrast) {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--color-warn);
+  text-underline-offset: 0.2em;
+}
+
+.html :global(.example-box) {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+}
+
+@media (min-width: 36rem) {
+  .html :global(.example-box) {
+    grid-template-columns: 2fr 1fr;
+    align-items: center;
+  }
+}
+
+.html :global(.example-list) {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.html :global(.grammar-table) {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  display: block;
+  overflow-x: auto;
+}
+
+.html :global(.grammar-table) td {
+  border: 1px solid var(--color-border);
+  padding: 0.25rem 0.5rem;
+  vertical-align: top;
+}
+
+.html :global(.comparison-grid) {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 36rem) {
+  .html :global(.comparison-grid) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.html :global(.comparison-col) {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+}
+
+.html :global(.comparison-title) {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.html :global(.word-bank) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

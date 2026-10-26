@@ -51,7 +51,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T06 | LLM port + Ollama adapter + settings (key, model, effort) | delegated writer | multi-file | [x] | see evidence |
 | T07 | System prompts per AI function | delegated writer | multi-file | [x] | see evidence |
 | T08 | Authored content: block 1 serial story, puzzles, ES contrast notes, analogies | delegated writer | content files | [x] | see evidence |
-| T09 | Units UI: list, unit flow, exercises, hints, timeline drag, completion | delegated writer | multi-file | [ ] | |
+| T09 | Units UI: list, unit flow, exercises, hints, timeline drag, completion | delegated writer | multi-file | [x] | see evidence |
 | T10 | Reading: AI editor pipeline + 6-step flow + next-day recall | delegated writer | multi-file | [ ] | |
 | T11 | Vocabulary + SRS (incl. own-error cards) | delegated writer | multi-file | [ ] | |
 | T12 | Writing missions + review flow + error log | delegated writer | multi-file | [ ] | |
@@ -60,6 +60,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T15 | Tutor agent ("I don't get it" + chat, tools) | delegated writer | multi-file | [ ] | |
 | T16 | Model eval tool | delegated writer | multi-file | [ ] | |
 | T17 | PWA polish, production Docker, README | delegated writer | multi-file | [ ] | |
+| T18 | Schema gaps: persist AI feedback on attempts, hint level, story title, doubt explanation | delegated writer | migration + units module | [ ] | |
 
 ## Progress
 
@@ -82,6 +83,8 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T08: authored block 1 — Apollo 13 serial story (6 chapters, 201–229 words, 10–14 grammar spans each, facts checked against NASA sources listed in story.json), unit extras (puzzle, analogyEs, pitfalls, canDoEs) and 30 timeline items; schemas in `packages/shared/src/content/authored.ts`; seed extended (42 rows, idempotent 0 on restart). Tests: shared 181, api 134 (+6 skipped), test:db 6/6; lint clean. Parent spot check: chapter 1 text + unit 1 puzzle.
 
+- T09: Units end to end — api `apps/api/src/units/` (list, detail without keys, attempts with server-side check + AI fallback for open items, graduated hints with key-leak guard and offline fallback, one-shot explain, timeline placement check, answers gated until all attempted, completion ≥80% over all graded items → event + can_do once); web stepper Story → Puzzle → Theory → Timeline → Exercises, direct-to-exercises, "I don't get it" sheet, drag timeline with keyboard alternative. Tests: shared 191, api 159 (+6 skipped), web 27; lint clean. Parent wired `createUnits` in `apps/api/src/index.ts` (writer surface gap) and verified live: unauthenticated 401, login 200, 6 units listed, 1.1-2 "am looking" correct (smoke attempt deleted afterwards). Schema gaps recorded as T18.
+
 ## Next step
 
-T09 — Units UI; relaunch T06 review captures after user re-login.
+T10 — Reading pipeline + flow; relaunch T06 review captures after user re-login.

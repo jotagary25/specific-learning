@@ -10,6 +10,8 @@ import { createDb } from "./shared/db/client.ts";
 import { runMigrations } from "./shared/db/migrate.ts";
 import { formatSeedResult, seed } from "./shared/db/seed/index.ts";
 import { createOllamaClient } from "./shared/llm/ollama.ts";
+import { createUnits } from "./units/units.service.ts";
+import { createDrizzleUnitsStore } from "./units/units.store.ts";
 
 const config = loadConfig();
 const contentDir = resolveContentDir();
@@ -43,7 +45,9 @@ const settings = createSettings({
   createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
 });
 
-const app = createApp({ pingDb: database.ping, contentDir, auth, settings });
+const units = createUnits({ store: createDrizzleUnitsStore(database.db), ai: settings });
+
+const app = createApp({ pingDb: database.ping, contentDir, auth, settings, units });
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`api listening on http://localhost:${info.port}`);

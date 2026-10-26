@@ -10,6 +10,9 @@ export function Layout() {
           <NavLink to="/" end className={styles.link}>
             Home
           </NavLink>
+          <NavLink to="/units" className={styles.link}>
+            Units
+          </NavLink>
           <NavLink to="/settings" className={styles.link}>
             Settings
           </NavLink>
