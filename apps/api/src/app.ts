@@ -12,6 +12,7 @@ import type { Reading } from "./reading/reading.service.ts";
 import { type PreferencesService, preferencesRoutes } from "./settings/preferences.ts";
 import { settingsRoutes } from "./settings/settings.routes.ts";
 import type { Settings } from "./settings/settings.service.ts";
+import { webRoutes } from "./static/web.routes.ts";
 import { todayRoutes } from "./today/today.routes.ts";
 import type { Today } from "./today/today.service.ts";
 import { tutorRoutes } from "./tutor/tutor.routes.ts";
@@ -26,6 +27,8 @@ import type { Writing } from "./writing/writing.service.ts";
 export type AppDeps = HealthDeps & {
   /** Content root for static assets; defaults to `resolveContentDir()`. */
   contentDir?: string;
+  /** Built web app to serve with SPA fallback (production); unset in dev, where Vite serves it. */
+  webDistDir?: string;
   /** Single-user session auth. Without it every protected /api route answers 401. */
   auth?: Auth;
   settings?: Settings;
@@ -56,9 +59,12 @@ export function createApp(deps: AppDeps) {
   if (deps.tutor) api.route("/tutor", tutorRoutes(deps.tutor));
   if (deps.evals) api.route("/eval", evalRoutes(deps.evals));
 
-  return new Hono()
+  const app = new Hono()
     .route("/api", api)
     .route("/content", contentRoutes({ contentDir: deps.contentDir ?? resolveContentDir() }));
+  // Registered last: it only answers what /api and /content did not.
+  if (deps.webDistDir) app.route("/", webRoutes({ distDir: deps.webDistDir }));
+  return app;
 }
 
 export type App = ReturnType<typeof createApp>;

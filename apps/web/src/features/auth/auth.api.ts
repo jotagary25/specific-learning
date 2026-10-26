@@ -15,9 +15,19 @@ export function safeNext(next: string | null): string {
 export const loginPath = (next: string) =>
   next === "/" ? "/login" : `/login?next=${encodeURIComponent(next)}`;
 
-/** Route loader: sends the visitor to the login page when the api reports no session. */
+/**
+ * Route loader: sends the visitor to the login page when the api reports no session.
+ * The session check is never cached by the service worker.
+ */
 export async function requireAuth({ request }: LoaderFunctionArgs) {
-  const res = await fetch("/api/auth/me");
+  let res: Response;
+  try {
+    res = await fetch("/api/auth/me");
+  } catch (error) {
+    // Offline: the session cannot be checked, so let cached pages open read-only.
+    if (!navigator.onLine) return null;
+    throw error;
+  }
   if (res.status === 401) {
     const url = new URL(request.url);
     throw redirect(loginPath(url.pathname + url.search));

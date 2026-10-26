@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Source of the app icons. Regenerate the PNGs in ../public with ./generate.sh -->
+  <title>English Course</title>
+  <rect width="512" height="512" rx="112" fill="#1d4ed8"/>
+  <path d="M136 132h176a64 64 0 0 1 64 64v184H200a64 64 0 0 1-64-64z" fill="#fff"/>
+  <path d="M196 196h108v34h-70v26h58v32h-58v26h72v34H196z" fill="#1d4ed8"/>
+</svg>

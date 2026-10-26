@@ -19,6 +19,19 @@ const EnvSchema = z.object({
       .default("auto")
       .transform((value) => (value === "auto" ? value : value === "true")),
   ),
+  /**
+   * Trust `X-Forwarded-*` headers from a reverse proxy (TLS termination): the cookie `Secure`
+   * flag follows `X-Forwarded-Proto` and login rate limiting keys on `X-Forwarded-For`.
+   */
+  TRUST_PROXY: z.preprocess(
+    emptyToUndefined,
+    z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
+  ),
+  /** Built web app served by the api in production (the Docker image sets it). */
+  WEB_DIST_DIR: z.preprocess(emptyToUndefined, z.string().optional()),
   /** Daily reading editor job; `false` disables the in-process scheduler (manual runs still work). */
   EDITOR_ENABLED: z.preprocess(
     emptyToUndefined,

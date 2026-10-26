@@ -51,7 +51,13 @@ const auth = createAuth({
   password: config.APP_PASSWORD,
   appSecret: config.APP_SECRET,
   cookieSecure: config.COOKIE_SECURE,
+  trustProxy: config.TRUST_PROXY,
   clientKey: (c) => {
+    // The proxy appends the address it saw, so the last entry is the one it vouches for.
+    const forwarded = config.TRUST_PROXY
+      ? c.req.header("x-forwarded-for")?.split(",").at(-1)?.trim()
+      : undefined;
+    if (forwarded) return forwarded;
     try {
       return getConnInfo(c).remote.address ?? "unknown";
     } catch {
@@ -149,6 +155,7 @@ evals
 const app = createApp({
   pingDb: database.ping,
   contentDir,
+  webDistDir: config.WEB_DIST_DIR,
   auth,
   settings,
   preferences,
@@ -164,6 +171,7 @@ const app = createApp({
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
   console.log(`api listening on http://localhost:${info.port}`);
+  if (config.WEB_DIST_DIR) console.log(`web: serving ${config.WEB_DIST_DIR}`);
 });
 
 const shutdown = () => {

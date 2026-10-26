@@ -15,6 +15,11 @@ export type AuthOptions = {
   appSecret: string;
   /** `auto` (default): Secure unless the request host is local. */
   cookieSecure?: "auto" | boolean;
+  /**
+   * Behind a trusted TLS-terminating proxy, `auto` follows `X-Forwarded-Proto` instead of
+   * the request host. Leave off when clients can reach the api directly (the header is spoofable).
+   */
+  trustProxy?: boolean;
   sessionTtlMs?: number;
   now?: () => number;
   rateLimiter?: LoginRateLimiter;
@@ -54,7 +59,12 @@ export function createAuth(options: AuthOptions): Auth {
 
   const secureFor = (c: Context) => {
     const setting = options.cookieSecure ?? "auto";
-    return setting === "auto" ? !isLocalHost(new URL(c.req.url).hostname) : setting;
+    if (setting !== "auto") return setting;
+    const forwardedProto = options.trustProxy
+      ? c.req.header("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase()
+      : undefined;
+    if (forwardedProto) return forwardedProto === "https";
+    return !isLocalHost(new URL(c.req.url).hostname);
   };
 
   const isAuthenticated = (c: Context) => {

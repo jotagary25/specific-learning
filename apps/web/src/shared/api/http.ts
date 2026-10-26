@@ -1,4 +1,5 @@
 import { ApiError } from "@english-course/shared";
+import { OFFLINE_ACTION_MESSAGE } from "../pwa/online.ts";
 
 export class HttpError extends Error {
   override readonly name = "HttpError";
@@ -21,11 +22,20 @@ export async function apiRequest<T>(
   schema: { parse: (data: unknown) => T },
   init: { method?: "GET" | "POST" | "PUT" | "DELETE"; body?: unknown } = {},
 ): Promise<T> {
-  const res = await fetch(path, {
-    method: init.method ?? "GET",
-    headers: init.body === undefined ? undefined : { "content-type": "application/json" },
-    body: init.body === undefined ? undefined : JSON.stringify(init.body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      method: init.method ?? "GET",
+      headers: init.body === undefined ? undefined : { "content-type": "application/json" },
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    });
+  } catch (error) {
+    // No offline writes: say so plainly instead of a generic network error.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      throw new HttpError(0, "offline", OFFLINE_ACTION_MESSAGE);
+    }
+    throw error;
+  }
   if (!res.ok) {
     const parsed = ApiError.safeParse(await res.json().catch(() => null));
     throw parsed.success

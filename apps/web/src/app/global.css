@@ -10,6 +10,7 @@
   --color-surface: #f3f4f6;
   --color-border: #e5e7eb;
   --color-highlight: #dbeafe;
+  --color-focus: #b45309;
 
   color-scheme: light dark;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -28,6 +29,7 @@
     --color-surface: #1e293b;
     --color-border: #334155;
     --color-highlight: #1e3a8a;
+    --color-focus: #fbbf24;
   }
 }
 
@@ -41,4 +43,15 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
+}
+
+/* Visible keyboard focus everywhere (mouse clicks keep the default look). */
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* On the blue header the ring follows the (white) text color. */
+header :focus-visible {
+  outline-color: currentColor;
 }

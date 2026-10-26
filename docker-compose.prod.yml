@@ -1,0 +1,44 @@
+# Production stack: one `app` container (api + built web) against an external PostgreSQL 18.
+#   docker compose -f docker-compose.prod.yml up -d --build
+# No PostgreSQL server yet? Start the bundled one too and point DATABASE_URL at host `db`:
+#   docker compose -f docker-compose.prod.yml --profile with-db up -d --build
+# Settings come from `.env` (or the file named by ENV_FILE); see README "Environment variables".
+name: english-course-prod
+
+services:
+  app:
+    image: ${APP_IMAGE:-english-course:latest}
+    build: .
+    restart: unless-stopped
+    env_file: ${ENV_FILE:-.env}
+    environment:
+      # The container always listens on 3000; publish it on APP_PORT.
+      PORT: "3000"
+    ports:
+      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+        required: false
+
+  db:
+    image: postgres:18
+    profiles: [with-db]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-english}
+      # Required with this profile: the postgres image refuses to start without it.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRES_DB: ${POSTGRES_DB:-english_course}
+      TZ: ${TZ:-UTC}
+    volumes:
+      # postgres 18+ keeps versioned data under /var/lib/postgresql/<major>/docker.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

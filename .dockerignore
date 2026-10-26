@@ -1,8 +1,16 @@
 **/node_modules
 **/dist
 **/coverage
+**/.vite
 .git
+.claude
 .env
 .env.*
 !.env.example
 *.log
+docs
+odd
+README.md
+Dockerfile
+docker-compose*.yml
+apps/web/icons

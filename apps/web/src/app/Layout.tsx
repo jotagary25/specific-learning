@@ -5,6 +5,9 @@ import { SessionComplete } from "../features/today/SessionComplete.tsx";
 import { SessionProvider } from "../features/today/SessionContext.tsx";
 import { TutorButton, TutorDrawer } from "../features/tutor/TutorDrawer.tsx";
 import { TutorProvider } from "../features/tutor/TutorProvider.tsx";
+import { InstallHint } from "../shared/pwa/InstallHint.tsx";
+import { OfflineBanner } from "../shared/pwa/OfflineBanner.tsx";
+import { UpdateToast } from "../shared/pwa/UpdateToast.tsx";
 import styles from "./Layout.module.css";
 
 export function Layout() {
@@ -41,6 +44,8 @@ export function Layout() {
               </NavLink>
             </nav>
           </header>
+          <OfflineBanner />
+          <InstallHint />
           <main className={styles.main}>
             <Outlet />
           </main>
@@ -51,6 +56,7 @@ export function Layout() {
           <SessionComplete />
           <TutorButton />
           <TutorDrawer />
+          <UpdateToast />
         </div>
       </TutorProvider>
     </SessionProvider>
