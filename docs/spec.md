@@ -253,7 +253,7 @@ Runs daily at 05:00 (server time, configurable) and selects **one article per da
 
 ## 4. AI functions catalog
 
-All functions use the LLM port and return **JSON validated with zod**. Ollama `format` gets the JSON schema derived from the zod schema. On a validation failure: one retry with the error appended; then fail gracefully. System prompts live in `apps/api/src/<feature>/prompts/` as versioned files.
+All functions use the LLM port and return **JSON validated with zod**. Ollama `format` gets the JSON schema derived from the zod schema. On a validation failure: one retry with the error appended; then fail gracefully. System prompts, output schemas and message builders live in `apps/api/src/prompts/<function-id>.ts` (registry in `index.ts`, shared blocks in `shared.ts`); output schemas are in `packages/shared/src/ai/`.
 
 | Function | Input | Output (shape) | Default effort | Tier |
 |----------|-------|----------------|----------------|------|

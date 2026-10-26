@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "samples": [
+    {
+      "id": "s1-ai-agents",
+      "topic": "AI coding agents",
+      "format": "tweet",
+      "targetUnitId": 1,
+      "text": "Right now many companies are using AI agents for write code. I think this trend grow very fast this year, and developers is worried about her jobs.",
+      "knownErrors": [
+        { "span": "for write", "type": "grammar", "unitId": 62, "correction": "to write" },
+        { "span": "this trend grow", "type": "grammar", "unitId": 1, "correction": "this trend is growing" },
+        { "span": "developers is", "type": "grammar", "unitId": 77, "correction": "developers are" },
+        { "span": "her jobs", "type": "word_choice", "unitId": null, "correction": "their jobs" }
+      ]
+    },
+    {
+      "id": "s2-internet-history-book",
+      "topic": "A book about the history of the Internet",
+      "format": "linkedin",
+      "targetUnitId": 5,
+      "text": "This week I readed a book about the history of Internet. The author explain how ARPANET was created in 1969 and how the people started to use email. I didn't knew that the first message ever sent was only \"LO\".",
+      "knownErrors": [
+        { "span": "readed", "type": "grammar", "unitId": 5, "correction": "read" },
+        { "span": "history of Internet", "type": "grammar", "unitId": 75, "correction": "history of the Internet" },
+        { "span": "The author explain", "type": "grammar", "unitId": 5, "correction": "The author explained" },
+        { "span": "the people started", "type": "grammar", "unitId": 73, "correction": "people started" },
+        { "span": "didn't knew", "type": "grammar", "unitId": 5, "correction": "didn't know" }
+      ]
+    },
+    {
+      "id": "s3-quantum-computing",
+      "topic": "How quantum computers work",
+      "format": "tweet",
+      "targetUnitId": 2,
+      "text": "Quantum computers doesn't work like normal computers. They uses qubits, that can be 0 and 1 at the same time. Is a fascinating topic.",
+      "knownErrors": [
+        { "span": "doesn't work", "type": "grammar", "unitId": 2, "correction": "don't work" },
+        { "span": "They uses", "type": "grammar", "unitId": 2, "correction": "They use" },
+        { "span": ", that can be", "type": "grammar", "unitId": null, "correction": ", which can be" },
+        { "span": "Is a fascinating", "type": "grammar", "unitId": null, "correction": "It's a fascinating" }
+      ]
+    },
+    {
+      "id": "s4-rocket-test",
+      "topic": "A rocket test that went wrong",
+      "format": "thread",
+      "targetUnitId": 6,
+      "text": "While the engineers were testing the new rocket, it explode. Nobody was injured because everybody were watching from a safe distance. The company say they will try again next month.",
+      "knownErrors": [
+        { "span": "it explode", "type": "grammar", "unitId": 6, "correction": "it exploded" },
+        { "span": "everybody were watching", "type": "grammar", "unitId": 77, "correction": "everybody was watching" },
+        { "span": "The company say", "type": "grammar", "unitId": 2, "correction": "The company says" }
+      ]
+    },
+    {
+      "id": "s5-remote-work",
+      "topic": "Remote work and communication tools",
+      "format": "linkedin",
+      "targetUnitId": 4,
+      "text": "I am thinking that remote work is here to stay. More and more teams are working from different countries, and companies are needing new tools for communicate. Many of them work this way since 2020.",
+      "knownErrors": [
+        { "span": "I am thinking that", "type": "grammar", "unitId": 4, "correction": "I think that" },
+        { "span": "are needing", "type": "grammar", "unitId": 4, "correction": "need" },
+        { "span": "for communicate", "type": "grammar", "unitId": 62, "correction": "to communicate" },
+        { "span": "work this way since 2020", "type": "grammar", "unitId": 13, "correction": "have worked this way since 2020" }
+      ]
+    }
+  ]
+}

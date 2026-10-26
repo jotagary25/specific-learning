@@ -49,7 +49,7 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 | T04 | Answer checker domain (normalization, variants) TDD | delegated writer | multi-file + tests | [x] | see evidence |
 | T05 | DB schema + migrations (all features) | delegated writer | multi-file | [x] | see evidence |
 | T06 | LLM port + Ollama adapter + settings (key, model, effort) | delegated writer | multi-file | [x] | see evidence |
-| T07 | System prompts per AI function | delegated writer | multi-file | [ ] | |
+| T07 | System prompts per AI function | delegated writer | multi-file | [x] | see evidence |
 | T08 | Authored content: block 1 serial story, puzzles, ES contrast notes, analogies | delegated writer | content files | [ ] | |
 | T09 | Units UI: list, unit flow, exercises, hints, timeline drag, completion | delegated writer | multi-file | [ ] | |
 | T10 | Reading: AI editor pipeline + 6-step flow + next-day recall | delegated writer | multi-file | [ ] | |
@@ -77,6 +77,9 @@ Forecast far above 400 authored lines (estimated 8–12k). Strategy `exception-o
 
 - T06: single-user auth (signed httpOnly cookie, rate-limited login), LLM port + Ollama native adapter (stream, chatJson with zod + 1 retry, tools, /api/tags, /api/show thinking), AES-256-GCM key storage (env fallback), per-function model/effort settings + Settings/Login UI. Defaults: fast `gemma4:31b` (low; select_article medium), quality `deepseek-v4-pro` (medium; review_writing high). Tests: api 81 (+5 db skipped), web 7, all green; compose: 401 unauthenticated, login 200 + cookie, key endpoint exposes last4 only. Parent spot check: api tests 81 passed. Pending for user: `.env.example` additions `OLLAMA_BASE_URL`, `COOKIE_SECURE`; set Ollama key in Settings.
 
+- T06 review: full slice 47ab8cf..4f35cb9 → `lens_context_budget_exceeded`; reduced to T06 commit (base 9e85d9e), consent granted, lineage `review-aea7ddcc064c2612` (4 lenses, correction budget 200). Captures blocked: claude CLI OAuth session expired (client runtime). Waiting for user re-login to relaunch.
+- T07: 13 prompt modules in `apps/api/src/prompts/` (system prompt + zod schema + pure builder, injection guard, hints never reveal answers, review ≤3 focused errors with Spanish hints and no corrections), output schemas in `packages/shared/src/ai/`, eval samples `content/eval/writing-samples.json` (5 texts). Tests: shared 157, api 127 (+5 skipped), all green; lint clean. Parent spot check: read `review-writing.ts`. Spec §4 updated with prompt location.
+
 ## Next step
 
-T07 — system prompts per AI function.
+T08 — authored content (block 1 story, puzzles, ES contrasts, analogies, timeline items); relaunch T06 review captures after user re-login.
