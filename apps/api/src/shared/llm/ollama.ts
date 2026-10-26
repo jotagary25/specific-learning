@@ -132,10 +132,14 @@ async function readErrorMessage(res: Response): Promise<string | undefined> {
 async function* ndjsonLines(body: ReadableStream<Uint8Array>): AsyncGenerator<WireChatChunk> {
   const reader = body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
+  let drained = false;
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        drained = true;
+        break;
+      }
       buffer += value;
       let newline = buffer.indexOf("\n");
       while (newline >= 0) {
@@ -148,6 +152,8 @@ async function* ndjsonLines(body: ReadableStream<Uint8Array>): AsyncGenerator<Wi
     const rest = buffer.trim();
     if (rest) yield JSON.parse(rest) as WireChatChunk;
   } finally {
+    // Stopped early (break, error, done chunk): cancel so the upstream connection is freed.
+    if (!drained) await reader.cancel().catch(() => undefined);
     reader.releaseLock();
   }
 }
@@ -254,6 +260,7 @@ export function createOllamaClient(opts: OllamaClientOptions): LlmClient {
           return;
         }
       }
+      throw new LlmError("upstream", "Ollama stream ended before completion");
     } catch (error) {
       throw mapThrown(error, signal);
     }

@@ -23,14 +23,13 @@ const reviewWriting: AiFunctionConfig = {
   isDefault: true,
 };
 
-function settingsApi() {
+function settingsApi(aiKey: object = { configured: true, source: "db", last4: "WXYZ" }) {
   const puts: unknown[] = [];
   const preferencePuts: unknown[] = [];
   let preferences = { "today.writingDay": 6, "srs.newPerDay": 5 };
   const fetchMock = mockApi({
     "GET /api/auth/me": () => Response.json({ authenticated: true }),
-    "GET /api/settings/ai-key": () =>
-      Response.json({ configured: true, source: "db", last4: "WXYZ" }),
+    "GET /api/settings/ai-key": () => Response.json(aiKey),
     "POST /api/settings/ai-key/test": () => Response.json({ ok: true, modelCount: 3 }),
     "GET /api/settings/models": () =>
       Response.json({
@@ -81,6 +80,21 @@ describe("SettingsPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Test connection" }));
     expect(await screen.findByText("Connection works: 3 models available.")).toBeTruthy();
+  });
+
+  it("asks to re-enter a stored key that can no longer be decrypted", async () => {
+    settingsApi({ configured: false, source: "db", last4: "WXYZ", error: "undecryptable" });
+    renderAt("/settings");
+
+    expect(
+      await screen.findByText(
+        "Saved key can't be decrypted (APP_SECRET changed?) — enter it again",
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove stored key" })).toBeTruthy();
+    expect(
+      (screen.getByRole("button", { name: "Test connection" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   it("lists models per function and saves one row with the chosen model and effort", async () => {

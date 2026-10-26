@@ -10,6 +10,7 @@ import { createAuth } from "../auth/auth.ts";
 import { LlmError } from "../shared/llm/errors.ts";
 import { createFakeLlm, type FakeLlmOptions } from "../shared/llm/fake.ts";
 import { createOllamaClient } from "../shared/llm/ollama.ts";
+import { encryptSecret } from "./crypto.ts";
 import { createSettings, type SettingsOptions } from "./settings.service.ts";
 import { createMemorySettingsStore } from "./settings.store.ts";
 
@@ -123,6 +124,35 @@ describe("settings routes: Ollama API key", () => {
     await settings.client.listModels();
 
     expect(keys).toEqual(["env-key-0000-1234", KEY]);
+  });
+
+  it("reports a stored key that APP_SECRET can no longer decrypt", async () => {
+    const { call, store } = await setup();
+    store.secrets.set("ollama_api_key", {
+      ...encryptSecret(KEY, "cd".repeat(32)),
+      last4: "WXYZ",
+    });
+
+    expect(AiKeyStatus.parse(await (await call("/ai-key")).json())).toEqual({
+      configured: false,
+      source: "db",
+      last4: "WXYZ",
+      error: "undecryptable",
+    });
+  });
+
+  it("counts the env key as configured while the stored key is undecryptable", async () => {
+    const { call, store, settings } = await setup({ envApiKey: "env-key-1234" });
+    store.secrets.set("ollama_api_key", {
+      ...encryptSecret(KEY, "cd".repeat(32)),
+      last4: "WXYZ",
+    });
+
+    expect(await (await call("/ai-key")).json()).toMatchObject({
+      configured: true,
+      error: "undecryptable",
+    });
+    expect(await settings.getApiKey()).toBe("env-key-1234");
   });
 
   it("rejects an invalid key payload", async () => {
@@ -303,5 +333,74 @@ describe("getLlmForFunction", () => {
     };
     const { settings } = await setup({}, llm);
     expect((await settings.getLlmForFunction("review_writing")).think).toBe("high");
+  });
+
+  it("propagates unexpected (non-LLM) errors instead of swallowing them", async () => {
+    const llm = createFakeLlm(fakeOptions);
+    llm.modelCapabilities = async () => {
+      throw new TypeError("bug");
+    };
+    const { settings } = await setup({}, llm);
+
+    await expect(settings.getLlmForFunction("review_writing")).rejects.toThrow(TypeError);
+    await expect(
+      settings.updateAiFunction("gloss_word", { model: "gemma4:31b", think: null }),
+    ).rejects.toThrow(TypeError);
+  });
+});
+
+describe("capability probe failures", () => {
+  function failingLlm(error: LlmError) {
+    const llm = createFakeLlm(fakeOptions);
+    let probes = 0;
+    llm.modelCapabilities = async () => {
+      probes += 1;
+      throw error;
+    };
+    return { llm, probes: () => probes };
+  }
+
+  it("are cached for 60 s so every call does not re-probe", async () => {
+    const { llm, probes } = failingLlm(new LlmError("upstream", "down"));
+    const { settings, tick } = await setup({}, llm);
+
+    await settings.getLlmForFunction("review_writing");
+    await settings.getLlmForFunction("review_writing");
+    expect(probes()).toBe(1);
+
+    tick(59_999);
+    await settings.getLlmForFunction("review_writing");
+    expect(probes()).toBe(1);
+
+    tick(1);
+    await settings.getLlmForFunction("review_writing");
+    expect(probes()).toBe(2);
+  });
+
+  it("honor a longer Retry-After when rate limited", async () => {
+    const { llm, probes } = failingLlm(
+      new LlmError("rate_limited", "slow down", { retryAfterSeconds: 120 }),
+    );
+    const { settings, tick } = await setup({}, llm);
+
+    await settings.getLlmForFunction("review_writing");
+    tick(60_000);
+    await settings.getLlmForFunction("review_writing");
+    expect(probes()).toBe(1);
+
+    tick(60_000);
+    await settings.getLlmForFunction("review_writing");
+    expect(probes()).toBe(2);
+  });
+
+  it("are forgotten when the key changes", async () => {
+    const { llm, probes } = failingLlm(new LlmError("not_configured", "no key"));
+    const { settings } = await setup({}, llm);
+
+    await settings.getLlmForFunction("review_writing");
+    await settings.setKey(KEY);
+    await settings.getLlmForFunction("review_writing");
+
+    expect(probes()).toBe(2);
   });
 });

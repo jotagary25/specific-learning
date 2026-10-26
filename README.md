@@ -61,7 +61,7 @@ invalid. Empty values count as unset.
 | `PORT` | no | `3000` | API listen port. `docker-compose.prod.yml` pins it to 3000 inside the container. |
 | `OLLAMA_API_KEY` | no | — | Bootstrap Ollama Cloud key; a key saved in Settings overrides it. |
 | `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show, web search). |
-| `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = Secure unless the request host is local (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
+| `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true`, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
 | `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting uses `X-Forwarded-For`. Only enable it when clients cannot reach the app directly. |
 | `EDITOR_ENABLED` | no | `true` | `false` disables the in-process daily editor (manual runs still work). |
 | `EDITOR_HOUR` | no | `5` | Local hour (0–23, in `TZ`) of the daily editor run. |

@@ -66,6 +66,52 @@ describe("login flow", () => {
   });
 });
 
+describe("session check when the server is unavailable", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows a server unavailable state instead of opening the app on a 5xx", async () => {
+    let up = false;
+    mockApi({
+      "GET /api/auth/me": () =>
+        up
+          ? Response.json({ authenticated: true })
+          : Response.json({ error: "internal", message: "boom" }, { status: 503 }),
+      "GET /api/settings/ai-key": () =>
+        Response.json({ configured: false, source: null, last4: null }),
+      "GET /api/settings/ai-functions": () => Response.json({ functions: [] }),
+      "GET /api/settings/models": () => Response.json({ models: [] }),
+    });
+
+    const { router } = renderAt("/settings");
+
+    expect(await screen.findByText(/Server unavailable/)).toBeTruthy();
+    expect(router.state.location.pathname).toBe("/login");
+    expect(screen.queryByRole("heading", { name: "Settings" })).toBeNull();
+
+    up = true;
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+    expect(await screen.findByRole("heading", { name: "Settings" })).toBeTruthy();
+    expect(router.state.location.pathname).toBe("/settings");
+  });
+
+  it("shows the same state when the request fails while online", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    );
+
+    renderAt("/units");
+
+    expect(await screen.findByText(/Server unavailable/)).toBeTruthy();
+  });
+});
+
 describe("safeNext", () => {
   it("only allows same-app paths", () => {
     expect(safeNext("/settings")).toBe("/settings");

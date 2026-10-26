@@ -45,9 +45,12 @@ export type AuthStatus = z.infer<typeof AuthStatus>;
 // --- Ollama API key ---
 
 export const AiKeyStatus = z.object({
+  /** True when a usable key exists (a stored key that decrypts, or the env key). */
   configured: z.boolean(),
   source: z.enum(["db", "env"]).nullable(),
   last4: z.string().max(4).nullable(),
+  /** `undecryptable`: a key is stored but APP_SECRET can no longer decrypt it. */
+  error: z.literal("undecryptable").optional(),
 });
 export type AiKeyStatus = z.infer<typeof AiKeyStatus>;
 

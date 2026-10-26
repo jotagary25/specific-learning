@@ -165,6 +165,34 @@ describe("ollama adapter: chat (streaming)", () => {
       },
     );
   });
+
+  it("throws an upstream error when the stream ends without a done chunk", async () => {
+    const { fetchFn } = mockFetch(ndjson({ message: { content: "Partial" }, done: false }));
+
+    await expect(collect(client(fetchFn).chat({ model: "m", messages: [] }))).rejects.toMatchObject(
+      { code: "upstream", message: expect.stringMatching(/ended before/) },
+    );
+  });
+
+  it("cancels the response body when the consumer stops early", async () => {
+    const cancel = vi.fn();
+    const encoder = new TextEncoder();
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(`${JSON.stringify({ message: { content: "a" } })}\n`));
+      },
+      // Never closes: only a cancel ends it.
+      cancel,
+    });
+    const { fetchFn } = mockFetch(new Response(body));
+
+    for await (const delta of client(fetchFn).chat({ model: "m", messages: [] })) {
+      expect(delta).toEqual({ type: "content", text: "a" });
+      break;
+    }
+
+    await vi.waitFor(() => expect(cancel).toHaveBeenCalled());
+  });
 });
 
 describe("ollama adapter: error mapping", () => {

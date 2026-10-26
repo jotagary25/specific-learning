@@ -9,7 +9,7 @@ import {
   type UpdateAiFunctionRequest,
 } from "@english-course/shared";
 import { z } from "zod";
-import { isLlmError } from "../shared/llm/errors.ts";
+import { isLlmError, type LlmError } from "../shared/llm/errors.ts";
 import type { LlmClient } from "../shared/llm/types.ts";
 import {
   AI_FUNCTIONS,
@@ -22,6 +22,10 @@ import { decryptSecret, encryptSecret } from "./crypto.ts";
 import type { SettingsStore } from "./settings.store.ts";
 
 const API_KEY_SECRET = "ollama_api_key";
+/** Key, model list and capabilities stay cached this long (the web mirrors it as staleTime). */
+const CACHE_TTL_MS = 10 * 60_000;
+/** A failed capability probe is not retried for this long (longer when Retry-After says so). */
+const CAPABILITY_FAILURE_TTL_MS = 60_000;
 const settingKey = (id: AiFunctionId) => `ai_function:${id}`;
 const StoredAiFunction = z.object({ model: z.string().min(1), think: ThinkValue });
 
@@ -53,34 +57,42 @@ type Cached<T> = { value: T; at: number };
 export function createSettings(options: SettingsOptions) {
   const { store, appSecret } = options;
   const now = options.now ?? Date.now;
-  const ttl = options.cacheTtlMs ?? 10 * 60_000;
-  const fresh = <T>(entry: Cached<T> | undefined): entry is Cached<T> =>
-    entry !== undefined && now() - entry.at < ttl;
+  const ttl = options.cacheTtlMs ?? CACHE_TTL_MS;
+  const fresh = <T>(entry: Cached<T> | undefined, maxAge = ttl): entry is Cached<T> =>
+    entry !== undefined && now() - entry.at < maxAge;
 
   let resolvedKey: Cached<string | undefined> | undefined;
   let modelsCache: Cached<ModelSummary[]> | undefined;
   const capabilitiesCache = new Map<string, Cached<ModelCapabilities>>();
+  const capabilityFailures = new Map<string, Cached<LlmError> & { ttlMs: number }>();
 
   const clearCaches = () => {
     resolvedKey = undefined;
     modelsCache = undefined;
     capabilitiesCache.clear();
+    capabilityFailures.clear();
   };
 
-  async function storedKey(): Promise<string | undefined> {
+  type StoredKey =
+    | { state: "none" }
+    | { state: "ok"; key: string; last4: string }
+    | { state: "undecryptable"; last4: string };
+
+  async function readStoredKey(): Promise<StoredKey> {
     const sealed = await store.getSecret(API_KEY_SECRET);
-    if (!sealed) return undefined;
+    if (!sealed) return { state: "none" };
     try {
-      return decryptSecret(sealed, appSecret);
+      return { state: "ok", key: decryptSecret(sealed, appSecret), last4: sealed.last4 };
     } catch {
       console.warn("settings: the stored Ollama API key cannot be decrypted (APP_SECRET changed?)");
-      return undefined;
+      return { state: "undecryptable", last4: sealed.last4 };
     }
   }
 
   async function getApiKey(): Promise<string | undefined> {
     if (!fresh(resolvedKey)) {
-      resolvedKey = { value: (await storedKey()) ?? options.envApiKey, at: now() };
+      const stored = await readStoredKey();
+      resolvedKey = { value: stored.state === "ok" ? stored.key : options.envApiKey, at: now() };
     }
     return resolvedKey.value;
   }
@@ -88,8 +100,17 @@ export function createSettings(options: SettingsOptions) {
   const client = options.createClient(getApiKey);
 
   async function keyStatus(): Promise<AiKeyStatus> {
-    const sealed = await store.getSecret(API_KEY_SECRET);
-    if (sealed) return { configured: true, source: "db", last4: sealed.last4 };
+    const stored = await readStoredKey();
+    if (stored.state === "ok") return { configured: true, source: "db", last4: stored.last4 };
+    if (stored.state === "undecryptable") {
+      // Requests fall back to the env key meanwhile, so `configured` reflects that.
+      return {
+        configured: options.envApiKey !== undefined,
+        source: "db",
+        last4: stored.last4,
+        error: "undecryptable",
+      };
+    }
     if (options.envApiKey) {
       return { configured: true, source: "env", last4: options.envApiKey.slice(-4) };
     }
@@ -101,12 +122,28 @@ export function createSettings(options: SettingsOptions) {
     return modelsCache.value;
   }
 
+  /** Probes `/api/show` once per TTL; LLM failures are negatively cached so callers skip it. */
   async function capabilities(model: string): Promise<ModelCapabilities> {
     const cached = capabilitiesCache.get(model);
     if (fresh(cached)) return cached.value;
-    const value = await client.modelCapabilities(model);
-    capabilitiesCache.set(model, { value, at: now() });
-    return value;
+    const failure = capabilityFailures.get(model);
+    if (failure && fresh(failure, failure.ttlMs)) throw failure.value;
+    try {
+      const value = await client.modelCapabilities(model);
+      capabilitiesCache.set(model, { value, at: now() });
+      capabilityFailures.delete(model);
+      return value;
+    } catch (error) {
+      if (isLlmError(error) && error.code !== "aborted") {
+        const retryAfterMs = (error.retryAfterSeconds ?? 0) * 1000;
+        capabilityFailures.set(model, {
+          value: error,
+          at: now(),
+          ttlMs: Math.max(CAPABILITY_FAILURE_TTL_MS, retryAfterMs),
+        });
+      }
+      throw error;
+    }
   }
 
   async function readAiFunction(id: AiFunctionId): Promise<AiFunctionSetting | undefined> {
@@ -179,7 +216,8 @@ export function createSettings(options: SettingsOptions) {
       try {
         caps = await capabilities(input.model);
       } catch (error) {
-        if (isLlmError(error) && error.code === "not_found") {
+        if (!isLlmError(error)) throw error;
+        if (error.code === "not_found") {
           throw new SettingsError("unknown_model", `Model "${input.model}" was not found`);
         }
         // Capabilities unknown (offline, no key, rate limited): accept without validation.
@@ -204,7 +242,9 @@ export function createSettings(options: SettingsOptions) {
           model,
           think: normalizeThink(think, (await capabilities(model)).thinking),
         };
-      } catch {
+      } catch (error) {
+        // Capabilities unknown (no key, offline, rate limited): keep the stored effort.
+        if (!isLlmError(error)) throw error;
         return { client, model, think };
       }
     },

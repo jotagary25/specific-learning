@@ -47,11 +47,14 @@ try {
   process.exit(1);
 }
 
+const settingsStore = createDrizzleSettingsStore(database.db);
 const auth = createAuth({
   password: config.APP_PASSWORD,
   appSecret: config.APP_SECRET,
   cookieSecure: config.COOKIE_SECURE,
   trustProxy: config.TRUST_PROXY,
+  // Logout bumps the epoch in `setting`, revoking every session (single-user app).
+  epochStore: settingsStore,
   clientKey: (c) => {
     // The proxy appends the address it saw, so the last entry is the one it vouches for.
     const forwarded = config.TRUST_PROXY
@@ -65,7 +68,6 @@ const auth = createAuth({
     }
   },
 });
-const settingsStore = createDrizzleSettingsStore(database.db);
 const settings = createSettings({
   store: settingsStore,
   appSecret: config.APP_SECRET,

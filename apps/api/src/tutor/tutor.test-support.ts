@@ -1,5 +1,6 @@
 // Scripted LLM and SSE helpers for the tutor tests.
 import { TutorStreamEvent } from "@english-course/shared";
+import { LlmError } from "../shared/llm/errors.ts";
 import type { ChatDelta, ChatRequest, LlmClient } from "../shared/llm/types.ts";
 
 /** One model round: a list of deltas, or a generator that can wait, fail or watch the signal. */
@@ -24,7 +25,8 @@ export function scriptedLlm(rounds: Round[]): ScriptedLlm {
     },
     chatJson: () => Promise.reject(new Error("chatJson is not scripted")),
     listModels: async () => [],
-    modelCapabilities: (model) => Promise.reject(new Error(`no capabilities for ${model}`)),
+    modelCapabilities: (model) =>
+      Promise.reject(new LlmError("not_found", `no capabilities for ${model}`)),
   };
 }
 

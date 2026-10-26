@@ -5,6 +5,9 @@ import styles from "./SettingsPage.module.css";
 import { deleteAiKey, fetchAiKey, saveAiKey, settingsKeys, testAiKey } from "./settings.api.ts";
 
 function describeStatus(status: AiKeyStatus): string {
+  if (status.error === "undecryptable") {
+    return "Saved key can't be decrypted (APP_SECRET changed?) — enter it again";
+  }
   if (!status.configured) return "Not configured";
   const ending = status.last4 ? ` · ends in ${status.last4}` : "";
   return status.source === "env"
@@ -22,6 +25,8 @@ export function ApiKeySection() {
   const status = useQuery({ queryKey: settingsKeys.aiKey, queryFn: fetchAiKey });
 
   const onKeyChanged = async (next: AiKeyStatus) => {
+    // The mutation answer is authoritative: show it now instead of waiting for the refetch,
+    // which is still needed for the key-dependent model list and capabilities.
     queryClient.setQueryData(settingsKeys.aiKey, next);
     await queryClient.invalidateQueries({ queryKey: ["settings"] });
   };

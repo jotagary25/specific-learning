@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEFAULT_OLLAMA_BASE_URL } from "./llm/ollama.ts";
 
 const emptyToUndefined = (value: unknown) => (value === "" ? undefined : value);
 
@@ -10,8 +11,11 @@ const EnvSchema = z.object({
     .string()
     .regex(/^[0-9a-fA-F]{64}$/, "APP_SECRET must be 32 bytes encoded as 64 hex chars"),
   OLLAMA_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
-  OLLAMA_BASE_URL: z.preprocess(emptyToUndefined, z.url().default("https://ollama.com")),
-  /** Session cookie `Secure` flag: `auto` = Secure unless the request host is local. */
+  OLLAMA_BASE_URL: z.preprocess(emptyToUndefined, z.url().default(DEFAULT_OLLAMA_BASE_URL)),
+  /**
+   * Session cookie `Secure` flag: `auto` = Secure for https (or `X-Forwarded-Proto: https`
+   * with TRUST_PROXY); plain http drops it only on local dev hosts.
+   */
   COOKIE_SECURE: z.preprocess(
     emptyToUndefined,
     z

@@ -29,6 +29,9 @@ export function LoginPage() {
     },
   });
 
+  const unavailable = params.get("reason") === "unavailable";
+  const retry = () => void navigate(safeNext(params.get("next")), { replace: true });
+
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (password) mutation.mutate(password);
@@ -38,6 +41,16 @@ export function LoginPage() {
     <main className={styles.page}>
       <form className={styles.card} onSubmit={onSubmit} aria-describedby={errorId}>
         <h1 className={styles.title}>English Course</h1>
+        {unavailable && (
+          <div role="status" className={styles.notice}>
+            <p className={styles.noticeText}>
+              Server unavailable. Your session could not be checked; try again in a moment.
+            </p>
+            <button className={styles.secondary} type="button" onClick={retry}>
+              Retry
+            </button>
+          </div>
+        )}
         <label htmlFor={passwordId} className={styles.label}>
           Password
         </label>

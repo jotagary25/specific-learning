@@ -14,6 +14,9 @@ import { apiRequest } from "../../shared/api/http.ts";
 
 const base = "/api/settings";
 
+/** Model list and capabilities change rarely; mirrors the api's 10-minute cache. */
+export const MODEL_METADATA_STALE_MS = 10 * 60_000;
+
 export const settingsKeys = {
   aiKey: ["settings", "ai-key"] as const,
   models: ["settings", "models"] as const,

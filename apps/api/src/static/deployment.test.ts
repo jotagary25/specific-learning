@@ -141,14 +141,11 @@ describe("Secure session cookie behind a reverse proxy", () => {
     expect(res.headers.get("set-cookie")).not.toMatch(/Secure/i);
   });
 
-  it("falls back to the host rule when a trusted proxy sends no header", async () => {
+  it("fails closed (Secure) when a trusted proxy sends no X-Forwarded-Proto", async () => {
     const app = prodApp(createAuth({ ...authOptions, trustProxy: true }));
 
     const local = await login(app, upstream, {});
-    expect(local.headers.get("set-cookie")).not.toMatch(/Secure/i);
-
-    const publicHost = await login(app, "https://english.example.com/api/auth/login", {});
-    expect(publicHost.headers.get("set-cookie")).toMatch(/Secure/i);
+    expect(local.headers.get("set-cookie")).toMatch(/Secure/i);
   });
 
   it("keeps an explicit COOKIE_SECURE=false even when the proxy says https", async () => {

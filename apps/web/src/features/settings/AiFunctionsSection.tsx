@@ -7,6 +7,7 @@ import {
   fetchAiFunctions,
   fetchCapabilities,
   fetchModels,
+  MODEL_METADATA_STALE_MS,
   saveAiFunction,
   settingsKeys,
 } from "./settings.api.ts";
@@ -23,7 +24,7 @@ function AiFunctionRow({ config, models }: { config: AiFunctionConfig; models: M
   const capabilities = useQuery({
     queryKey: settingsKeys.capabilities(model),
     queryFn: () => fetchCapabilities(model),
-    staleTime: 10 * 60_000,
+    staleTime: MODEL_METADATA_STALE_MS,
     retry: false,
   });
 
@@ -113,7 +114,7 @@ export function AiFunctionsSection() {
   const models = useQuery({
     queryKey: settingsKeys.models,
     queryFn: fetchModels,
-    staleTime: 10 * 60_000,
+    staleTime: MODEL_METADATA_STALE_MS,
     retry: false,
   });
 
