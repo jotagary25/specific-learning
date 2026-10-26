@@ -2,6 +2,7 @@ import { PREFERENCE_DEFAULTS, PreferencesView } from "@english-course/shared";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { DEFAULT_WRITING_DAY, WRITING_DAY_KEY } from "../today/today.sources.ts";
 import { DEFAULT_NEW_PER_DAY, NEW_PER_DAY_KEY } from "../vocabulary/vocabulary.service.ts";
 import {
@@ -19,7 +20,12 @@ async function setup(options: PreferencesOptions = {}) {
   const { auth, user } = await createTestAuth();
   const userId = user.id;
   const preferences = createPreferences(store, options);
-  const app = createApp({ pingDb: async () => true, auth, preferences });
+  const app = createApp({
+    contentDir: REPO_CONTENT_DIR,
+    pingDb: async () => true,
+    auth,
+    preferences,
+  });
   const cookie = await loginCookie(app);
   const call = (method: string, body?: unknown) =>
     app.request("/api/settings/preferences", {

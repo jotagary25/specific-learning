@@ -44,19 +44,15 @@ const StoredAiFunction = z.object({ model: z.string().min(1), think: ThinkValue 
  * call. Called once per user and provider, then cached.
  */
 export type ClientFactory = (getApiKey: () => Promise<string | undefined>) => LlmClient;
-export type ProviderConfig = { envApiKey?: string; createClient: ClientFactory };
+export type ProviderConfig = { createClient: ClientFactory };
 
 export type SettingsOptions = {
   store: SettingsStore;
   appSecret: string;
-  /** Ollama: OLLAMA_API_KEY from env, used only when no key is stored. */
-  envApiKey?: string;
   /** Ollama client factory. */
   createClient: ClientFactory;
   /** OpenRouter; without it the provider cannot be selected. */
   openrouter?: ProviderConfig;
-  /** Whether a user may fall back to the instance env keys (default: everyone). */
-  mayUseEnvKeys?: (userId: string) => Promise<boolean>;
   now?: () => number;
   cacheTtlMs?: number;
 };
@@ -86,19 +82,16 @@ type UserState = {
 
 /**
  * Per-user AI settings: each user picks an active provider and has their own key per provider
- * (env keys as fallback) and their own model/effort per AI function and provider. Every method
+ * (stored from Settings, never from the environment) and their own model/effort per AI function and provider. Every method
  * takes the user id first; an omitted provider means the user's active one.
  */
 export function createSettings(options: SettingsOptions) {
   const { store, appSecret } = options;
   const providers: Partial<Record<AiProviderId, ProviderConfig>> = {
-    ollama: { envApiKey: options.envApiKey, createClient: options.createClient },
+    ollama: { createClient: options.createClient },
     ...(options.openrouter ? { openrouter: options.openrouter } : {}),
   };
   const available = (Object.keys(providers) as AiProviderId[]).sort();
-  /** Users who never chose: the first provider with an env key, else Ollama. */
-  const defaultProvider: AiProviderId =
-    !options.envApiKey && options.openrouter?.envApiKey ? "openrouter" : "ollama";
   const configOf = (provider: AiProviderId): ProviderConfig => {
     const config = providers[provider];
     if (!config)
@@ -106,21 +99,14 @@ export function createSettings(options: SettingsOptions) {
     return config;
   };
 
-  /** Explicit choice, else the provider whose key the user stored, else the env default. */
+  /** Explicit choice, else the provider whose key the user stored, else Ollama. */
   async function activeProvider(userId: string): Promise<AiProviderId> {
     const stored = await store.getSetting(userId, PROVIDER_SETTING);
     if (typeof stored === "string" && stored in providers) return stored as AiProviderId;
     for (const id of available) {
       if (await store.getSecret(userId, API_KEY_SECRET[id])) return id;
     }
-    return defaultProvider;
-  }
-
-  /** Instance env keys are shared spend: only users allowed by the host may fall back to them. */
-  async function envKeyFor(userId: string, id: AiProviderId): Promise<string | undefined> {
-    const envApiKey = providers[id]?.envApiKey;
-    if (envApiKey === undefined) return undefined;
-    return (await (options.mayUseEnvKeys?.(userId) ?? true)) ? envApiKey : undefined;
+    return "ollama";
   }
   const pick = async (userId: string, provider?: AiProviderId) =>
     provider ?? (await activeProvider(userId));
@@ -166,14 +152,14 @@ export function createSettings(options: SettingsOptions) {
     }
   }
 
-  /** Raw key (stored, else env) for one provider. Never send it to the browser or log it. */
+  /** The user's stored key for one provider. Never send it to the browser or log it. */
   async function getApiKey(userId: string, provider?: AiProviderId): Promise<string | undefined> {
     const id = await pick(userId, provider);
     const state = stateOf(userId, id);
     if (!fresh(state.resolvedKey)) {
       const stored = await readStoredKey(userId, id);
       state.resolvedKey = {
-        value: stored.state === "ok" ? stored.key : await envKeyFor(userId, id),
+        value: stored.state === "ok" ? stored.key : undefined,
         at: now(),
       };
     }
@@ -189,19 +175,11 @@ export function createSettings(options: SettingsOptions) {
 
   async function keyStatus(userId: string, provider?: AiProviderId): Promise<AiKeyStatus> {
     const id = await pick(userId, provider);
-    const envApiKey = await envKeyFor(userId, id);
     const stored = await readStoredKey(userId, id);
     if (stored.state === "ok") return { configured: true, source: "db", last4: stored.last4 };
     if (stored.state === "undecryptable") {
-      // Requests fall back to the env key meanwhile, so `configured` reflects that.
-      return {
-        configured: envApiKey !== undefined,
-        source: "db",
-        last4: stored.last4,
-        error: "undecryptable",
-      };
+      return { configured: false, source: "db", last4: stored.last4, error: "undecryptable" };
     }
-    if (envApiKey) return { configured: true, source: "env", last4: envApiKey.slice(-4) };
     return { configured: false, source: null, last4: null };
   }
 

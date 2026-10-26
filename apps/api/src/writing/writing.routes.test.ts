@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { createFakeLlm, type FakeLlm } from "../shared/llm/fake.ts";
@@ -94,7 +95,7 @@ async function setup(options: Setup = {}) {
   });
   const { auth, user } = await createTestAuth();
   const userId = user.id;
-  const app = createApp({ pingDb: async () => true, auth, writing });
+  const app = createApp({ contentDir: REPO_CONTENT_DIR, pingDb: async () => true, auth, writing });
   const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/writing${path}`, {

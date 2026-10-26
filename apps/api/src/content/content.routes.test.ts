@@ -1,8 +1,10 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
+import { REPO_CONTENT_DIR } from "./content-dir.test-support.ts";
 import { resolveContentDir } from "./content-dir.ts";
 
-const app = createApp({ pingDb: async () => true, contentDir: resolveContentDir({}) });
+const app = createApp({ pingDb: async () => true, contentDir: REPO_CONTENT_DIR });
 
 describe("GET /content/images/*", () => {
   it("serves a unit image from the content folder", async () => {
@@ -26,11 +28,11 @@ describe("GET /content/images/*", () => {
 });
 
 describe("resolveContentDir", () => {
-  it("prefers CONTENT_DIR when set", () => {
-    expect(resolveContentDir({ CONTENT_DIR: "/srv/content" })).toBe("/srv/content");
+  it("keeps an absolute CONTENT_DIR", () => {
+    expect(resolveContentDir("/srv/content")).toBe("/srv/content");
   });
 
-  it("defaults to the repo content folder", () => {
-    expect(resolveContentDir({})).toMatch(/[/\\]content$/);
+  it("resolves a relative CONTENT_DIR from the working directory", () => {
+    expect(resolveContentDir("content")).toBe(join(process.cwd(), "content"));
   });
 });

@@ -50,10 +50,12 @@ services:
     command: corepack pnpm --filter @english-course/api dev
     environment:
       <<: *node-env
-      PORT: ${PORT:-3000}
+      PORT: ${PORT:?Set PORT in .env}
+      # Dev-container path of the repo content folder (the repo is mounted at /app).
+      CONTENT_DIR: /app/content
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     ports:
-      - "${PORT:-3000}:${PORT:-3000}"
+      - "${PORT:?Set PORT in .env}:${PORT:?Set PORT in .env}"
     depends_on:
       db:
         condition: service_healthy
@@ -65,7 +67,7 @@ services:
     command: corepack pnpm --filter @english-course/web dev
     environment:
       <<: *node-env
-      API_URL: http://api:${PORT:-3000}
+      API_URL: http://api:${PORT:?Set PORT in .env}
     ports:
       - "5173:5173"
     depends_on:

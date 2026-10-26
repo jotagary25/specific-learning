@@ -36,7 +36,7 @@ import { createWriting } from "./writing/writing.service.ts";
 import { createDrizzleWritingStore } from "./writing/writing.store.ts";
 
 const config = loadConfig();
-const contentDir = resolveContentDir();
+const contentDir = resolveContentDir(config.CONTENT_DIR);
 const database = createDb(config.DATABASE_URL);
 const users = createDrizzleUserStore(database.db);
 
@@ -67,12 +67,8 @@ const auth = createAuth({
 const settings = createSettings({
   store: settingsStore,
   appSecret: config.APP_SECRET,
-  envApiKey: config.OLLAMA_API_KEY,
-  // Instance env keys are the admin's spend; other users bring their own key.
-  mayUseEnvKeys: async (userId) => (await users.findById(userId))?.role === "admin",
   createClient: (getApiKey) => createOllamaClient({ baseUrl: config.OLLAMA_BASE_URL, getApiKey }),
   openrouter: {
-    envApiKey: config.OPENROUTER_API_KEY,
     createClient: (getApiKey) =>
       createOpenRouterClient({
         baseUrl: config.OPENROUTER_BASE_URL,

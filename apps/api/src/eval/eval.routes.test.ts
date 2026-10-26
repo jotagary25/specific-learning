@@ -9,7 +9,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
-import { resolveContentDir } from "../content/content-dir.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { createMemoryEvalStore } from "./eval.memory-store.ts";
@@ -53,16 +53,22 @@ async function setup(opts: { apiKey?: string } = {}) {
   const settings = createSettings({
     store: createMemorySettingsStore(),
     appSecret: APP_SECRET,
-    envApiKey: opts.apiKey,
     createClient: () => client,
   });
   const evals = createEval({
     store: createMemoryEvalStore(),
     ai: settings,
-    fixtures: () => loadEvalFixtures(resolveContentDir({})),
+    fixtures: () => loadEvalFixtures(REPO_CONTENT_DIR),
   });
-  const { auth } = await createTestAuth();
-  const app = createApp({ pingDb: async () => true, auth, settings, evals });
+  const { auth, user } = await createTestAuth();
+  if (opts.apiKey) await settings.setKey(user.id, opts.apiKey);
+  const app = createApp({
+    contentDir: REPO_CONTENT_DIR,
+    pingDb: async () => true,
+    auth,
+    settings,
+    evals,
+  });
   const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api${path}`, {
@@ -75,7 +81,7 @@ async function setup(opts: { apiKey?: string } = {}) {
 
 describe("eval fixtures", () => {
   it("builds five real prompts per function from the repo content", async () => {
-    const fixtures = await loadEvalFixtures(resolveContentDir({}));
+    const fixtures = await loadEvalFixtures(REPO_CONTENT_DIR);
     expect(fixtures.review_writing).toHaveLength(5);
     expect(fixtures.rewrite_natural).toHaveLength(5);
     expect(fixtures.hint_exercise.map((c) => c.sampleId)).toEqual([

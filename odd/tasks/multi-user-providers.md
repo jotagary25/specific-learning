@@ -63,6 +63,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L19 (user): "nada por defecto en producción si algo no esta en los "envs" debe fallar." → prod compose `APP_BIND`/`APP_PORT` now required (`${VAR:?…}`), verified: `docker compose config` fails with "required variable APP_BIND is missing a value"; README env table + example updated.
 
+- L20 (user): "si algo no esta en envirotments debe fallar, que es lo que estas preguntando? eres tonto? porque hay un espacio para apykey en lo envs si te dije que eso se configura desde la app?" → env AI keys removed (keys only per user in Settings; `AiKeyStatus.source` is `"db" | null`); api config has no defaults (13 required vars, aggregated startup error; WEB_DIST_DIR optional mode switch; Dockerfile sets CONTENT_DIR/WEB_DIST_DIR); dev compose `${PORT:?}`; Vite requires API_URL for the dev server; README/spec updated. Tests: api 614 (+32 skipped), web 116, config RED→GREEN (43). Docker build + fail-fast startup verified. User must rewrite `.env` and `.env.example`.
+
 ## Next step
 
-Ask the user whether "no defaults" also applies to the app config defaults in `apps/api/src/shared/config.ts`.
+Feature complete. User: update `.env` (dev) and `.env.example`; push/PR/merge are user decisions.

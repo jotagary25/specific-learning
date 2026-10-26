@@ -35,8 +35,11 @@ RUN pnpm install --frozen-lockfile --prod --filter "@english-course/api..." \
 # ---- runtime ----
 FROM ${NODE_IMAGE} AS runtime
 # TZ is fixed to UTC: users pick their own zone in Settings (apps/api/src/shared/clock.ts).
+# PORT, CONTENT_DIR and WEB_DIST_DIR are image internals (the paths below), so `.env` does not
+# need them; every other variable must come from the environment (the api fails without it).
 ENV NODE_ENV=production \
     PORT=3000 \
+    CONTENT_DIR=/app/content \
     WEB_DIST_DIR=/app/apps/web/dist \
     TZ=UTC
 WORKDIR /app

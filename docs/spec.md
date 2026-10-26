@@ -126,7 +126,7 @@ Each book block has one **real-world story told in chapters**, one chapter per u
 
 #### 3.4.1 AI editor pipeline (daily job)
 
-Runs per user at their local `editorHour` (Settings; default `EDITOR_HOUR`, 05) via a periodic check, and selects **one article per user per day** from a shared pool. Annotations are stored per user (`daily_article`).
+Runs per user at their local `editorHour` (Settings; initially the instance `EDITOR_HOUR`) via a periodic check, and selects **one article per user per day** from a shared pool. Annotations are stored per user (`daily_article`).
 
 | Step | Detail |
 |------|--------|
@@ -347,7 +347,7 @@ apps/api/src/
 
 | Item | Fact |
 |------|------|
-| Auth | `Authorization: Bearer <OLLAMA_API_KEY>`; the key is created at ollama.com/settings/keys |
+| Auth | `Authorization: Bearer <key>`; each user creates the key at ollama.com/settings/keys and saves it in Settings |
 | Chat | `POST https://ollama.com/api/chat` with `model`, `messages`, `stream`, `think`, `format` (JSON schema), `tools` |
 | Effort | `think`: `true`/`false`/`null` or a level string from the model's `thinking.values` (e.g., gpt-oss `low|medium|high`); unsupported values fall back to the default |
 | Capabilities | `POST https://ollama.com/api/show` → `thinking` object (values, default) |
@@ -365,7 +365,7 @@ Reasoning output (`message.thinking`) is discarded, never shown or stored.
 
 - **Docker Compose** services: `web` (static build served by nginx or by the api), `api` (Node), `db` (`postgres:18`, **local/dev only**).
 - **Production:** the user's existing PostgreSQL 18 server via `DATABASE_URL`; the compose file has a profile/override that omits `db`.
-- **Env:** `DATABASE_URL`, `APP_SECRET` (32-byte key for encryption), `APP_USER_EMAIL` + `APP_USER_PASSWORD` (admin user bootstrapped on startup; see README "Users"), optional `OLLAMA_API_KEY` / `OPENROUTER_API_KEY` (admin-only fallbacks; users save their own keys). The app runs in UTC; each user picks a time zone in Settings.
+- **Env:** every variable is required with no default and the api fails on start naming each missing one (full list in README "Environment variables"): `DATABASE_URL`, `PORT`, `APP_SECRET` (32-byte key for encryption), `APP_USER_EMAIL` + `APP_USER_PASSWORD` (admin user bootstrapped on startup; see README "Users"), provider base URLs, `APP_PUBLIC_URL`, `COOKIE_SECURE`, `TRUST_PROXY`, `EDITOR_ENABLED`, `EDITOR_HOUR`, `CONTENT_DIR`; `WEB_DIST_DIR` is an optional mode switch. AI provider keys are never env variables: each user saves their own in Settings. The app runs in UTC; each user picks a time zone in Settings.
 - Migrations run on api start (Drizzle). The content seed is idempotent.
 - PWA: manifest, icons, service worker (app shell cache; API is network-first).
 

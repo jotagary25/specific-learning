@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { LlmError } from "../shared/llm/errors.ts";
@@ -45,13 +46,13 @@ async function setup(options: { rounds?: Round[]; noKey?: boolean } = {}) {
   const settings = createSettings({
     store: createMemorySettingsStore(),
     appSecret: APP_SECRET,
-    envApiKey: options.noKey ? undefined : "test-key",
     createClient: () => llm,
   });
   const store = createMemoryTutorStore();
   const tutor = createTutor({ store, ai: settings, units: unitsStub });
-  const { auth } = await createTestAuth();
-  const app = createApp({ pingDb: async () => true, auth, tutor });
+  const { auth, user } = await createTestAuth();
+  if (!options.noKey) await settings.setKey(user.id, "test-key");
+  const app = createApp({ contentDir: REPO_CONTENT_DIR, pingDb: async () => true, auth, tutor });
   const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/tutor${path}`, {

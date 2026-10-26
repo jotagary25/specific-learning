@@ -1,5 +1,6 @@
 import type { TutorContext } from "@english-course/shared";
 import { beforeAll, describe, expect, it } from "vitest";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createMemoryUnitsStore, type MemoryUnitsStore } from "../units/units.memory-store.ts";
 import { createUnits } from "../units/units.service.ts";
 import { createMemoryVocabularyStore } from "../vocabulary/vocabulary.memory-store.ts";
@@ -18,7 +19,7 @@ const ctx = (context: TutorContext = { kind: "free", ref: "" }) => ({
 let units: ReturnType<typeof createUnits>;
 let store: MemoryUnitsStore;
 beforeAll(async () => {
-  store = await createMemoryUnitsStore();
+  store = await createMemoryUnitsStore(REPO_CONTENT_DIR);
   units = createUnits({ store });
 });
 

@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { LlmError } from "../shared/llm/errors.ts";
 import { createFakeLlm, type FakeLlmOptions } from "../shared/llm/fake.ts";
 import { createOllamaClient } from "../shared/llm/ollama.ts";
@@ -42,7 +43,7 @@ async function setup(overrides: Partial<SettingsOptions> = {}, llm = createFakeL
     ...overrides,
   });
   const { auth, user } = await createTestAuth();
-  const app = createApp({ pingDb: async () => true, auth, settings });
+  const app = createApp({ contentDir: REPO_CONTENT_DIR, pingDb: async () => true, auth, settings });
   const cookie = await loginCookie(app);
   const userId = user.id;
   const call = (path: string, init: RequestInit = {}) =>
@@ -85,26 +86,20 @@ describe("settings routes: Ollama API key", () => {
     expect(await get.text()).not.toContain(KEY);
   });
 
-  it("falls back to the env key and lets the stored key override it", async () => {
-    const { call } = await setup({ envApiKey: "env-key-0000-1234" });
-
-    expect(await (await call("/ai-key")).json()).toEqual({
-      configured: true,
-      source: "env",
-      last4: "1234",
-    });
+  it("deletes the stored key, leaving the provider without a key", async () => {
+    const { call, settings, userId } = await setup();
 
     await call("/ai-key", { method: "PUT", body: JSON.stringify({ apiKey: KEY }) });
     expect(await (await call("/ai-key")).json()).toMatchObject({ source: "db", last4: "WXYZ" });
 
     const del = await call("/ai-key", { method: "DELETE" });
-    expect(await del.json()).toEqual({ configured: true, source: "env", last4: "1234" });
+    expect(await del.json()).toEqual({ configured: false, source: null, last4: null });
+    expect(await settings.getApiKey(userId)).toBeUndefined();
   });
 
-  it("resolves the stored key for the LLM client (db first, then env)", async () => {
+  it("resolves the stored key for the LLM client", async () => {
     const keys: Array<string | undefined> = [];
     const { call, settings, userId } = await setup({
-      envApiKey: "env-key-0000-1234",
       createClient: (getApiKey) => ({
         ...createFakeLlm(fakeOptions),
         listModels: async () => {
@@ -118,11 +113,11 @@ describe("settings routes: Ollama API key", () => {
     await call("/ai-key", { method: "PUT", body: JSON.stringify({ apiKey: KEY }) });
     await settings.clientFor(userId, "ollama").listModels();
 
-    expect(keys).toEqual(["env-key-0000-1234", KEY]);
+    expect(keys).toEqual([undefined, KEY]);
   });
 
   it("reports a stored key that APP_SECRET can no longer decrypt", async () => {
-    const { call, store, userId } = await setup();
+    const { call, store, settings, userId } = await setup();
     store.secrets.set(memoryKey(userId, "ollama_api_key"), {
       ...encryptSecret(KEY, "cd".repeat(32)),
       last4: "WXYZ",
@@ -134,20 +129,7 @@ describe("settings routes: Ollama API key", () => {
       last4: "WXYZ",
       error: "undecryptable",
     });
-  });
-
-  it("counts the env key as configured while the stored key is undecryptable", async () => {
-    const { call, store, settings, userId } = await setup({ envApiKey: "env-key-1234" });
-    store.secrets.set(memoryKey(userId, "ollama_api_key"), {
-      ...encryptSecret(KEY, "cd".repeat(32)),
-      last4: "WXYZ",
-    });
-
-    expect(await (await call("/ai-key")).json()).toMatchObject({
-      configured: true,
-      error: "undecryptable",
-    });
-    expect(await settings.getApiKey(userId)).toBe("env-key-1234");
+    expect(await settings.getApiKey(userId)).toBeUndefined();
   });
 
   it("rejects an invalid key payload", async () => {
@@ -180,6 +162,7 @@ describe("settings routes: Ollama API key", () => {
     const { call } = await setup({
       createClient: (getApiKey) =>
         createOllamaClient({
+          baseUrl: "https://ollama.example",
           getApiKey,
           fetch: async () => {
             throw new Error("must not be called");
@@ -419,9 +402,9 @@ describe("settings routes: AI providers", () => {
       },
     });
 
-  async function withOpenRouter(envApiKey?: string) {
+  async function withOpenRouter() {
     const orLlm = openrouterLlm();
-    const ctx = await setup({ openrouter: { envApiKey, createClient: () => orLlm } });
+    const ctx = await setup({ openrouter: { createClient: () => orLlm } });
     return { ...ctx, orLlm };
   }
 
@@ -433,8 +416,12 @@ describe("settings routes: AI providers", () => {
     });
   });
 
-  it("defaults to OpenRouter when only its env key is set", async () => {
-    const { call } = await withOpenRouter("env-or-key-9999");
+  it("defaults to OpenRouter once the user stored only its key", async () => {
+    const { call } = await withOpenRouter();
+    await call("/ai-key?provider=openrouter", {
+      method: "PUT",
+      body: JSON.stringify({ apiKey: ORKEY }),
+    });
     expect(await (await call("/ai-provider")).json()).toMatchObject({ provider: "openrouter" });
   });
 
@@ -518,7 +505,6 @@ describe("settings routes: AI providers", () => {
     const verify = { calls: 0 };
     const { call } = await setup({
       openrouter: {
-        envApiKey: "env-or-key-9999",
         createClient: () => ({
           ...orLlm,
           verifyKey: async () => {

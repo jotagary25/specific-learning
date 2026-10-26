@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../app.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createMemoryUserStore, type UserStore } from "../users/users.store.ts";
 import { addTestUser, TEST_EMAIL, TEST_PASSWORD, TEST_SECRET } from "./auth.test-support.ts";
 import { type AuthOptions, createAuth } from "./auth.ts";
@@ -15,7 +16,7 @@ async function setup(options: Partial<AuthOptions> = {}) {
   const user = await addTestUser(users);
   const other = await addTestUser(users, OTHER_EMAIL, OTHER_PASSWORD, "learner");
   const auth = createAuth({ users, appSecret: TEST_SECRET, ...options });
-  const app = createApp({ pingDb: async () => true, auth });
+  const app = createApp({ contentDir: REPO_CONTENT_DIR, pingDb: async () => true, auth });
   return { app, users, user, other };
 }
 
@@ -215,6 +216,7 @@ describe("auth routes", () => {
     await before.request("/api/auth/logout", { method: "POST", headers: { cookie } });
 
     const after = createApp({
+      contentDir: REPO_CONTENT_DIR,
       pingDb: async () => true,
       auth: createAuth({ users, appSecret: TEST_SECRET }),
     });
@@ -334,6 +336,7 @@ describe("session store failures", () => {
   async function flakyApp() {
     const { store, state } = await flakyStore();
     const app = createApp({
+      contentDir: REPO_CONTENT_DIR,
       pingDb: async () => true,
       auth: createAuth({ users: store, appSecret: TEST_SECRET }),
     });
@@ -427,7 +430,7 @@ describe("auth middleware", () => {
   });
 
   it("fails closed when the app is built without auth", async () => {
-    const app = createApp({ pingDb: async () => true });
+    const app = createApp({ contentDir: REPO_CONTENT_DIR, pingDb: async () => true });
     expect((await app.request("/api/anything")).status).toBe(401);
     expect((await app.request("/api/health")).status).toBe(200);
   });

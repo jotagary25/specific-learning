@@ -2,7 +2,6 @@
 // Single-learner fake: user ids are accepted and ignored (isolation is covered by the DB
 // integration test).
 import type { TimelineExpected, UnitExtras } from "@english-course/shared";
-import { resolveContentDir } from "../content/content-dir.ts";
 import { mapAuthored, mapUnit } from "../shared/db/seed/index.ts";
 import { loadAuthored } from "../shared/db/seed/load-authored.ts";
 import { loadUnits } from "../shared/db/seed/load-content.ts";
@@ -25,9 +24,7 @@ export type MemoryUnitsStore = UnitsStore & {
   doubts: Array<{ text: string; context: Record<string, unknown>; explanation: string | null }>;
 };
 
-export async function createMemoryUnitsStore(
-  contentDir = resolveContentDir(),
-): Promise<MemoryUnitsStore> {
+export async function createMemoryUnitsStore(contentDir: string): Promise<MemoryUnitsStore> {
   const [contentUnits, authored] = await Promise.all([
     loadUnits(contentDir),
     loadAuthored(contentDir),

@@ -74,9 +74,9 @@ export type UpdateAiProviderRequest = z.infer<typeof UpdateAiProviderRequest>;
 // --- provider API keys ---
 
 export const AiKeyStatus = z.object({
-  /** True when a usable key exists (a stored key that decrypts, or the env key). */
+  /** True when the user has a stored key that decrypts. Keys are only set from Settings. */
   configured: z.boolean(),
-  source: z.enum(["db", "env"]).nullable(),
+  source: z.enum(["db"]).nullable(),
   last4: z.string().max(4).nullable(),
   /** `undecryptable`: a key is stored but APP_SECRET can no longer decrypt it. */
   error: z.literal("undecryptable").optional(),

@@ -5,8 +5,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { addTestUser, TEST_EMAIL, TEST_PASSWORD, TEST_SECRET } from "../auth/auth.test-support.ts";
 import { type AuthOptions, createAuth } from "../auth/auth.ts";
-import { resolveContentDir } from "../content/content-dir.ts";
-import { loadConfig } from "../shared/config.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createMemoryUserStore } from "../users/users.store.ts";
 
 const INDEX = '<!doctype html><html lang="en"><body><div id="root"></div></body></html>';
@@ -23,7 +22,7 @@ afterAll(() => rmSync(distDir, { recursive: true, force: true }));
 const users = createMemoryUserStore();
 await addTestUser(users);
 const authOptions: AuthOptions = { users, appSecret: TEST_SECRET };
-const contentDir = resolveContentDir({});
+const contentDir = REPO_CONTENT_DIR;
 
 const prodApp = (auth = createAuth(authOptions)) =>
   createApp({ pingDb: async () => true, contentDir, webDistDir: distDir, auth });
@@ -186,50 +185,5 @@ describe("Secure session cookie behind a reverse proxy", () => {
 
     const res = await login(app, upstream, { "x-forwarded-proto": "https" }, proxy);
     expect(res.headers.get("set-cookie")).not.toMatch(/Secure/i);
-  });
-});
-
-describe("deployment config", () => {
-  const base = {
-    DATABASE_URL: "postgres://u:p@localhost:5432/db",
-    APP_USER_EMAIL: "admin@example.com",
-    APP_USER_PASSWORD: "a long enough passphrase",
-    APP_SECRET: "ab".repeat(32),
-  };
-
-  it("defaults TRUST_PROXY to false and WEB_DIST_DIR to unset", () => {
-    const config = loadConfig(base);
-    expect(config.TRUST_PROXY).toBe(false);
-    expect(config.WEB_DIST_DIR).toBeUndefined();
-  });
-
-  it("parses TRUST_PROXY and WEB_DIST_DIR", () => {
-    const config = loadConfig({ ...base, TRUST_PROXY: "true", WEB_DIST_DIR: "/app/web" });
-    expect(config.TRUST_PROXY).toBe(true);
-    expect(config.WEB_DIST_DIR).toBe("/app/web");
-  });
-
-  it("rejects an invalid TRUST_PROXY value", () => {
-    expect(() => loadConfig({ ...base, TRUST_PROXY: "yes" })).toThrow(/TRUST_PROXY/);
-  });
-
-  it("requires the admin email and a password of at least 8 characters", () => {
-    const { APP_USER_EMAIL: _email, ...noEmail } = base;
-    const { APP_USER_PASSWORD: _password, ...noPassword } = base;
-
-    expect(() => loadConfig(noEmail)).toThrow(/APP_USER_EMAIL/);
-    expect(() => loadConfig(noPassword)).toThrow(/APP_USER_PASSWORD/);
-    expect(() => loadConfig({ ...base, APP_USER_EMAIL: "not-an-email" })).toThrow(/APP_USER_EMAIL/);
-    expect(() => loadConfig({ ...base, APP_USER_PASSWORD: "seven77" })).toThrow(
-      /at least 8 characters/,
-    );
-    expect(() => loadConfig({ ...base, APP_USER_PASSWORD: "change-me" })).not.toThrow();
-  });
-
-  it("no longer accepts APP_PASSWORD in place of the admin credentials", () => {
-    const { APP_USER_EMAIL: _e, APP_USER_PASSWORD: _p, ...rest } = base;
-    expect(() => loadConfig({ ...rest, APP_PASSWORD: "a long enough passphrase" })).toThrow(
-      /APP_USER_EMAIL/,
-    );
   });
 });

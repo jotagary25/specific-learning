@@ -337,7 +337,7 @@ describe("eval runner: providers and cost", () => {
           providers.push(provider);
           return priced;
         },
-        keyStatus: async () => ({ configured: true, source: "env", last4: "1234" }),
+        keyStatus: async () => ({ configured: true, source: "db", last4: "1234" }),
         updateAiFunction: async (_userId, id, input, provider) => {
           applied.push(String(provider));
           return {

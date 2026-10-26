@@ -8,6 +8,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createMemoryVocabularyStore } from "./vocabulary.memory-store.ts";
 import { createVocabulary } from "./vocabulary.service.ts";
 
@@ -17,7 +18,12 @@ async function setup() {
   const store = createMemoryVocabularyStore();
   const vocabulary = createVocabulary({ store, now: () => NOW });
   const { auth } = await createTestAuth();
-  const app = createApp({ pingDb: async () => true, auth, vocabulary });
+  const app = createApp({
+    contentDir: REPO_CONTENT_DIR,
+    pingDb: async () => true,
+    auth,
+    vocabulary,
+  });
   const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/vocabulary${path}`, {

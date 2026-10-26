@@ -2,14 +2,29 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vitest/config";
 
-// In docker the api is reachable by service name; on the host it is localhost.
-const apiTarget = process.env.API_URL ?? "http://localhost:3000";
+const proxyTo = (target: string) => ({
+  "/api": { target, changeOrigin: true },
+  "/content": { target, changeOrigin: true },
+});
+
+/**
+ * Where the dev server proxies `/api` and `/content`. Required, no default: docker compose sets
+ * it (the api service name); on the host, set it in the shell (e.g. `http://localhost:3000`).
+ * Builds and tests do not proxy, so they do not need it.
+ */
+function requireApiUrl(): string {
+  const apiUrl = process.env.API_URL?.trim();
+  if (!apiUrl) {
+    throw new Error("API_URL is not set: the Vite dev server needs it to proxy /api and /content");
+  }
+  return apiUrl;
+}
 
 const THEME_COLOR = "#1d4ed8";
 const BACKGROUND_COLOR = "#ffffff";
 const SHORTCUT_ICONS = [{ src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" }];
 
-export default defineConfig({
+export default defineConfig(({ command, mode }) => ({
   plugins: [
     react(),
     VitePWA({
@@ -88,13 +103,11 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
-    proxy: {
-      "/api": { target: apiTarget, changeOrigin: true },
-      "/content": { target: apiTarget, changeOrigin: true },
-    },
+    // Only the dev server (and preview) proxies; vitest also runs as "serve", in mode "test".
+    ...(command === "serve" && mode !== "test" ? { proxy: proxyTo(requireApiUrl()) } : {}),
   },
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
   },
-});
+}));

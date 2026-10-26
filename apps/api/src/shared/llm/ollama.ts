@@ -13,10 +13,9 @@ import type {
   Usage,
 } from "./types.ts";
 
-export const DEFAULT_OLLAMA_BASE_URL = "https://ollama.com";
-
 export type OllamaClientOptions = {
-  baseUrl?: string;
+  /** Ollama API base URL (the configured `OLLAMA_BASE_URL`). */
+  baseUrl: string;
   /** Resolved on every call so a key change takes effect immediately. */
   getApiKey: () => Promise<string | undefined>;
   fetch?: typeof fetch;
@@ -159,7 +158,7 @@ async function* ndjsonLines(body: ReadableStream<Uint8Array>): AsyncGenerator<Wi
 }
 
 export function createOllamaClient(opts: OllamaClientOptions): LlmClient {
-  const baseUrl = (opts.baseUrl ?? DEFAULT_OLLAMA_BASE_URL).replace(/\/+$/, "");
+  const baseUrl = opts.baseUrl.replace(/\/+$/, "");
   const fetchFn = opts.fetch ?? fetch;
   const chatMs = opts.timeouts?.chatMs ?? 180_000;
   const metadataMs = opts.timeouts?.metadataMs ?? 15_000;

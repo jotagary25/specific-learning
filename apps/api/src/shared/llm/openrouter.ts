@@ -14,11 +14,11 @@ import type {
   Usage,
 } from "./types.ts";
 
-export const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const APP_TITLE = "English Course";
 
 export type OpenRouterClientOptions = {
-  baseUrl?: string;
+  /** OpenRouter API base URL (the configured `OPENROUTER_BASE_URL`). */
+  baseUrl: string;
   /** Resolved on every call so a key change takes effect immediately. */
   getApiKey: () => Promise<string | undefined>;
   /** Public app URL sent as `HTTP-Referer` (with the app title) for attribution; omitted when unset. */
@@ -278,7 +278,7 @@ const chunkError = (chunk: WireChunk) =>
   new LlmError("upstream", `OpenRouter error: ${chunk.error?.message ?? "unknown"}`);
 
 export function createOpenRouterClient(opts: OpenRouterClientOptions): LlmClient {
-  const baseUrl = (opts.baseUrl ?? DEFAULT_OPENROUTER_BASE_URL).replace(/\/+$/, "");
+  const baseUrl = opts.baseUrl.replace(/\/+$/, "");
   const fetchFn = opts.fetch ?? fetch;
   const chatMs = opts.timeouts?.chatMs ?? 180_000;
   const metadataMs = opts.timeouts?.metadataMs ?? 15_000;

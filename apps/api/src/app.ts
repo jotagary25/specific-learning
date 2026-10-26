@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { type AppEnv, type Auth, requireSession } from "./auth/auth.ts";
 import { contentRoutes } from "./content/content.routes.ts";
-import { resolveContentDir } from "./content/content-dir.ts";
 import { evalRoutes } from "./eval/eval.routes.ts";
 import type { Eval } from "./eval/eval.service.ts";
 import { type HealthDeps, healthRoutes } from "./health/health.routes.ts";
@@ -29,8 +28,8 @@ import { writingRoutes } from "./writing/writing.routes.ts";
 import type { Writing } from "./writing/writing.service.ts";
 
 export type AppDeps = HealthDeps & {
-  /** Content root for static assets; defaults to `resolveContentDir()`. */
-  contentDir?: string;
+  /** Content root for static assets (the configured `CONTENT_DIR`). */
+  contentDir: string;
   /** Built web app to serve with SPA fallback (production); unset in dev, where Vite serves it. */
   webDistDir?: string;
   /** Per-user session auth. Without it every protected /api route answers 401. */
@@ -67,7 +66,7 @@ export function createApp(deps: AppDeps) {
 
   const app = new Hono()
     .route("/api", api)
-    .route("/content", contentRoutes({ contentDir: deps.contentDir ?? resolveContentDir() }));
+    .route("/content", contentRoutes({ contentDir: deps.contentDir }));
   // Registered last: it only answers what /api and /content did not.
   if (deps.webDistDir) app.route("/", webRoutes({ distDir: deps.webDistDir }));
   return app;

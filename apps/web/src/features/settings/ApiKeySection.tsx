@@ -11,15 +11,13 @@ import {
   testAiKey,
 } from "./settings.api.ts";
 
-function describeStatus(status: AiKeyStatus, provider: AiProviderId): string {
+function describeStatus(status: AiKeyStatus): string {
   if (status.error === "undecryptable") {
     return "Saved key can't be decrypted (APP_SECRET changed?) — enter it again";
   }
   if (!status.configured) return "Not configured";
   const ending = status.last4 ? ` · ends in ${status.last4}` : "";
-  return status.source === "env"
-    ? `Using ${provider.toUpperCase()}_API_KEY from the server environment${ending}`
-    : `Saved (encrypted)${ending}`;
+  return `Saved (encrypted)${ending}`;
 }
 
 export function ApiKeySection({ provider }: { provider: AiProviderId }) {
@@ -86,7 +84,7 @@ export function ApiKeySection({ provider }: { provider: AiProviderId }) {
           ? "Loading…"
           : status.isError
             ? "Could not load the key status."
-            : describeStatus(status.data, provider)}
+            : describeStatus(status.data)}
       </p>
       <form className={styles.keyForm} onSubmit={onSubmit}>
         <label htmlFor={inputId} className={styles.label}>

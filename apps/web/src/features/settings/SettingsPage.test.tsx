@@ -344,7 +344,7 @@ describe("SettingsPage: AI providers", () => {
       "GET /api/settings/ai-key?provider=ollama": () =>
         Response.json({ configured: false, source: null, last4: null }),
       "GET /api/settings/ai-key?provider=openrouter": () =>
-        Response.json({ configured: true, source: "env", last4: "9999" }),
+        Response.json({ configured: true, source: "db", last4: "9999" }),
       "GET /api/settings/models?provider=ollama": () => Response.json({ models: [] }),
       "GET /api/settings/ai-functions?provider=ollama": () =>
         Response.json({ functions: [checkAnswer] }),
@@ -372,11 +372,7 @@ describe("SettingsPage: AI providers", () => {
     });
     renderAt("/settings");
 
-    expect(
-      await screen.findByText(
-        "Using OPENROUTER_API_KEY from the server environment · ends in 9999",
-      ),
-    ).toBeTruthy();
+    expect(await screen.findByText("Saved (encrypted) · ends in 9999")).toBeTruthy();
     fireEvent.click(await screen.findByLabelText("OpenRouter"));
     expect(await screen.findByText("Now using OpenRouter.")).toBeTruthy();
     expect(providerPuts).toEqual([{ provider: "openrouter" }]);

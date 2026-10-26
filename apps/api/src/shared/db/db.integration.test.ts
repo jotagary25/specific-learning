@@ -6,7 +6,7 @@ import { PREFERENCE_DEFAULTS } from "@english-course/shared";
 import { count, eq, sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { resolveContentDir } from "../../content/content-dir.ts";
+import { REPO_CONTENT_DIR } from "../../content/content-dir.test-support.ts";
 import { createDrizzleEvalStore } from "../../eval/eval.store.ts";
 import { createProgress } from "../../progress/progress.service.ts";
 import { createDrizzleProgressStore } from "../../progress/progress.store.ts";
@@ -349,7 +349,7 @@ describe.skipIf(!url)("migrations + content seed (real Postgres)", () => {
 
   beforeAll(async () => {
     await resetDatabase(db);
-    units = await loadUnits(resolveContentDir());
+    units = await loadUnits(REPO_CONTENT_DIR);
   });
 
   afterAll(async () => {
@@ -405,7 +405,7 @@ describe.skipIf(!url)("migrations + content seed (real Postgres)", () => {
   });
 
   it("seeds authored story chapters, timeline items and unit extras idempotently", async () => {
-    const authored = await loadAuthored(resolveContentDir());
+    const authored = await loadAuthored(REPO_CONTENT_DIR);
 
     const first = await seedAuthored(db, authored);
     expect(first).toMatchObject({ chapters: 6, timelineItems: 30, unitExtras: 6 });
@@ -621,7 +621,7 @@ describe.skipIf(!url)("data isolation between users (real Postgres)", () => {
   beforeAll(async () => {
     await resetDatabase(db);
     await runMigrations(db);
-    await seedContent(db, await loadUnits(resolveContentDir()));
+    await seedContent(db, await loadUnits(REPO_CONTENT_DIR));
     const users = createDrizzleUserStore(db);
     a = (await users.insert(newUser("a@example.com"))).id;
     b = (await users.insert(newUser("b@example.com"))).id;

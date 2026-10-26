@@ -14,6 +14,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { LlmError } from "../shared/llm/errors.ts";
@@ -51,7 +52,7 @@ async function setup(options: Setup = {}) {
     today: () => options.today ?? TODAY,
   });
   const { auth } = await createTestAuth();
-  const app = createApp({ pingDb: async () => true, auth, reading });
+  const app = createApp({ contentDir: REPO_CONTENT_DIR, pingDb: async () => true, auth, reading });
   const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/reading${path}`, {

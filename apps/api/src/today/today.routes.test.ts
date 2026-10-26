@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createMemoryTodayStore } from "./today.memory-store.ts";
 import { createToday, type TodayState } from "./today.service.ts";
 
@@ -41,7 +42,7 @@ async function setup(start = MONDAY_MORNING, timeZone = "UTC") {
     timeZoneOf: async () => timeZone,
   });
   const { auth } = await createTestAuth();
-  const app = createApp({ pingDb: async () => true, auth, today });
+  const app = createApp({ contentDir: REPO_CONTENT_DIR, pingDb: async () => true, auth, today });
   const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/today${path}`, {

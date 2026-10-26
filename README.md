@@ -23,8 +23,32 @@ openssl rand -hex 32   # paste as APP_SECRET
 openssl rand -hex 16   # a strong APP_USER_PASSWORD (or choose your own, 8+ characters)
 ```
 
-Edit `.env`: set `APP_SECRET`, `APP_USER_EMAIL`, `APP_USER_PASSWORD`, a real `POSTGRES_PASSWORD`
-(and the same password inside `DATABASE_URL`), then:
+Nothing has a default: `.env` must hold every variable below, or the api (and `docker compose`)
+refuses to start and names what is missing. Use a real `POSTGRES_PASSWORD` and the same password
+inside `DATABASE_URL`:
+
+```env
+POSTGRES_USER=english
+POSTGRES_PASSWORD=<a real password>
+POSTGRES_DB=english_course
+DATABASE_URL=postgres://english:<the same password>@localhost:5432/english_course
+PORT=3000
+APP_USER_EMAIL=you@example.com
+APP_USER_PASSWORD=<8+ characters>
+APP_SECRET=<openssl rand -hex 32>
+OLLAMA_BASE_URL=https://ollama.com
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+APP_PUBLIC_URL=http://localhost:5173
+COOKIE_SECURE=auto
+TRUST_PROXY=false
+EDITOR_ENABLED=true
+EDITOR_HOUR=5
+CONTENT_DIR=../../content
+```
+
+In compose, the api gets `DATABASE_URL` (service `db`) and `CONTENT_DIR` (`/app/content`) from
+`docker-compose.yml` and the web gets `API_URL`; `.env` values serve host runs (`pnpm dev`, where
+the api runs in `apps/api`, so `CONTENT_DIR` is relative to it). Then:
 
 ```sh
 docker compose up
@@ -41,15 +65,15 @@ First run:
    (units 1–6) and the admin account run when the api starts.
 2. **Settings → AI provider**: pick Ollama Cloud or OpenRouter and paste that provider's key
    (https://ollama.com/settings/keys or https://openrouter.ai/settings/keys). Keys are encrypted
-   at rest with `APP_SECRET` and never reach the browser. (`OLLAMA_API_KEY` / `OPENROUTER_API_KEY`
-   in `.env` work as a bootstrap; a key saved in Settings wins.)
+   at rest with `APP_SECRET` and never reach the browser. Keys are set per user in Settings only;
+   there are no key environment variables.
 3. **Settings → Open model evaluation** (`/settings/eval`): run the evaluation, compare models on
    quality, latency and cost, and apply the winner to each AI function.
 4. **Time zone**: after the first login the app offers your browser's time zone; accept it or
    keep UTC (change it any time in **Settings → Study preferences**). The Today plan, day
    boundaries, weekly/monthly progress and your daily article all follow it.
 5. **Daily editor**: once your local hour reaches your **Daily article from** hour (Settings,
-   default `EDITOR_HOUR`), the editor picks and annotates an article from The Conversation for
+   initially `EDITOR_HOUR`), the editor picks and annotates an article from The Conversation for
    you. Before the first run, use **Reading → Run editor now**.
 
 **Time zones.** The app and its containers always run in UTC (`TZ=UTC` is fixed in the image and
@@ -58,37 +82,39 @@ zone in Settings, and every local day or hour is computed in that zone.
 
 ## Environment variables
 
-The api validates its variables on start and refuses to boot with a clear message when one is
-invalid. Empty values count as unset.
+The api validates its variables on start and refuses to boot when one is missing or invalid,
+with one message naming every offending variable. **Every variable has no default**; empty values
+count as missing. The only optional one is `WEB_DIST_DIR`, a mode switch rather than a default.
+AI provider keys are not environment variables: each user saves their own in **Settings**.
 
-| Name | Required | Default | Description |
-|------|----------|---------|-------------|
-| `DATABASE_URL` | yes | — | PostgreSQL 18 URL, `postgres://user:pass@host:5432/db`. |
-| `APP_USER_EMAIL` | yes | — | Email of the admin account, used to log in (case-insensitive). See [Users](#users). |
-| `APP_USER_PASSWORD` | yes | — | Admin password, at least 8 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
-| `APP_SECRET` | yes | — | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored provider keys unreadable (save them again). |
-| `PORT` | no | `3000` | API listen port. The compose file pins it to 3000 inside the container. |
-| `OLLAMA_API_KEY` | no | — | Instance Ollama Cloud key. Only the admin falls back to it (it is the admin's spend); other users must save their own key in Settings. A saved key always wins. |
-| `OLLAMA_BASE_URL` | no | `https://ollama.com` | Ollama API base URL (chat, tags, show). |
-| `OPENROUTER_API_KEY` | no | — | Instance OpenRouter key. Only the admin falls back to it; other users save their own key. A user who never chose a provider uses the provider whose key they saved, else OpenRouter when this is the only env key. |
-| `OPENROUTER_BASE_URL` | no | `https://openrouter.ai/api/v1` | OpenRouter API base URL (chat/completions, models, key). |
-| `APP_PUBLIC_URL` | no | — | Public URL of this app, sent to OpenRouter as `HTTP-Referer` (with the title `English Course`) for app attribution. Omitted when unset. |
-| `COOKIE_SECURE` | no | `auto` | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
-| `TRUST_PROXY` | no | `false` | `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting (per account and client) uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
-| `APP_PORT` | prod: yes | — | Host port published for the app. The production compose fails if it is missing. |
-| `APP_BIND` | prod: yes | — | Host address to publish on: `127.0.0.1` behind a reverse proxy, `0.0.0.0` to expose the app directly (then leave `TRUST_PROXY` off). The production compose fails if it is missing. |
-| `EDITOR_ENABLED` | no | `true` | `false` disables the in-process daily editor (manual runs still work). It checks every 5 minutes which users are due. |
-| `EDITOR_HOUR` | no | `5` | Default **Daily article from** hour (0–23) for users who have not set their own in Settings; it is read in each user's own time zone. |
-| `CONTENT_DIR` | no | repo `content/` | Content root (units, authored content, images, eval samples). Relative paths resolve from the working directory. |
-| `WEB_DIST_DIR` | no | unset (`/app/apps/web/dist` in the image) | When set, the api also serves the built web app with SPA fallback. Leave unset in development. |
-| `DATABASE_URL_TEST` | no | `DATABASE_URL` with `_test` appended to the db name | Database for `pnpm --filter @english-course/api test:db` (created if missing; name must end in `_test`). |
-| `API_URL` | no | `http://localhost:3000` | Dev only: where the Vite dev server proxies `/api` and `/content` (`http://api:3000` in compose). |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | dev only | — | Credentials of the local development `postgres:18` service (`docker-compose.yml`). Production uses your own database via `DATABASE_URL`. |
+| Name | Required | Description |
+|------|----------|-------------|
+| `DATABASE_URL` | yes | PostgreSQL 18 URL, `postgres://user:pass@host:5432/db`. |
+| `PORT` | yes | API listen port. The image sets `3000` and the production compose pins it, so production `.env` does not need it. |
+| `APP_USER_EMAIL` | yes | Email of the admin account, used to log in (case-insensitive). See [Users](#users). |
+| `APP_USER_PASSWORD` | yes | Admin password, at least 8 characters. Stored only as a salted scrypt hash; changing it logs the admin out everywhere. |
+| `APP_SECRET` | yes | 64 hex chars (`openssl rand -hex 32`). Encrypts stored secrets and signs sessions; changing it logs everyone out and makes stored provider keys unreadable (save them again). |
+| `OLLAMA_BASE_URL` | yes | Ollama API base URL (chat, tags, show), e.g. `https://ollama.com`. |
+| `OPENROUTER_BASE_URL` | yes | OpenRouter API base URL (chat/completions, models, key), e.g. `https://openrouter.ai/api/v1`. |
+| `APP_PUBLIC_URL` | yes | Public URL of this app, sent to OpenRouter as `HTTP-Referer` (with the title `English Course`) for app attribution. |
+| `COOKIE_SECURE` | yes | Session cookie `Secure` flag: `auto`, `true` or `false`. `auto` = with `TRUST_PROXY=true` and a request from a loopback/private proxy, `X-Forwarded-Proto` decides (missing header → Secure); otherwise https → Secure, and plain http drops Secure only for local hosts (`localhost`, `*.localhost`, `127.*`, `::1`, single-label hosts such as `api`). |
+| `TRUST_PROXY` | yes | `true` or `false`. `true` behind a TLS-terminating reverse proxy: with `COOKIE_SECURE=auto`, `X-Forwarded-Proto` decides the `Secure` flag, and login rate limiting (per account and client) uses the last `X-Forwarded-For` entry. Both headers are honored only from a loopback or private peer (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `::1`, `fc00::/7`, `fe80::/10`); any other peer is keyed by its own address. Keep the app unreachable from clients except through the proxy. |
+| `EDITOR_ENABLED` | yes | `true` or `false`; `false` disables the in-process daily editor (manual runs still work). It checks every 5 minutes which users are due. |
+| `EDITOR_HOUR` | yes | **Daily article from** hour (0–23) for users who have not set their own in Settings; it is read in each user's own time zone. |
+| `CONTENT_DIR` | yes | Content root (units, authored content, images, eval samples). Relative paths resolve from the working directory. The image sets `/app/content` and dev compose sets it for the api container, so only host runs read it from `.env`. |
+| `WEB_DIST_DIR` | no (mode switch) | When set, the api also serves the built web app from that folder with SPA fallback; unset, it does not (development, where Vite serves the web). The image sets `/app/apps/web/dist`. |
+| `APP_PORT` | prod | Host port published for the app. The production compose fails if it is missing. |
+| `APP_BIND` | prod | Host address to publish on: `127.0.0.1` behind a reverse proxy, `0.0.0.0` to expose the app directly (then set `TRUST_PROXY=false`). The production compose fails if it is missing. |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | dev | Credentials of the local development `postgres:18` service (`docker-compose.yml`). Production uses your own database via `DATABASE_URL`. |
+| `API_URL` | dev server | Where the Vite dev server proxies `/api` and `/content`; it fails to start without it. Dev compose sets `http://api:$PORT`; on the host run `API_URL=http://localhost:3000 pnpm dev`. Builds and tests do not use it. |
+| `DATABASE_URL_TEST` | no (tests) | Database for `pnpm --filter @english-course/api test:db`; when unset it uses `DATABASE_URL` with `_test` appended to the db name (created if missing; name must end in `_test`). |
 
 ## AI providers
 
 Both providers are optional: without a key, AI features answer "AI unavailable" and everything
-else keeps working. Each user picks the active provider in **Settings → AI provider**; keys and
+else keeps working. Keys are set per user in **Settings → AI provider** only (never in `.env`),
+encrypted with `APP_SECRET`. A user who never picked a provider uses the one whose key they
+saved, else Ollama. Each user picks the active provider in **Settings → AI provider**; keys and
 the model/effort chosen for every AI function are kept per provider, so switching back and forth
 loses nothing. Evaluation runs use the active provider.
 
@@ -153,18 +179,24 @@ The user must own the database: the app creates its tables on start. In `DATABAS
 
 ### 2. Environment and start
 
+Every line is required (no defaults); `PORT`, `CONTENT_DIR` and `WEB_DIST_DIR` are image
+internals and are set by the image, so leave them out. AI keys are not here: each user saves
+theirs in Settings.
+
 ```env
 DATABASE_URL=postgres://english_course:<password>@<db-host>:5432/english_course
 APP_USER_EMAIL=you@example.com
 APP_USER_PASSWORD=<8+ characters>
 APP_SECRET=<openssl rand -hex 32, generated on the server>
-TRUST_PROXY=true            # behind a TLS reverse proxy
+OLLAMA_BASE_URL=https://ollama.com
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+APP_PUBLIC_URL=https://english.example.com
+COOKIE_SECURE=auto
+TRUST_PROXY=true            # behind a TLS reverse proxy; false without one
+EDITOR_ENABLED=true
+EDITOR_HOUR=5
 APP_BIND=127.0.0.1
 APP_PORT=3000
-# optional
-OPENROUTER_API_KEY=
-OLLAMA_API_KEY=
-APP_PUBLIC_URL=https://english.example.com
 ```
 
 ```sh
@@ -172,7 +204,8 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml ps    # wait for "healthy"
 ```
 
-The compose file has no defaults: `APP_BIND` and `APP_PORT` must be set, or it fails. Keep `APP_SECRET`
+The compose file has no defaults: `APP_BIND` and `APP_PORT` must be set, or it fails; the api
+then fails on start, naming each variable, if any other line is missing. Keep `APP_SECRET`
 stable: changing it signs everyone out and makes saved AI keys unreadable.
 
 **On Dokploy**: create a Compose service with `docker-compose.prod.yml`, put the variables above
@@ -185,7 +218,7 @@ Put a TLS-terminating proxy in front and set `TRUST_PROXY=true`, so the session 
 `Secure` flag from `X-Forwarded-Proto` and login rate limiting keys on the client address.
 Forwarded headers are honored only from loopback or private peers (a host proxy, or a proxy
 container such as Traefik on a Docker network), so a client cannot spoof them. To reach the app
-without a proxy, set `APP_BIND=0.0.0.0` and keep `TRUST_PROXY` off. A service worker (offline
+without a proxy, set `APP_BIND=0.0.0.0` and `TRUST_PROXY=false`. A service worker (offline
 support, install on the phone) requires HTTPS.
 
 - **Caddy**: `english.example.com { reverse_proxy 127.0.0.1:3000 }`.
@@ -244,7 +277,7 @@ that writes (answers, reviews, writing, AI help) needs a connection; nothing is 
 | Command | What |
 |---------|------|
 | `docker compose up` | Postgres + api (watch) + web (Vite) |
-| `pnpm dev` | api + web on the host (needs a reachable `DATABASE_URL`) |
+| `API_URL=http://localhost:3000 pnpm dev` | api + web on the host (needs a reachable `DATABASE_URL`) |
 | `pnpm -r test` | All unit tests (vitest) |
 | `pnpm --filter @english-course/api test:db` | DB integration tests against `DATABASE_URL_TEST` |
 | `pnpm typecheck` | TypeScript in every package |

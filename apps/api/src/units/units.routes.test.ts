@@ -9,6 +9,7 @@ import {
 import { beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "../app.ts";
 import { createTestAuth, loginCookie } from "../auth/auth.test-support.ts";
+import { REPO_CONTENT_DIR } from "../content/content-dir.test-support.ts";
 import { createSettings } from "../settings/settings.service.ts";
 import { createMemorySettingsStore } from "../settings/settings.store.ts";
 import { LlmError } from "../shared/llm/errors.ts";
@@ -33,13 +34,13 @@ const APP_SECRET = "cd".repeat(32);
 // Loading and validating the content folder is the slow part: do it once, clone per test.
 let pristine: MemoryUnitsStore;
 beforeAll(async () => {
-  pristine = await createMemoryUnitsStore();
+  pristine = await createMemoryUnitsStore(REPO_CONTENT_DIR);
 });
 
 async function setup(
   options: { llm?: FakeLlm; noAi?: boolean; missedItems?: MissedItemCards } = {},
 ) {
-  const store = await createMemoryUnitsStore();
+  const store = await createMemoryUnitsStore(REPO_CONTENT_DIR);
   const llm = options.llm ?? createFakeLlm();
   const settings = createSettings({
     store: createMemorySettingsStore(),
@@ -52,7 +53,7 @@ async function setup(
     missedItems: options.missedItems,
   });
   const { auth } = await createTestAuth();
-  const app = createApp({ pingDb: async () => true, auth, units });
+  const app = createApp({ contentDir: REPO_CONTENT_DIR, pingDb: async () => true, auth, units });
   const cookie = await loginCookie(app);
   const call = (path: string, init: { method?: string; body?: unknown } = {}) =>
     app.request(`/api/units${path}`, {
