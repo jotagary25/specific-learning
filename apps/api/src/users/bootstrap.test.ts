@@ -49,6 +49,22 @@ describe("bootstrapAdmin", () => {
     expect(await verifyPassword(env.password, user?.passwordHash ?? "")).toBe(false);
   });
 
+  it("keeps a single admin when the new .env email belongs to an existing learner", async () => {
+    const store = createMemoryUserStore();
+    const admin = await bootstrapAdmin(store, env, FAST);
+    const learner = await store.insert({
+      email: "learner@example.com",
+      passwordHash: admin.user.passwordHash,
+      role: "learner",
+    });
+
+    await bootstrapAdmin(store, { ...env, email: "learner@example.com" }, FAST);
+
+    const admins = await store.listAdmins();
+    expect(admins.map((u) => u.id)).toEqual([learner.id]);
+    expect(store.users.get(admin.user.id)).toMatchObject({ role: "learner", sessionEpoch: 1 });
+  });
+
   it("moves the existing admin to a new email instead of creating a second admin", async () => {
     const store = createMemoryUserStore();
     const created = await bootstrapAdmin(store, env, FAST);

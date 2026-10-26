@@ -43,6 +43,8 @@ Risk: T1 item 1 (migration) + item 2 (auth); T3 item 2 (credentials). Each in it
 
 - L8 (T1 evidence): migration `0002_users_and_isolation` (app_user, user_id on learner tables, unit_progress, daily_article, per-user setting/secret; truncates learner data), admin bootstrap from `APP_USER_EMAIL`/`APP_USER_PASSWORD` (scrypt), per-user session epoch + email+IP rate limit, all stores scoped by user. Tests: shared 224, importer 40, api 522 (+29 skipped), web 110; test:db 29/29 incl. per-feature isolation; live: admin created, login/me/units/logout verified. Notes: article annotations shared from first user (follow-up: per-user annotations); in-memory fakes ignore user id. User must replace `APP_PASSWORD` with `APP_USER_EMAIL` + `APP_USER_PASSWORD` (≥12 chars). Engram mirror pending (memory session ended).
 
+- L9 (T1 verification): independent verifier — S1 pass, S2 pass, no blockers (bootstrap, uniform 401 + decoy hash, rate limit 5/burst, token tamper, logout scope, no user-creation routes, per-store user scoping, migration from 0001, seed idempotent, cascade delete). Advisories: shared article annotations (→ T2), two admins if new email belongs to a learner (fixed: other admins demoted + signed out; RED→GREEN in bootstrap.test.ts), nullable user_id on setting/secret (intentional for instance defaults), web search uses admin key (removed in T2).
+
 ## Next step
 
-Commit T1, native review (high: migration + auth), then T2.
+Native review of T1 range (a4dde70..HEAD), then T2.

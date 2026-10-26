@@ -19,6 +19,7 @@ export type BootstrapResult = {
  *   creates a second admin);
  * - otherwise (first start) the admin is created.
  * A changed email or password bumps the session epoch, ending that user's sessions.
+ * Any other admin is demoted to learner, so there is always exactly one admin.
  */
 export async function bootstrapAdmin(
   store: UserStore,
@@ -37,6 +38,12 @@ export async function bootstrapAdmin(
   if (target.role !== "admin") patch.role = "admin";
   if (!(await verifyPassword(credentials.password, target.passwordHash))) {
     patch.passwordHash = await hashPassword(credentials.password, params);
+  }
+  // The .env user is the only admin: any other admin is demoted and signed out.
+  for (const other of await store.listAdmins()) {
+    if (other.id !== target.id) {
+      await store.update(other.id, { role: "learner", revokeSessions: true });
+    }
   }
   if (Object.keys(patch).length === 0) return { action: "unchanged", user: target };
   if (patch.email !== undefined || patch.passwordHash !== undefined) patch.revokeSessions = true;
