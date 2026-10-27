@@ -61,7 +61,8 @@
   width: 100%;
   max-width: var(--content-max);
   margin-inline: auto;
-  padding: var(--space-5) var(--gutter) var(--space-6);
+  /* Bottom room so the floating buttons never cover the last content. */
+  padding: var(--space-5) var(--gutter) calc(var(--space-6) + var(--fab-size));
 }
 
 /* ---------- Footer strip: uppercase tracked line + server health ---------- */

@@ -232,6 +232,10 @@ answers use the state tokens.
   Anything fixed or sticky at the bottom (session bar, floating buttons, sheets' own content)
   must add it: `bottom: calc(var(--shell-bottom) + var(--space-3))`. Sheets and drawers sit
   above the tab bar (`--z-sheet` > `--z-tabbar`) and may cover it.
+- **Floating buttons:** all share the bottom-right corner and `--fab-size` (52px). The tutor
+  button sits at `--fab-bottom`; any page-level floating button (e.g. "I don't get it") stacks
+  above it at `--fab-stack`. `main` reserves `--fab-size` of bottom padding so they never cover
+  the last content.
 - **Layers:** `--z-sticky` 10 · `--z-fab` 15 · `--z-tabbar` 18 · `--z-sheet` 20 ·
   `--z-drawer` 30 · `--z-toast` 40 · `--z-overlay` 50 (full-screen takeovers).
 

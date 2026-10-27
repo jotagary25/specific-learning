@@ -24,10 +24,10 @@ Branch: `feat/sonorus-redesign` (from `feat/multi-user-providers` @ `247713d`) �
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
 | T1 | S1, S2, S3 | delegated writer (context backstop): tokens, fonts, global styles, app shell (desktop top bar + mobile bottom tab bar), shared UI primitives, `docs/design-system.md` | [x] | 014f5ac |
-| T2 | S1–S3 | parallel writer A: `features/today`, `features/units` | [ ] | |
-| T3 | S1–S3 | parallel writer B: `features/reading`, `features/vocabulary`, `features/writing` | [ ] | |
-| T4 | S1–S3 | parallel writer C: `features/progress`, `features/tutor`, `features/settings`, `features/auth`, `features/eval`, `features/home`, `shared/pwa` | [ ] | |
-| T5 | S1–S3 | parent: browser check mobile + desktop, fix findings | [ ] | |
+| T2 | S1–S3 | parallel writer A: `features/today`, `features/units` | [x] | 20b2b6a |
+| T3 | S1–S3 | parallel writer B: `features/reading`, `features/vocabulary`, `features/writing` | [x] | 172a2f9 |
+| T4 | S1–S3 | parallel writer C: `features/progress`, `features/tutor`, `features/settings`, `features/auth`, `features/eval`, `features/home`, `shared/pwa` | [x] | d228d26 |
+| T5 | S1–S3 | parent: browser check mobile + desktop, fix findings | [x] | see Log |
 
 Risk: none of the high-risk items (UI only). Writer reason for T2–T4: parallel independent units with disjoint edit surfaces.
 
@@ -40,6 +40,10 @@ Risk: none of the high-risk items (UI only). Writer reason for T2–T4: parallel
 
 - L5 (T1 evidence): tokens.css (10-step ramps, roles, `data-tone` lime/plum/cream remapping, state colors, 6px spacing, clamp type scale, motion, focus), self-hosted Gloock 400 + Commissioner 400/500/600 precached (woff2 globPatterns), global.css, 9 primitives in shared/ui (Button, IconButton, Eyebrow, Panel, Stepper, StatusDot, Stat, ProgressLine, Badge, Field + overlay styles + icons), shell with desktop top bar + mobile bottom tab bar + More menu, recolored PWA icons, docs/design-system.md. Web tests 132, typecheck/lint/build green. Notes for T2–T4: fixed-bottom elements add `var(--shell-bottom)`; overlays compose `shared/ui/Overlay.module.css`; old variable aliases removed after T4; light-only.
 
+- L6 (T2–T4): parallel writers restyled today+units (`20b2b6a`), reading+vocabulary+writing (`172a2f9`), progress+tutor+settings+auth+eval+home+pwa (`d228d26`); no test files changed; seam check: typecheck 0 errors, tests shared 224 / importer 40 / api 614 (+32 skipped) / web 132, lint clean, build 14 precache entries (fonts included).
+- L7 (T5 browser check, dev stack with a temporary APP_SECRET override because the user's `.env` APP_SECRET is invalid; override deleted afterwards): desktop login, Today, Units, unit story/exercises, Reading, Writing, Progress, Settings; mobile Today, unit exercises, Vocabulary, More menu. Finding fixed: "I don't get it" and "Ask the tutor" floating buttons overlapped (desktop + mobile) → shared `--fab-size/--fab-bottom/--fab-stack` tokens, explain button stacks above the tutor, `main` reserves bottom room; design-system.md updated. Screenshot fading in the in-app browser was a capture artifact (verified via computed styles and re-capture).
+- Primitive requests from writers (not done, optional): `Button` ref + leading icon + danger variant, shared `PageHeader`, larger Field label, 44px `Button size="sm"`, overlay override specificity.
+
 ## Next step
 
-T2–T4 in parallel.
+Feature complete. User: fix `APP_SECRET` in `.env` (current value fails validation); push/PR/merge are user decisions.

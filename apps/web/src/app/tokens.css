@@ -167,6 +167,10 @@
   --tabbar-height: 60px;
   /* Space the shell reserves at the bottom (the mobile tab bar). Fixed/sticky bottom UI adds it. */
   --shell-bottom: 0px;
+  /* Floating action buttons: one size, stacked upward from the tutor button. */
+  --fab-size: 52px;
+  --fab-bottom: calc(var(--shell-bottom) + var(--space-3));
+  --fab-stack: calc(var(--fab-bottom) + var(--fab-size) + var(--space-2));
 
   /* --- Shape --- */
   --radius: 0;
