@@ -5,49 +5,61 @@ import {
   sentenceAt,
 } from "@english-course/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type MouseEvent, useMemo, useState } from "react";
+import { type MouseEvent, type ReactNode, useMemo, useState } from "react";
+import { Button, CloseIcon, Eyebrow, Field, IconButton } from "../../shared/ui/index.ts";
 import styles from "./Reading.module.css";
 import { glossWord, readingKeys, saveWord } from "./reading.api.ts";
 import { hostOf, keyedParagraphs, tokenize } from "./reading.model.ts";
 
 /** Attribution required by CC BY-ND (and shown for every source): authors, outlet, link, license. */
 export function Attribution({ article }: { article: ArticleView }) {
+  const kicker = [
+    article.topic ?? "Reading",
+    article.estLevel,
+    article.wordCount > 0 ? `${article.wordCount} words` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <header className={styles.attribution}>
-      <h2 className={styles.headline}>{article.title}</h2>
-      {article.authors.length > 0 ? (
-        <ul className={styles.authors} aria-label="Authors">
-          {article.authors.map((author) => (
-            <li key={author}>{author}</li>
-          ))}
-        </ul>
-      ) : null}
-      <p className={styles.muted}>
-        {article.outlet ?? hostOf(article.url)}
-        {article.publishedAt ? ` · ${new Date(article.publishedAt).toLocaleDateString()}` : ""} ·{" "}
-        <a href={article.url} target="_blank" rel="noreferrer">
-          Read the original
-        </a>
-      </p>
-      <p className={styles.license}>
-        {article.license === "CC BY-ND 4.0" ? (
-          <>
-            Republished unmodified under{" "}
-            <a
-              href="https://creativecommons.org/licenses/by-nd/4.0/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              CC BY-ND 4.0
-            </a>
-            . Annotations are ours; the text is the author's.
-          </>
-        ) : (
-          <>
-            License: {article.license ?? "unknown"} — for personal study only. Source linked above.
-          </>
-        )}
-      </p>
+      <Eyebrow rule>{kicker}</Eyebrow>
+      <h2 className={styles.articleTitle}>{article.title}</h2>
+      <div className={styles.byline}>
+        {article.authors.length > 0 ? (
+          <ul className={styles.authors} aria-label="Authors">
+            {article.authors.map((author) => (
+              <li key={author}>{author}</li>
+            ))}
+          </ul>
+        ) : null}
+        <p className={styles.source}>
+          {article.outlet ?? hostOf(article.url)}
+          {article.publishedAt ? ` · ${new Date(article.publishedAt).toLocaleDateString()}` : ""} ·{" "}
+          <a href={article.url} target="_blank" rel="noreferrer">
+            Read the original
+          </a>
+        </p>
+        <p className={styles.license}>
+          {article.license === "CC BY-ND 4.0" ? (
+            <>
+              Republished unmodified under{" "}
+              <a
+                href="https://creativecommons.org/licenses/by-nd/4.0/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                CC BY-ND 4.0
+              </a>
+              . Annotations are ours; the text is the author's.
+            </>
+          ) : (
+            <>
+              License: {article.license ?? "unknown"} — for personal study only. Source linked
+              above.
+            </>
+          )}
+        </p>
+      </div>
     </header>
   );
 }
@@ -79,34 +91,34 @@ function WordSheet({
 
   return (
     <div className={styles.sheet} role="dialog" aria-label={`Meaning of ${lookup.word}`}>
-      <div className={styles.row}>
-        <strong>{lookup.word}</strong>
-        <button type="button" className={styles.linkButton} onClick={onClose}>
-          Close
-        </button>
+      <div className={styles.sheetHeader}>
+        <p className={styles.sheetWord}>{lookup.word}</p>
+        <IconButton label="Close" size="sm" onClick={onClose}>
+          <CloseIcon size={18} />
+        </IconButton>
       </div>
       {query.isPending ? <p className={styles.muted}>Looking it up…</p> : null}
       {query.isError ? <p className={styles.error}>{query.error.message}</p> : null}
       {gloss ? (
         <>
-          <p>
-            <span className={styles.muted}>
-              {gloss.lemma} · {gloss.partOfSpeech}
-            </span>
-          </p>
+          <Eyebrow muted>
+            {gloss.lemma} · {gloss.partOfSpeech}
+          </Eyebrow>
           <p lang="es" className={styles.gloss}>
             {gloss.glossEs}
           </p>
           <p>{gloss.definitionEn}</p>
           <p className={styles.example}>{gloss.example}</p>
-          <button
-            type="button"
-            className={styles.primary}
-            disabled={saved || save.isPending}
-            onClick={() => save.mutate()}
-          >
-            {saved ? "Saved" : "Save word"}
-          </button>
+          <div className={styles.actions}>
+            <Button
+              variant={saved ? "secondary" : "primary"}
+              fullWidth="mobile"
+              disabled={saved || save.isPending}
+              onClick={() => save.mutate()}
+            >
+              {saved ? "Saved" : "Save word"}
+            </Button>
+          </div>
           {save.isError ? <p className={styles.error}>{save.error.message}</p> : null}
         </>
       ) : null}
@@ -118,7 +130,7 @@ function WordSheet({
  * The verbatim article. Tapping a word opens its meaning (annotated glossary words are subtly
  * underlined); a lookup field is the keyboard alternative.
  */
-export function ArticleBody({ article }: { article: ArticleView }) {
+export function ArticleBody({ article, aside }: { article: ArticleView; aside?: ReactNode }) {
   const paragraphs = useMemo(() => paragraphsOf(article.text), [article.text]);
   const glossary = article.annotations?.glossary ?? [];
   const [lookup, setLookup] = useState<Lookup | null>(null);
@@ -147,7 +159,7 @@ export function ArticleBody({ article }: { article: ArticleView }) {
   };
 
   return (
-    <div className={styles.card}>
+    <div className={styles.spread}>
       {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: tap-a-word lookup; the field below is the keyboard path. */}
       <div className={styles.article} onClick={onClick}>
         {keyedParagraphs(paragraphs).map(({ key, index: p, text: paragraph }) => (
@@ -170,26 +182,29 @@ export function ArticleBody({ article }: { article: ArticleView }) {
           </p>
         ))}
       </div>
-      <form
-        className={styles.inline}
-        onSubmit={(event) => {
-          event.preventDefault();
-          lookUpTyped();
-        }}
-      >
-        <label className={styles.muted} htmlFor="lookup">
-          Look up a word
-        </label>
-        <input
-          id="lookup"
-          className={styles.input}
-          value={typed}
-          onChange={(event) => setTyped(event.target.value)}
-        />
-        <button type="submit" className={styles.secondary}>
-          Look up
-        </button>
-      </form>
+      <aside className={styles.aside} aria-label="Reading tools">
+        {aside}
+        <form
+          className={styles.lookup}
+          onSubmit={(event) => {
+            event.preventDefault();
+            lookUpTyped();
+          }}
+        >
+          <Field id="lookup" label="Look up a word">
+            {(control) => (
+              <input
+                {...control}
+                value={typed}
+                onChange={(event) => setTyped(event.target.value)}
+              />
+            )}
+          </Field>
+          <Button type="submit" variant="secondary">
+            Look up
+          </Button>
+        </form>
+      </aside>
       {lookup ? (
         <WordSheet
           key={`${lookup.word}|${lookup.sentence}`}

@@ -1,9 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
+import { ArrowLeftIcon, ArrowRightIcon, Button, Eyebrow, Panel } from "../../shared/ui/index.ts";
 import { LevelLine, MissionCard } from "./MissionCard.tsx";
 import styles from "./Writing.module.css";
 import { WritingWorkspace } from "./WritingWorkspace.tsx";
 import { fetchCurrent, generateMission, writingKeys } from "./writing.api.ts";
+
+/** Page title block of the writing pages: eyebrow, Gloock title, side link, hairline. */
+export function WritingHeader({
+  eyebrow,
+  title,
+  link,
+  back = false,
+}: {
+  eyebrow: string;
+  title: string;
+  link: { to: string; label: string };
+  back?: boolean;
+}) {
+  return (
+    <header className={styles.header}>
+      <div className={styles.headerText}>
+        <Eyebrow rule>{eyebrow}</Eyebrow>
+        <h1 className={styles.title}>{title}</h1>
+      </div>
+      <Link to={link.to} className={styles.sideLink}>
+        {back ? <ArrowLeftIcon size={18} /> : null}
+        {link.label}
+        {back ? null : <ArrowRightIcon size={18} />}
+      </Link>
+    </header>
+  );
+}
 
 export function WritingPage() {
   const queryClient = useQueryClient();
@@ -20,12 +48,11 @@ export function WritingPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.row}>
-        <h1 className={styles.title}>Writing</h1>
-        <Link to="/writing/history" className={styles.linkButton}>
-          History
-        </Link>
-      </div>
+      <WritingHeader
+        eyebrow="Personal brand · weekly post"
+        title="Writing"
+        link={{ to: "/writing/history", label: "History" }}
+      />
       {current.isPending ? <p className={styles.muted}>Loading…</p> : null}
       {current.isError ? (
         <p role="alert" className={styles.error}>
@@ -34,24 +61,28 @@ export function WritingPage() {
       ) : null}
       {current.data ? <LevelLine level={current.data.level} /> : null}
       {current.data && !current.data.mission ? (
-        <section className={styles.card}>
-          <p>Write a short post for your personal brand, built on what you read this week.</p>
+        <Panel tone="lime" padding="lg" className={styles.start}>
+          <Eyebrow rule>Next mission</Eyebrow>
+          <h2 className={styles.startTitle}>Your week, in your words.</h2>
+          <p className={styles.lead}>
+            Write a short post for your personal brand, built on what you read this week.
+          </p>
           <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.primary}
+            <Button
+              arrow
+              fullWidth="mobile"
               disabled={generate.isPending}
               onClick={() => generate.mutate()}
             >
               {generate.isPending ? "Preparing…" : "Get a mission"}
-            </button>
+            </Button>
           </div>
           {generate.isError ? (
             <p role="alert" className={styles.error}>
               {generate.error.message}
             </p>
           ) : null}
-        </section>
+        </Panel>
       ) : null}
       {current.data?.mission && current.data.submission ? (
         <>

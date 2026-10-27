@@ -1,5 +1,6 @@
 import type { PublishedVersion, RewriteView } from "@english-course/shared";
 import { useState } from "react";
+import { Badge, Button, Eyebrow } from "../../shared/ui/index.ts";
 import styles from "./Writing.module.css";
 import { versionLabel } from "./writing.model.ts";
 
@@ -35,51 +36,61 @@ export function Rewrites({
   ];
 
   return (
-    <section aria-labelledby="rewrites-title" className={styles.page}>
-      <h2 id="rewrites-title" className={styles.subheading}>
-        Natural versions
-      </h2>
-      <p className={styles.muted}>
-        Compare your fixed text with how a native writer might say it. Copy the one you want to
-        post.
-      </p>
+    <section aria-labelledby="rewrites-title" className={styles.rewrites}>
+      <div className={styles.sectionHead}>
+        <Eyebrow rule muted>
+          Registers
+        </Eyebrow>
+        <h2 id="rewrites-title" className={styles.sectionTitle}>
+          Natural versions
+        </h2>
+        <p className={styles.muted}>
+          Compare your fixed text with how a native writer might say it. Copy the one you want to
+          post.
+        </p>
+      </div>
       <div className={styles.versions}>
-        {versions.map((version) => {
+        {versions.map((version, index) => {
           const label = versionLabel(version.id);
           return (
-            <article key={version.id} className={styles.card} aria-label={label}>
-              <div className={styles.row}>
-                <strong>{label}</strong>
-                {publishedVersion === version.id ? (
-                  <span className={`${styles.badge} ${styles.fixed}`}>Published</span>
-                ) : null}
+            <article
+              key={version.id}
+              className={styles.version}
+              data-own={version.id === "own" || undefined}
+              aria-label={label}
+            >
+              <div className={styles.versionHead}>
+                <Eyebrow as="span">
+                  <span className="numeral">{String(index + 1).padStart(2, "0")}</span> {label}
+                </Eyebrow>
+                {publishedVersion === version.id ? <Badge tone="correct">Published</Badge> : null}
               </div>
               <p className={styles.versionText}>{version.text}</p>
               {version.noteEs ? (
-                <p lang="es" className={styles.muted}>
+                <p lang="es" className={styles.versionNote}>
                   {version.noteEs}
                 </p>
               ) : null}
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  className={styles.secondary}
+              <div className={styles.versionActions}>
+                <Button
+                  variant="secondary"
+                  size="sm"
                   aria-label={`Copy ${label}`}
                   onClick={async () =>
                     setCopied((await copy(version.text)) ? version.id : "failed")
                   }
                 >
                   {copied === version.id ? "Copied" : "Copy"}
-                </button>
+                </Button>
                 {canMarkPublished && publishedVersion !== version.id ? (
-                  <button
-                    type="button"
-                    className={styles.secondary}
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     aria-label={`I published ${label}`}
                     onClick={() => onMarkPublished(version.id)}
                   >
                     I published this
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             </article>

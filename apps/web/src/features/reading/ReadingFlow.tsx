@@ -2,6 +2,7 @@ import type { ArticleDetail, ReadingStep } from "@english-course/shared";
 import { useMutation } from "@tanstack/react-query";
 import { type JSX, useState } from "react";
 import { Link } from "react-router";
+import { Button, Eyebrow, Field, Panel, Stat, Stepper } from "../../shared/ui/index.ts";
 import {
   PredictStep,
   QuestionsStep,
@@ -13,7 +14,14 @@ import {
 } from "./FlowSteps.tsx";
 import styles from "./Reading.module.css";
 import { completeReading, goToStep, saveOpinion } from "./reading.api.ts";
-import { FLOW_STEPS, type FlowStep, nextStep, reachable, STEP_LABELS } from "./reading.model.ts";
+import {
+  FLOW_STEPS,
+  type FlowStep,
+  nextStep,
+  reachable,
+  STEP_HINTS,
+  STEP_LABELS,
+} from "./reading.model.ts";
 
 function OpinionStep({ detail }: StepProps) {
   const refresh = useRefresh();
@@ -27,31 +35,34 @@ function OpinionStep({ detail }: StepProps) {
   });
   return (
     <form
-      className={styles.card}
+      className={styles.step}
       onSubmit={(event) => {
         event.preventDefault();
         if (text.trim()) finish.mutate();
       }}
     >
-      <label htmlFor="opinion" className={styles.label}>
-        {detail.article.annotations?.opinionPrompt ?? "What do you think? One sentence."}
-      </label>
-      <input
+      <Eyebrow rule muted>
+        Your take
+      </Eyebrow>
+      <Field
         id="opinion"
-        className={styles.input}
-        maxLength={500}
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-      />
-      <p className={styles.muted}>Your opinions become the seed of this week's post.</p>
+        className={styles.bigField}
+        label={detail.article.annotations?.opinionPrompt ?? "What do you think? One sentence."}
+        hint="Your opinions become the seed of this week's post."
+      >
+        {(control) => (
+          <input
+            {...control}
+            maxLength={500}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+          />
+        )}
+      </Field>
       <div className={styles.actions}>
-        <button
-          type="submit"
-          className={styles.primary}
-          disabled={!text.trim() || finish.isPending}
-        >
+        <Button type="submit" arrow fullWidth="mobile" disabled={!text.trim() || finish.isPending}>
           Finish reading
-        </button>
+        </Button>
       </div>
       {finish.isError ? <p className={styles.error}>{finish.error.message}</p> : null}
     </form>
@@ -61,16 +72,24 @@ function OpinionStep({ detail }: StepProps) {
 function Done({ detail }: { detail: ArticleDetail }) {
   const { session } = detail;
   return (
-    <section className={styles.banner} role="status" aria-label="Reading completed">
-      <p className={styles.bannerTitle}>Reading done!</p>
-      <p>
-        {session.answers.length} questions answered · {session.savedWords.length} words saved
-        {session.opinion ? ` · opinion: “${session.opinion}”` : ""}
-      </p>
+    <Panel
+      tone="lime"
+      padding="lg"
+      className={styles.done}
+      role="status"
+      aria-label="Reading completed"
+    >
+      <Eyebrow rule>Finished</Eyebrow>
+      <p className={styles.doneTitle}>Reading done!</p>
+      <div className={styles.doneStats}>
+        <Stat stacked size="lg" label="Questions" value={session.answers.length} />
+        <Stat stacked size="lg" label="Words saved" value={session.savedWords.length} />
+      </div>
+      {session.opinion ? <p className={styles.doneQuote}>“{session.opinion}”</p> : null}
       <p>
         Tomorrow: a 2-minute recall. <Link to="/reading/history">Past readings</Link>
       </p>
-    </section>
+    </Panel>
   );
 }
 
@@ -99,6 +118,8 @@ export function ReadingFlow({ detail }: { detail: ArticleDetail }) {
   const allowed = reachable(sessionStep);
   const current: FlowStep | "done" = viewing && allowed.includes(viewing) ? viewing : sessionStep;
   const View = current === "done" ? null : STEP_VIEWS[current];
+  const done = (step: FlowStep) =>
+    sessionStep === "done" || FLOW_STEPS.indexOf(step) < FLOW_STEPS.indexOf(sessionStep);
 
   const onContinue = () => {
     if (current === "done") return;
@@ -114,24 +135,19 @@ export function ReadingFlow({ detail }: { detail: ArticleDetail }) {
 
   return (
     <div className={styles.flow}>
-      <nav aria-label="Reading steps">
-        <ol className={styles.stepper}>
-          {FLOW_STEPS.map((step, index) => (
-            <li key={step}>
-              <button
-                type="button"
-                className={styles.stepButton}
-                aria-current={step === current ? "step" : undefined}
-                disabled={!allowed.includes(step)}
-                onClick={() => setViewing(step)}
-              >
-                <span className={styles.stepIndex}>{index + 1}</span>
-                <span className={styles.stepLabel}>{STEP_LABELS[step]}</span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      </nav>
+      <Stepper
+        label="Reading steps"
+        className={styles.stepper}
+        current={current}
+        onSelect={(id) => setViewing(id as FlowStep)}
+        steps={FLOW_STEPS.map((step) => ({
+          id: step,
+          title: STEP_LABELS[step],
+          subtitle: STEP_HINTS[step],
+          disabled: !allowed.includes(step),
+          done: done(step),
+        }))}
+      />
       {sessionStep === "done" && current === "done" ? <Done detail={detail} /> : null}
       {View ? <View detail={detail} onContinue={onContinue} /> : null}
       {move.isError ? <p className={styles.error}>{move.error.message}</p> : null}

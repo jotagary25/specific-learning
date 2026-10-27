@@ -1,7 +1,19 @@
-import { highlightSpans, type SubmissionView } from "@english-course/shared";
+import {
+  highlightSpans,
+  type SubmissionView,
+  type WritingErrorStatus,
+} from "@english-course/shared";
 import { Link } from "react-router";
+import { Badge, Eyebrow, type StateTone } from "../../shared/ui/index.ts";
 import styles from "./Writing.module.css";
 import { errorStatusLabel, errorTypeLabel } from "./writing.model.ts";
+
+const STATUS_TONE: Record<WritingErrorStatus, StateTone> = {
+  open: "almost",
+  remaining: "almost",
+  changed: "incorrect",
+  fixed: "correct",
+};
 
 /** The learner's live text with the open errors highlighted, plus one Spanish hint per error. */
 export function ReviewPanel({ text, submission }: { text: string; submission: SubmissionView }) {
@@ -12,46 +24,52 @@ export function ReviewPanel({ text, submission }: { text: string; submission: Su
     open.map((error) => ({ id: error.id, span: error.span })),
   );
   const numberOf = (id: string) => numbered.find((error) => error.id === id)?.n;
+  const scores = submission.scores;
 
   return (
-    <section className={styles.card} aria-labelledby="review-title">
-      <h2 id="review-title" className={styles.subheading}>
-        Review
-      </h2>
-      {submission.scores ? (
+    <section className={styles.review} aria-labelledby="review-title">
+      <div className={styles.sectionHead}>
+        <Eyebrow rule muted>
+          Editor's notes · round {submission.round + 1}
+        </Eyebrow>
+        <h2 id="review-title" className={styles.sectionTitle}>
+          Review
+        </h2>
+      </div>
+      {scores ? (
         <dl className={styles.scores}>
-          <div>
+          <div className={styles.overall}>
             <dt>Overall</dt>
-            <dd>{submission.overall}</dd>
+            <dd className="numeral">{submission.overall}</dd>
           </div>
           <div>
             <dt>Grammar</dt>
-            <dd>{submission.scores.grammar}</dd>
+            <dd className="numeral">{scores.grammar}</dd>
           </div>
           <div>
             <dt>Clarity</dt>
-            <dd>{submission.scores.clarity}</dd>
+            <dd className="numeral">{scores.clarity}</dd>
           </div>
           <div>
             <dt>Vocabulary</dt>
-            <dd>{submission.scores.vocabulary}</dd>
+            <dd className="numeral">{scores.vocabulary}</dd>
           </div>
           <div>
             <dt>Naturalness</dt>
-            <dd>{submission.scores.naturalness}</dd>
+            <dd className="numeral">{scores.naturalness}</dd>
           </div>
         </dl>
       ) : null}
       {submission.strengthEs ? (
-        <p lang="es">
+        <p lang="es" className={styles.strength}>
           <strong>What worked:</strong> {submission.strengthEs}
         </p>
       ) : null}
 
       {submission.errors.length === 0 ? (
-        <p>No errors to fix. Nice work.</p>
+        <p className={styles.lead}>No errors to fix. Nice work.</p>
       ) : (
-        <>
+        <div className={styles.reviewGrid}>
           <p className={styles.text} data-testid="highlighted-text">
             {segments.map((segment, index) =>
               segment.errorId ? (
@@ -68,48 +86,49 @@ export function ReviewPanel({ text, submission }: { text: string; submission: Su
           </p>
           <ol className={styles.errors} aria-label="Errors to fix">
             {numbered.map((error) => (
-              <li key={error.id} className={styles.errorItem}>
-                <div className={styles.row}>
-                  <strong>
-                    {error.n}. {errorTypeLabel(error.type)}
-                    {error.origin === "recheck" ? " (new)" : ""}
-                  </strong>
-                  <span
-                    className={`${styles.badge} ${error.status === "fixed" ? styles.fixed : styles.pending}`}
-                  >
-                    {errorStatusLabel(error.status)}
-                  </span>
-                </div>
-                <p lang="es">{error.hintEs}</p>
-                {error.feedbackEs ? (
-                  <p lang="es" className={styles.muted}>
-                    {error.feedbackEs}
-                  </p>
-                ) : null}
-                {error.unit ? (
-                  <p>
-                    <Link to={`/units/${error.unit.id}`} className={styles.linkButton}>
-                      Unit {error.unit.id} · {error.unit.title}
-                    </Link>
-                  </p>
-                ) : null}
-                {missing.includes(error.id) ? (
-                  <p className={styles.muted}>"{error.span}" is no longer in your text.</p>
-                ) : null}
-                {error.reveal ? (
-                  <div className={styles.reveal}>
-                    <p lang="es">{error.reveal.explanationEs}</p>
-                    {error.reveal.correctedFragment ? (
-                      <p>
-                        Correct form: <strong>{error.reveal.correctedFragment}</strong>
-                      </p>
-                    ) : null}
+              <li key={error.id} className={styles.errorItem} data-status={error.status}>
+                <span className={`numeral ${styles.errorNumeral}`} aria-hidden="true">
+                  {String(error.n).padStart(2, "0")}
+                </span>
+                <div className={styles.errorBody}>
+                  <div className={styles.errorHead}>
+                    <strong>
+                      {error.n}. {errorTypeLabel(error.type)}
+                      {error.origin === "recheck" ? " (new)" : ""}
+                    </strong>
+                    <Badge tone={STATUS_TONE[error.status]}>{errorStatusLabel(error.status)}</Badge>
                   </div>
-                ) : null}
+                  <p lang="es">{error.hintEs}</p>
+                  {error.feedbackEs ? (
+                    <p lang="es" className={styles.muted}>
+                      {error.feedbackEs}
+                    </p>
+                  ) : null}
+                  {error.unit ? (
+                    <p className={styles.small}>
+                      <Link to={`/units/${error.unit.id}`}>
+                        Unit {error.unit.id} · {error.unit.title}
+                      </Link>
+                    </p>
+                  ) : null}
+                  {missing.includes(error.id) ? (
+                    <p className={styles.muted}>"{error.span}" is no longer in your text.</p>
+                  ) : null}
+                  {error.reveal ? (
+                    <div className={styles.reveal}>
+                      <p lang="es">{error.reveal.explanationEs}</p>
+                      {error.reveal.correctedFragment ? (
+                        <p>
+                          Correct form: <strong>{error.reveal.correctedFragment}</strong>
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ol>
-        </>
+        </div>
       )}
     </section>
   );

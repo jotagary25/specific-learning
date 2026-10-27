@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
+import { ArrowRightIcon, Button, Eyebrow, Panel } from "../../shared/ui/index.ts";
 import styles from "./Reading.module.css";
 import { ReadingFlow } from "./ReadingFlow.tsx";
 import { RecallCard } from "./RecallCard.tsx";
@@ -13,19 +14,16 @@ function EmptyState() {
   });
   const result = run.data;
   return (
-    <div className={styles.card}>
-      <p className={styles.muted}>
+    <Panel tone="lime" padding="lg" className={styles.empty}>
+      <Eyebrow rule>The editor's desk</Eyebrow>
+      <h2 className={styles.emptyTitle}>Nothing on the press yet.</h2>
+      <p className={styles.lead}>
         Today's article is not ready yet. The editor picks one every morning.
       </p>
       <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.primary}
-          disabled={run.isPending}
-          onClick={() => run.mutate()}
-        >
+        <Button arrow fullWidth="mobile" disabled={run.isPending} onClick={() => run.mutate()}>
           {run.isPending ? "Choosing an article…" : "Run editor now"}
-        </button>
+        </Button>
       </div>
       {result?.status === "no-candidates" ? (
         <p className={styles.error} role="status">
@@ -37,7 +35,35 @@ function EmptyState() {
         </p>
       ) : null}
       {run.isError ? <p className={styles.error}>{run.error.message}</p> : null}
-    </div>
+    </Panel>
+  );
+}
+
+/** Page title block shared by the reading pages: eyebrow, Gloock title, side link, hairline. */
+export function ReadingHeader({
+  id,
+  eyebrow,
+  title,
+  link,
+}: {
+  id: string;
+  eyebrow: string;
+  title: string;
+  link: { to: string; label: string };
+}) {
+  return (
+    <header className={styles.header}>
+      <div className={styles.headerText}>
+        <Eyebrow rule>{eyebrow}</Eyebrow>
+        <h1 id={id} className={styles.title}>
+          {title}
+        </h1>
+      </div>
+      <Link to={link.to} className={styles.sideLink}>
+        {link.label}
+        <ArrowRightIcon size={18} />
+      </Link>
+    </header>
   );
 }
 
@@ -46,14 +72,12 @@ export function ReadingPage() {
   const today = useQuery({ queryKey: readingKeys.today, queryFn: fetchToday });
   return (
     <section className={styles.page} aria-labelledby="reading-title">
-      <div className={styles.row}>
-        <h1 id="reading-title" className={styles.title}>
-          Today's reading
-        </h1>
-        <Link to="/reading/history" className={styles.muted}>
-          History
-        </Link>
-      </div>
+      <ReadingHeader
+        id="reading-title"
+        eyebrow="Daily reading · 6 steps"
+        title="Today's reading"
+        link={{ to: "/reading/history", label: "History" }}
+      />
       <RecallCard />
       {today.isPending ? <p className={styles.muted}>Loading…</p> : null}
       {today.isError ? <p className={styles.error}>{today.error.message}</p> : null}

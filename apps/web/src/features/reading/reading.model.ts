@@ -12,6 +12,16 @@ export const STEP_LABELS: Record<FlowStep, string> = {
   opinion: "Opinion",
 };
 
+/** Stepper subtitles: what each step asks of the learner. */
+export const STEP_HINTS: Record<FlowStep, string> = {
+  predict: "Guess the story",
+  read: "Tap any word",
+  questions: "Think beyond",
+  spots: "Find the form",
+  retell: "From memory",
+  opinion: "One sentence",
+};
+
 export const nextStep = (step: FlowStep): ReadingStep =>
   FLOW_STEPS[FLOW_STEPS.indexOf(step) + 1] ?? "done";
 

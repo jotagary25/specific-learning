@@ -2,6 +2,7 @@ import type { QueueCard, SrsRating } from "@english-course/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
+import { ArrowRightIcon, Button, Eyebrow, Panel, Stat } from "../../shared/ui/index.ts";
 import { ReviewCard } from "./ReviewCard.tsx";
 import styles from "./Vocabulary.module.css";
 import { completeSession, fetchQueue, reviewCard, vocabularyKeys } from "./vocabulary.api.ts";
@@ -23,15 +24,19 @@ function EndScreen({ tally, started }: { tally: Tally; started: number }) {
   }, [tally, started, mutate]);
 
   return (
-    <div className={styles.end} role="status">
-      <h2 className={styles.subheading}>That's it for now</h2>
+    <Panel tone="lime" padding="lg" className={styles.end} role="status">
+      <Eyebrow rule>Session complete</Eyebrow>
+      <h2 className={styles.endTitle}>That's it for now</h2>
       {tally.reviewed > 0 ? (
         <>
-          <p>
-            You reviewed <strong>{tally.reviewed}</strong> {tally.reviewed === 1 ? "card" : "cards"}
-            .
-          </p>
-          <ul className={styles.counts}>
+          <Stat
+            stacked
+            size="lg"
+            label="Reviewed"
+            value={tally.reviewed}
+            unit={tally.reviewed === 1 ? " card" : " cards"}
+          />
+          <ul className={styles.counts} aria-label="Ratings">
             <li>Again: {tally.again}</li>
             <li>Hard: {tally.hard}</li>
             <li>Good: {tally.good}</li>
@@ -39,17 +44,17 @@ function EndScreen({ tally, started }: { tally: Tally; started: number }) {
           </ul>
         </>
       ) : (
-        <p className={styles.muted}>Nothing is due right now. Come back later.</p>
+        <p className={styles.lead}>Nothing is due right now. Come back later.</p>
       )}
       <div className={styles.actions}>
-        <Link to="/" className={styles.secondary}>
+        <Button to="/" variant="secondary">
           Back to Home
-        </Link>
-        <Link to="/vocabulary/cards" className={styles.linkButton}>
+        </Button>
+        <Button to="/vocabulary/cards" variant="ghost">
           Browse cards
-        </Link>
+        </Button>
       </div>
-    </div>
+    </Panel>
   );
 }
 
@@ -94,6 +99,34 @@ function Session({ cards }: { cards: QueueCard[] }) {
   );
 }
 
+/** Page title block of the vocabulary pages: eyebrow, Gloock title, side link, hairline. */
+export function VocabularyHeader({
+  id,
+  eyebrow,
+  title,
+  link,
+}: {
+  id: string;
+  eyebrow: string;
+  title: string;
+  link: { to: string; label: string };
+}) {
+  return (
+    <header className={styles.header}>
+      <div className={styles.headerText}>
+        <Eyebrow rule>{eyebrow}</Eyebrow>
+        <h1 id={id} className={styles.title}>
+          {title}
+        </h1>
+      </div>
+      <Link to={link.to} className={styles.sideLink}>
+        {link.label}
+        <ArrowRightIcon size={18} />
+      </Link>
+    </header>
+  );
+}
+
 /** `/vocabulary`: one short review session (≤10 cards), then stop. No endless mode. */
 export function VocabularyPage() {
   // The batch is fixed when the session starts; reviews must not reshuffle it.
@@ -106,14 +139,12 @@ export function VocabularyPage() {
   });
   return (
     <section className={styles.page} aria-labelledby="vocabulary-title">
-      <div className={styles.row}>
-        <h1 id="vocabulary-title" className={styles.title}>
-          Vocabulary review
-        </h1>
-        <Link to="/vocabulary/cards" className={styles.muted}>
-          Cards
-        </Link>
-      </div>
+      <VocabularyHeader
+        id="vocabulary-title"
+        eyebrow="Spaced repetition · up to 10 cards"
+        title="Vocabulary review"
+        link={{ to: "/vocabulary/cards", label: "Cards" }}
+      />
       {queue.isPending ? <p className={styles.muted}>Loading…</p> : null}
       {queue.isError ? <p className={styles.error}>{queue.error.message}</p> : null}
       {queue.data ? <Session cards={queue.data.cards} /> : null}

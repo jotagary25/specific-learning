@@ -1,9 +1,9 @@
 import { FORMAT_LABELS } from "@english-course/shared";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router";
-import { Sparkline } from "../../shared/ui/Sparkline.tsx";
+import { Badge, Eyebrow, Panel, Sparkline, Stat } from "../../shared/ui/index.ts";
 import { LevelLine } from "./MissionCard.tsx";
 import styles from "./Writing.module.css";
+import { WritingHeader } from "./WritingPage.tsx";
 import { fetchHistory, writingKeys } from "./writing.api.ts";
 import { flowLabel, versionLabel } from "./writing.model.ts";
 
@@ -17,12 +17,12 @@ export function WritingHistoryPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.row}>
-        <h1 className={styles.title}>Writing history</h1>
-        <Link to="/writing" className={styles.linkButton}>
-          Back to writing
-        </Link>
-      </div>
+      <WritingHeader
+        eyebrow="Writing archive"
+        title="Writing history"
+        link={{ to: "/writing", label: "Back to writing" }}
+        back
+      />
       {history.isPending ? <p className={styles.muted}>Loading…</p> : null}
       {history.isError ? (
         <p role="alert" className={styles.error}>
@@ -31,29 +31,44 @@ export function WritingHistoryPage() {
       ) : null}
       {history.data ? <LevelLine level={history.data.level} /> : null}
       {scores.length > 1 ? (
-        <figure className={styles.card}>
-          <Sparkline values={scores} label={`Overall scores over time: ${scores.join(", ")}`} />
-          <figcaption className={styles.muted}>
-            Overall score of completed missions, oldest to newest.
-          </figcaption>
-        </figure>
+        <Panel tone="plum" padding="md" as="div" className={styles.trend}>
+          <figure className={styles.trendFigure}>
+            <div className={styles.trendHead}>
+              <Eyebrow>Overall score</Eyebrow>
+              <Stat size="lg" label="Latest" value={scores[scores.length - 1]} />
+            </div>
+            <Sparkline
+              className={styles.sparkline}
+              values={scores}
+              label={`Overall scores over time: ${scores.join(", ")}`}
+            />
+            <figcaption className={styles.muted}>
+              Overall score of completed missions, oldest to newest.
+            </figcaption>
+          </figure>
+        </Panel>
       ) : null}
       {history.data && missions.length === 0 ? (
         <p className={styles.muted}>No missions yet.</p>
       ) : null}
       <ul className={styles.history}>
         {missions.map((m) => (
-          <li key={m.id} className={styles.card}>
-            <div className={styles.row}>
-              <strong>{m.title}</strong>
-              <span className={styles.chip}>{FORMAT_LABELS[m.format]}</span>
+          <li key={m.id} className={styles.historyRow}>
+            <span className={`numeral ${styles.historyScore}`} aria-hidden="true">
+              {m.overall !== null ? m.overall : "—"}
+            </span>
+            <div className={styles.historyText}>
+              <div className={styles.historyHead}>
+                <strong className={styles.historyTitle}>{m.title}</strong>
+                <Badge>{FORMAT_LABELS[m.format]}</Badge>
+              </div>
+              <p className={styles.muted}>
+                {new Date(m.createdAt).toLocaleDateString()} · {flowLabel(m.status)}
+                {m.overall !== null ? ` · score ${m.overall}` : ""}
+                {m.errorCount > 0 ? ` · fixed ${m.fixedCount} of ${m.errorCount} errors` : ""}
+                {m.publishedVersion ? ` · published: ${versionLabel(m.publishedVersion)}` : ""}
+              </p>
             </div>
-            <p className={styles.muted}>
-              {new Date(m.createdAt).toLocaleDateString()} · {flowLabel(m.status)}
-              {m.overall !== null ? ` · score ${m.overall}` : ""}
-              {m.errorCount > 0 ? ` · fixed ${m.fixedCount} of ${m.errorCount} errors` : ""}
-              {m.publishedVersion ? ` · published: ${versionLabel(m.publishedVersion)}` : ""}
-            </p>
           </li>
         ))}
       </ul>

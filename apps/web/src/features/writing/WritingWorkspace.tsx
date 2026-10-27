@@ -7,7 +7,7 @@ import {
 } from "@english-course/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Button, Eyebrow, Panel } from "../../shared/ui/index.ts";
 import { ReviewPanel } from "./ReviewPanel.tsx";
 import { Rewrites } from "./Rewrites.tsx";
 import styles from "./Writing.module.css";
@@ -107,7 +107,7 @@ export function WritingWorkspace({
   const closed = status === "completed" || status === "skipped";
 
   return (
-    <div className={styles.page}>
+    <div className={styles.workspace}>
       {notice ? (
         <p role="alert" className={styles.notice}>
           {notice}
@@ -115,9 +115,9 @@ export function WritingWorkspace({
       ) : null}
 
       {!closed ? (
-        <section className={styles.card} aria-labelledby="editor-label">
-          <label className={styles.label} id="editor-label">
-            {reviewing ? "Fix your text" : "Your text"}
+        <section className={styles.editor} aria-labelledby="editor-label">
+          <label className={styles.editorLabel} id="editor-label">
+            <span className={styles.editorTitle}>{reviewing ? "Fix your text" : "Your text"}</span>
             <textarea
               className={styles.textarea}
               value={text}
@@ -126,7 +126,7 @@ export function WritingWorkspace({
               spellCheck={false}
             />
           </label>
-          <div className={styles.row}>
+          <div className={styles.editorMeta}>
             <span
               className={`${styles.counter} ${length.state === "long" ? styles.counterLong : ""}`}
               aria-live="polite"
@@ -149,58 +149,57 @@ export function WritingWorkspace({
               </span>
             ) : null}
           </div>
-          <div className={styles.actions}>
+          <div className={styles.editorActions}>
             {status === "draft" ? (
-              <button
-                type="button"
-                className={styles.primary}
+              <Button
+                arrow
+                fullWidth="mobile"
                 disabled={busy || !text.trim()}
                 onClick={() => run(() => submitText(mission.id, text))}
               >
                 {busy ? "Reviewing…" : "Submit for review"}
-              </button>
+              </Button>
             ) : null}
             {can.recheck ? (
-              <button
-                type="button"
-                className={styles.primary}
+              <Button
+                arrow
+                fullWidth="mobile"
                 disabled={busy || !text.trim()}
                 onClick={() => run(() => recheckText(mission.id, text))}
               >
                 {busy
                   ? "Checking…"
                   : `Check my fixes (${submission.round + 1} of ${submission.maxRounds})`}
-              </button>
+              </Button>
             ) : null}
             {can.rewrite ? (
-              <button
-                type="button"
-                className={can.recheck ? styles.secondary : styles.primary}
+              <Button
+                variant={can.recheck ? "secondary" : "primary"}
+                fullWidth="mobile"
                 disabled={busy}
                 onClick={() => run(() => requestRewrites(mission.id))}
               >
                 Show natural versions
-              </button>
+              </Button>
             ) : null}
             {can.complete ? (
-              <button
-                type="button"
-                className={styles.secondary}
+              <Button
+                variant="secondary"
+                fullWidth="mobile"
                 disabled={busy}
                 onClick={() => run(() => completeMission(mission.id))}
               >
                 Finish mission
-              </button>
+              </Button>
             ) : null}
             {can.skip ? (
-              <button
-                type="button"
-                className={styles.linkButton}
+              <Button
+                variant="ghost"
                 disabled={busy}
                 onClick={() => run(() => skipMission(mission.id))}
               >
                 Skip this mission
-              </button>
+              </Button>
             ) : null}
           </div>
         </section>
@@ -223,28 +222,31 @@ export function WritingWorkspace({
       ) : null}
 
       {closed ? (
-        <section className={styles.card} role="status">
-          <h2 className={styles.subheading}>
+        <Panel tone="lime" padding="lg" className={styles.closed} role="status">
+          <Eyebrow rule>{status === "completed" ? "Well done" : "Set aside"}</Eyebrow>
+          <h2 className={styles.startTitle}>
             {status === "completed" ? "Mission completed" : "Mission skipped"}
           </h2>
-          {levelUp ? <p>You moved up to the next format. Well earned.</p> : null}
+          {levelUp ? (
+            <p className={styles.lead}>You moved up to the next format. Well earned.</p>
+          ) : null}
           {submission.publishedVersion ? (
             <p>Published: {versionLabel(submission.publishedVersion)}</p>
           ) : null}
           <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.primary}
+            <Button
+              arrow
+              fullWidth="mobile"
               disabled={next.isPending}
               onClick={() => next.mutate()}
             >
               {next.isPending ? "Preparing…" : "Next mission"}
-            </button>
-            <Link to="/writing/history" className={styles.secondary}>
+            </Button>
+            <Button to="/writing/history" variant="secondary" fullWidth="mobile">
               History
-            </Link>
+            </Button>
           </div>
-        </section>
+        </Panel>
       ) : null}
     </div>
   );

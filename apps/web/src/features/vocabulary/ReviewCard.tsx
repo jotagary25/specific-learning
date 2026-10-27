@@ -1,5 +1,6 @@
 import { type QueueCard, RATING_LABELS, type SrsRating } from "@english-course/shared";
 import { useEffect, useRef, useState } from "react";
+import { Button, Eyebrow, Panel, ProgressLine } from "../../shared/ui/index.ts";
 import styles from "./Vocabulary.module.css";
 import {
   feedbackFor,
@@ -25,11 +26,11 @@ function Prompt({ card }: { card: QueueCard }) {
 
 function Feedback({ feedback }: { feedback: TypedFeedback }) {
   return (
-    <div className={styles.feedback} role="status">
-      <p className={styles[feedback.verdict]}>{VERDICT_TEXT[feedback.verdict]}</p>
+    <div className={styles.feedback} data-state={feedback.verdict} role="status">
+      <p className={styles.verdict}>{VERDICT_TEXT[feedback.verdict]}</p>
       {feedback.diff ? (
         <p className={styles.diff}>
-          <span className={styles.srOnly}>Differences: </span>
+          <span className="visually-hidden">Differences: </span>
           {feedback.diff.map((token, i) => {
             const Tag = token.kind === "removed" ? "del" : token.kind === "added" ? "ins" : "span";
             return (
@@ -99,62 +100,84 @@ export function ReviewCard({ card, position, total, pending, onRate }: Props) {
   }, [answered, typed, feedback, input, pending, onRate]);
 
   return (
-    <article className={styles.card} aria-label={`Card ${position} of ${total}`}>
-      <div className={styles.row}>
-        <span className={styles.progress}>
+    <Panel
+      as="article"
+      tone="cream"
+      padding="none"
+      className={styles.card}
+      aria-label={`Card ${position} of ${total}`}
+    >
+      <div className={styles.cardTop}>
+        <span className={`numeral ${styles.progress}`}>
           {position}/{total}
         </span>
-        {card.context ? <span className={styles.muted}>{card.context}</span> : null}
+        <ProgressLine
+          className={styles.progressLine}
+          value={((position - 1) / Math.max(total, 1)) * 100}
+          label="Session progress"
+          showValue={false}
+        />
+        {card.context ? <span className={styles.context}>{card.context}</span> : null}
       </div>
-      <p className={styles.task}>{card.task}</p>
-      <Prompt card={card} />
-      {card.hintEs ? (
-        <p className={styles.hint} lang="es">
-          {card.hintEs}
-        </p>
-      ) : null}
 
-      {typed ? (
-        <form
-          className={styles.answerForm}
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!feedback && input.trim()) setFeedback(feedbackFor(card, input));
-          }}
-        >
-          <label htmlFor={`answer-${card.id}`} className={styles.srOnly}>
-            Your answer
-          </label>
-          <input
-            id={`answer-${card.id}`}
-            ref={inputRef}
-            className={styles.input}
-            value={input}
-            readOnly={feedback !== null}
-            autoComplete="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            onChange={(event) => setInput(event.target.value)}
-          />
-          {feedback ? null : (
-            <button type="submit" className={styles.primary} disabled={!input.trim()}>
-              Check
-            </button>
-          )}
-        </form>
-      ) : revealed ? null : (
-        <button type="button" className={styles.primary} onClick={() => setRevealed(true)}>
-          Show answer
-        </button>
-      )}
+      <div className={styles.cardBody}>
+        <Eyebrow muted>{card.task}</Eyebrow>
+        <Prompt card={card} />
+        {card.hintEs ? (
+          <p className={styles.hint} lang="es">
+            {card.hintEs}
+          </p>
+        ) : null}
 
-      {feedback ? <Feedback feedback={feedback} /> : null}
+        {typed ? (
+          <form
+            className={styles.answerForm}
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!feedback && input.trim()) setFeedback(feedbackFor(card, input));
+            }}
+          >
+            <label htmlFor={`answer-${card.id}`} className="visually-hidden">
+              Your answer
+            </label>
+            <input
+              id={`answer-${card.id}`}
+              ref={inputRef}
+              className={styles.input}
+              data-state={feedback?.verdict}
+              value={input}
+              readOnly={feedback !== null}
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              onChange={(event) => setInput(event.target.value)}
+            />
+            {feedback ? null : (
+              <Button type="submit" disabled={!input.trim()}>
+                Check
+              </Button>
+            )}
+          </form>
+        ) : revealed ? null : (
+          <div className={styles.revealRow}>
+            <Button arrow onClick={() => setRevealed(true)}>
+              Show answer
+            </Button>
+            <span className={styles.keyHint} aria-hidden="true">
+              <kbd className={styles.kbd}>Space</kbd>
+            </span>
+          </div>
+        )}
+
+        {feedback ? <Feedback feedback={feedback} /> : null}
+
+        {answered ? <p className={styles.back}>{card.back}</p> : null}
+      </div>
 
       {answered ? (
-        <>
-          <p className={styles.back}>{card.back}</p>
+        <div className={styles.rateBlock}>
           <fieldset className={styles.ratings} disabled={pending}>
-            <legend className={styles.srOnly}>How well did you know it?</legend>
+            <legend className="visually-hidden">How well did you know it?</legend>
             {RATINGS.map((rating) => (
               <button
                 key={rating}
@@ -165,18 +188,18 @@ export function ReviewCard({ card, position, total, pending, onRate }: Props) {
                 aria-keyshortcuts={String(rating)}
                 onClick={() => rate(rating)}
               >
-                <span>{RATING_LABELS[rating]}</span>
+                <span className={styles.ratingLabel}>{RATING_LABELS[rating]}</span>
                 <kbd className={styles.kbd}>{rating}</kbd>
               </button>
             ))}
           </fieldset>
           {feedback ? (
-            <p className={styles.muted}>
+            <p className={styles.rateHint}>
               Enter accepts <strong>{RATING_LABELS[feedback.suggested]}</strong>; 1–4 to change it.
             </p>
           ) : null}
-        </>
+        </div>
       ) : null}
-    </article>
+    </Panel>
   );
 }
