@@ -1,5 +1,6 @@
 import type { GrammarSpan, StoryChapterView } from "@english-course/shared";
 import { useState } from "react";
+import { Eyebrow, Panel } from "../../shared/ui/index.ts";
 import styles from "./Units.module.css";
 import { highlightBody } from "./units.model.ts";
 
@@ -14,14 +15,16 @@ export function StoryStep({
   const paragraphs = highlightBody(chapter.body, chapter.grammarSpans);
 
   return (
-    <article className={styles.card} aria-labelledby="story-title">
-      <p className={styles.eyebrow}>
-        {storyTitle ? `${storyTitle} · ` : ""}Chapter {chapter.position}
-      </p>
-      <h2 id="story-title" className={styles.heading}>
-        {chapter.title}
-      </h2>
-      <p className={styles.muted}>Tap a highlighted phrase to see why it uses this grammar.</p>
+    <article className={styles.magazine} aria-labelledby="story-title">
+      <header className={styles.stepHeader}>
+        <Eyebrow rule muted>
+          {storyTitle ? `${storyTitle} · ` : ""}Chapter {chapter.position}
+        </Eyebrow>
+        <h2 id="story-title" className={styles.storyTitle}>
+          {chapter.title}
+        </h2>
+        <p className={styles.muted}>Tap a highlighted phrase to see why it uses this grammar.</p>
+      </header>
       <div className={styles.story}>
         {paragraphs.map((pieces, p) => (
           // Paragraph order is fixed for a chapter.
@@ -47,14 +50,17 @@ export function StoryStep({
           </p>
         ))}
       </div>
-      <p className={styles.note} aria-live="polite">
+      <p className={styles.note} data-open={note ? true : undefined} aria-live="polite">
         {note ? (
           <>
             <strong>{note.text}:</strong> {note.note}
           </>
         ) : null}
       </p>
-      <p className={styles.teaser}>{chapter.teaser}</p>
+      <Panel as="aside" tone="plum" padding="lg" className={styles.storyTeaser}>
+        <Eyebrow muted>Next chapter</Eyebrow>
+        <p className={styles.teaser}>{chapter.teaser}</p>
+      </Panel>
     </article>
   );
 }

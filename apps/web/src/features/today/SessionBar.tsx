@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { Button } from "../../shared/ui/index.ts";
 import { ParkItForm } from "./ParkIt.tsx";
 import { useStudySession } from "./SessionContext.tsx";
 import { formatClock } from "./session.model.ts";
@@ -16,43 +17,49 @@ export function SessionBar() {
   const last = active.blockIndex >= blocks.length - 1;
 
   return (
-    <section className={styles.bar} aria-label="Study session">
-      <div className={styles.barRow}>
-        <span className={styles.clock} role="timer" aria-label="Time left">
-          {formatClock(remaining)}
-        </span>
-        {current ? (
-          <Link to={current.deepLink} className={styles.barBlock}>
-            {active.blockIndex + 1}/{blocks.length} · {current.title}
-          </Link>
-        ) : (
-          <span className={styles.barBlock}>All blocks done: free review until the timer ends</span>
-        )}
+    <section className={styles.bar} data-tone="plum" aria-label="Study session">
+      <div className={styles.barInner}>
+        <div className={styles.barRow}>
+          <span className={`numeral ${styles.clock}`} role="timer" aria-label="Time left">
+            {formatClock(remaining)}
+          </span>
+          {current ? (
+            <Link to={current.deepLink} className={styles.barBlock}>
+              <span className={styles.barStep}>
+                {active.blockIndex + 1}/{blocks.length} ·{" "}
+              </span>
+              {current.title}
+            </Link>
+          ) : (
+            <span className={styles.barBlock}>
+              All blocks done: free review until the timer ends
+            </span>
+          )}
+        </div>
+        <div className={styles.barActions}>
+          {current && (
+            <Button size="sm" onClick={nextBlock}>
+              {last ? "Finish block" : "Next block"}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="secondary"
+            aria-expanded={parking}
+            onClick={() => setParking((open) => !open)}
+          >
+            Park it
+          </Button>
+          <Button size="sm" variant="ghost" disabled={stopping} onClick={() => void stop("user")}>
+            End
+          </Button>
+        </div>
       </div>
-      <div className={styles.barRow}>
-        {current && (
-          <button type="button" className={styles.primary} onClick={nextBlock}>
-            {last ? "Finish block" : "Next block"}
-          </button>
-        )}
-        <button
-          type="button"
-          className={styles.secondary}
-          aria-expanded={parking}
-          onClick={() => setParking((open) => !open)}
-        >
-          Park it
-        </button>
-        <button
-          type="button"
-          className={styles.ghost}
-          disabled={stopping}
-          onClick={() => void stop("user")}
-        >
-          End
-        </button>
-      </div>
-      {parking && <ParkItForm label="Save" placeholder="Park a thought for later" />}
+      {parking && (
+        <div className={styles.barPark} data-tone="cream">
+          <ParkItForm label="Save" placeholder="Park a thought for later" />
+        </div>
+      )}
     </section>
   );
 }

@@ -2,6 +2,7 @@ import type { ExplainContext, ExplainResponse } from "@english-course/shared";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState } from "react";
 import { HttpError } from "../../shared/api/http.ts";
+import { Button, buttonClassName, Eyebrow, Field, overlayStyles } from "../../shared/ui/index.ts";
 import styles from "./Units.module.css";
 import { requestExplanation } from "./units.api.ts";
 
@@ -54,11 +55,22 @@ export function ExplainSheet({ unitNumber, context, onBack, onFollowUp }: Props)
   const current = previous.at(-1);
 
   return (
-    <div className={styles.backdrop}>
-      <div className={styles.sheet} role="dialog" aria-modal="true" aria-labelledby={titleId}>
-        <h2 id={titleId} className={styles.heading}>
-          No entiendo
-        </h2>
+    <>
+      <div className={overlayStyles.backdrop} aria-hidden="true" />
+      <div
+        className={overlayStyles.sheet}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+      >
+        <div className={overlayStyles.header}>
+          <div>
+            <Eyebrow muted>I don't get it</Eyebrow>
+            <h2 id={titleId} className={overlayStyles.title}>
+              No entiendo
+            </h2>
+          </div>
+        </div>
         {explain.isPending ? (
           <p className={styles.muted} role="status">
             Preparing an explanation…
@@ -75,7 +87,7 @@ export function ExplainSheet({ unitNumber, context, onBack, onFollowUp }: Props)
             </ul>
             {current.analogyEs ? <p className={styles.muted}>{current.analogyEs}</p> : null}
             {current.pitfallEs ? <p className={styles.muted}>{current.pitfallEs}</p> : null}
-            <p>
+            <p className={styles.backToTask}>
               <strong>{current.backToTaskEs}</strong>
             </p>
           </div>
@@ -91,24 +103,21 @@ export function ExplainSheet({ unitNumber, context, onBack, onFollowUp }: Props)
             });
           }}
         >
-          <label htmlFor={questionId} className={styles.label}>
-            Still confused? Ask in your own words (optional)
-          </label>
-          <input
-            id={questionId}
-            className={styles.input}
-            value={question}
-            maxLength={500}
-            onChange={(event) => setQuestion(event.target.value)}
-          />
+          <Field label="Still confused? Ask in your own words (optional)" id={questionId}>
+            <input
+              id={questionId}
+              value={question}
+              maxLength={500}
+              onChange={(event) => setQuestion(event.target.value)}
+            />
+          </Field>
           <div className={styles.actions}>
-            <button type="submit" className={styles.secondary} disabled={explain.isPending}>
+            <Button type="submit" variant="secondary" disabled={explain.isPending}>
               Explain it differently
-            </button>
+            </Button>
             {onFollowUp ? (
-              <button
-                type="button"
-                className={styles.secondary}
+              <Button
+                variant="secondary"
                 onClick={() =>
                   onFollowUp(
                     current
@@ -118,14 +127,19 @@ export function ExplainSheet({ unitNumber, context, onBack, onFollowUp }: Props)
                 }
               >
                 Ask a follow-up
-              </button>
+              </Button>
             ) : null}
-            <button ref={backRef} type="button" className={styles.primary} onClick={onBack}>
+            <button
+              ref={backRef}
+              type="button"
+              className={buttonClassName({ className: styles.backButton })}
+              onClick={onBack}
+            >
               Back to where I was
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </>
   );
 }

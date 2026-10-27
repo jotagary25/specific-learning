@@ -1,6 +1,7 @@
 import type { AttemptResponse, ItemProgress, PublicExercise } from "@english-course/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { Button } from "../../shared/ui/index.ts";
 import { blankCount, ExerciseItem } from "./ExerciseItem.tsx";
 import styles from "./Exercises.module.css";
 import { fetchAnswers, unitsKeys } from "./units.api.ts";
@@ -110,14 +111,14 @@ export function ExerciseCard({ unitNumber, exercise, progress, onAttempt, onFocu
 
       {exercise.answerNote ? <p className={styles.muted}>{exercise.answerNote}</p> : null}
       <div className={styles.reviewRow}>
-        <button
-          type="button"
-          className={styles.hintButton}
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={!allAttempted || review}
           onClick={() => setReview(true)}
         >
           Show answers
-        </button>
+        </Button>
         {!allAttempted ? (
           <span className={styles.muted}>Answer every item once to unlock the answers.</span>
         ) : null}

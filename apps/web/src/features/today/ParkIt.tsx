@@ -1,6 +1,7 @@
 import { PARKING_TEXT_MAX } from "@english-course/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
+import { Button } from "../../shared/ui/index.ts";
 import styles from "./Today.module.css";
 import { addParking, todayKeys } from "./today.api.ts";
 
@@ -34,7 +35,7 @@ export function ParkItForm({
 
   return (
     <form className={styles.parkForm} onSubmit={submit}>
-      <label className={styles.srOnly} htmlFor="park-text">
+      <label className="visually-hidden" htmlFor="park-text">
         {placeholder}
       </label>
       <input
@@ -48,9 +49,9 @@ export function ParkItForm({
           setSaved(false);
         }}
       />
-      <button type="submit" className={styles.secondary} disabled={add.isPending || !text.trim()}>
+      <Button type="submit" variant="secondary" disabled={add.isPending || !text.trim()}>
         {label}
-      </button>
+      </Button>
       {saved && (
         <span className={styles.ok} role="status">
           Parked. Back to it later.

@@ -70,9 +70,7 @@ function Shape({
           className={styles.interrupt}
           data-variant={variant}
           style={{ left: `${toPercent(shape.interruptAt)}%` }}
-        >
-          ⚡
-        </span>
+        />
       ) : null}
     </>
   );
@@ -120,7 +118,7 @@ export function TimelineAxis({ placement, onChange, expected, disabled }: Props)
   return (
     <div className={styles.axis}>
       <div ref={trackRef} className={styles.track}>
-        <span className={styles.line} />
+        <span className={styles.line} aria-hidden="true" />
         <span className={styles.now} style={{ left: "50%" }} aria-hidden="true" />
         {expected ? <Shape shape={expected} variant="expected" /> : null}
         <Shape shape={placement} variant="learner" />
@@ -151,7 +149,7 @@ export function TimelineAxis({ placement, onChange, expected, disabled }: Props)
       </div>
       <div className={styles.labels} aria-hidden="true">
         <span>Past</span>
-        <span>Now</span>
+        <span className={styles.nowLabel}>Now</span>
         <span>Future</span>
       </div>
     </div>

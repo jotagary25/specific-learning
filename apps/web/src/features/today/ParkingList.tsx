@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Eyebrow } from "../../shared/ui/index.ts";
 import { ParkItForm } from "./ParkIt.tsx";
 import styles from "./Today.module.css";
 import { deleteParking, fetchParking, todayKeys, updateParking } from "./today.api.ts";
@@ -15,40 +16,47 @@ export function ParkingList() {
   const remove = useMutation({ mutationFn: deleteParking, onSuccess: refresh });
 
   return (
-    <section className={styles.card} aria-labelledby="parking-title">
-      <h2 id="parking-title" className={styles.subheading}>
-        Parking list
-      </h2>
-      <p className={styles.muted}>Ideas that pulled you away. Explore them when you have time.</p>
-      <ParkItForm label="Add" />
-      {parking.isError && <p className={styles.error}>{parking.error.message}</p>}
-      {parking.data && parking.data.items.length === 0 && (
-        <p className={styles.muted}>Nothing parked.</p>
-      )}
-      {parking.data && parking.data.items.length > 0 && (
-        <ul className={styles.parkingList}>
-          {parking.data.items.map((item) => (
-            <li key={item.id} className={styles.parkingItem}>
-              <label className={item.done ? styles.doneText : undefined}>
-                <input
-                  type="checkbox"
-                  checked={item.done}
-                  onChange={(e) => toggle.mutate({ id: item.id, done: e.target.checked })}
-                />{" "}
-                {item.text}
-              </label>
-              <button
-                type="button"
-                className={styles.ghost}
-                aria-label={`Delete "${item.text}"`}
-                onClick={() => remove.mutate(item.id)}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+    <section className={styles.parking} aria-labelledby="parking-title">
+      <div className={styles.parkingIntro}>
+        <Eyebrow rule muted>
+          For later
+        </Eyebrow>
+        <h2 id="parking-title" className={styles.subheading}>
+          Parking list
+        </h2>
+        <p className={styles.muted}>Ideas that pulled you away. Explore them when you have time.</p>
+      </div>
+      <div className={styles.parkingBody}>
+        <ParkItForm label="Add" />
+        {parking.isError && <p className={styles.error}>{parking.error.message}</p>}
+        {parking.data && parking.data.items.length === 0 && (
+          <p className={styles.empty}>Nothing parked.</p>
+        )}
+        {parking.data && parking.data.items.length > 0 && (
+          <ul className={styles.parkingList}>
+            {parking.data.items.map((item) => (
+              <li key={item.id} className={styles.parkingItem}>
+                <label className={item.done ? styles.doneText : styles.parkingLabel}>
+                  <input
+                    type="checkbox"
+                    checked={item.done}
+                    onChange={(e) => toggle.mutate({ id: item.id, done: e.target.checked })}
+                  />{" "}
+                  {item.text}
+                </label>
+                <button
+                  type="button"
+                  className={styles.delete}
+                  aria-label={`Delete "${item.text}"`}
+                  onClick={() => remove.mutate(item.id)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

@@ -2,6 +2,15 @@ import type { AttemptResponse, UnitDetail, UnitStep } from "@english-course/shar
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
+import {
+  ArrowLeftIcon,
+  Button,
+  CheckIcon,
+  Eyebrow,
+  Panel,
+  ProgressLine,
+  Stepper,
+} from "../../shared/ui/index.ts";
 import { useTutor } from "../tutor/TutorProvider.tsx";
 import { ExerciseCard } from "./ExerciseCard.tsx";
 import { ExplainSheet } from "./ExplainSheet.tsx";
@@ -13,10 +22,26 @@ import styles from "./Units.module.css";
 import { fetchUnit, unitsKeys } from "./units.api.ts";
 import { applyAttempt, STEP_LABELS, stepsFor } from "./units.model.ts";
 
+const pad = (n: number) => String(n).padStart(2, "0");
+
+const STEP_SUBTITLES: Record<UnitStep, string> = {
+  story: "The chapter",
+  puzzle: "Guess first",
+  theory: "The rule",
+  timeline: "Place it",
+  exercises: "Practice",
+};
+
 function CompletionBanner({ unit, celebrate }: { unit: UnitDetail; celebrate: boolean }) {
   const canDo = unit.extras?.canDoEs ?? [];
   return (
-    <section className={styles.banner} role="status" aria-label="Unit completed">
+    <Panel
+      tone="lime"
+      padding="md"
+      className={styles.banner}
+      role="status"
+      aria-label="Unit completed"
+    >
       <p className={styles.bannerTitle}>
         {celebrate ? "Unit completed!" : "Completed"} ·{" "}
         {Math.round(unit.progress.completion.ratio * 100)}% on first attempts
@@ -24,41 +49,14 @@ function CompletionBanner({ unit, celebrate }: { unit: UnitDetail; celebrate: bo
       {canDo.length > 0 ? (
         <ul lang="es" className={styles.canDo}>
           {canDo.map((statement) => (
-            <li key={statement}>{statement}</li>
+            <li key={statement}>
+              <CheckIcon size={20} className={styles.canDoIcon} />
+              <span>{statement}</span>
+            </li>
           ))}
         </ul>
       ) : null}
-    </section>
-  );
-}
-
-function Stepper({
-  steps,
-  current,
-  onSelect,
-}: {
-  steps: UnitStep[];
-  current: UnitStep;
-  onSelect: (step: UnitStep) => void;
-}) {
-  return (
-    <nav aria-label="Unit steps">
-      <ol className={styles.stepper}>
-        {steps.map((step, index) => (
-          <li key={step}>
-            <button
-              type="button"
-              className={styles.stepButton}
-              aria-current={step === current ? "step" : undefined}
-              onClick={() => onSelect(step)}
-            >
-              <span className={styles.stepIndex}>{index + 1}</span>
-              <span className={styles.stepLabel}>{STEP_LABELS[step]}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
-    </nav>
+    </Panel>
   );
 }
 
@@ -126,26 +124,29 @@ function UnitFlow({ unit }: { unit: UnitDetail }) {
         : undefined,
   };
 
+  const percent = Math.round(unit.progress.completion.ratio * 100);
+
   return (
     <>
       <header className={styles.unitHeader}>
-        <p className={styles.eyebrow}>
-          <Link to="/units">Units</Link> · {unit.block.title}
-        </p>
-        <h1 className={styles.title}>
-          Unit {unit.number}: {unit.title}
-        </h1>
-        {unit.subtitle ? <p className={styles.muted}>{unit.subtitle}</p> : null}
+        <div className={styles.unitHeading}>
+          <Eyebrow rule className={styles.crumbs}>
+            <span>
+              <Link to="/units">Units</Link> · Unit {pad(unit.number)} · {unit.block.title}
+            </span>
+          </Eyebrow>
+          <h1 className={styles.title}>
+            <span className="visually-hidden">Unit {unit.number}: </span>
+            {unit.title}
+          </h1>
+          {unit.subtitle ? <p className={styles.lead}>{unit.subtitle}</p> : null}
+        </div>
+        <span className={`numeral ${styles.unitBigNumeral}`} aria-hidden="true">
+          {pad(unit.number)}
+        </span>
         <div className={styles.meter}>
-          <progress
-            className={styles.progress}
-            max={100}
-            value={Math.round(unit.progress.completion.ratio * 100)}
-            aria-label="Unit score"
-          />
-          <span className={styles.muted}>
-            {Math.round(unit.progress.completion.ratio * 100)}% · 80% completes the unit
-          </span>
+          <ProgressLine value={percent} label="Unit score" showValue={false} />
+          <span className={styles.score}>{percent}% · 80% completes the unit</span>
         </div>
       </header>
 
@@ -153,18 +154,30 @@ function UnitFlow({ unit }: { unit: UnitDetail }) {
         <CompletionBanner unit={unit} celebrate={celebrate} />
       ) : null}
 
-      <Stepper steps={steps} current={step} onSelect={goTo} />
+      <div className={styles.flowNav}>
+        <Stepper
+          label="Unit steps"
+          className={styles.stepper}
+          steps={steps.map((id) => ({
+            id,
+            title: STEP_LABELS[id],
+            subtitle: STEP_SUBTITLES[id],
+          }))}
+          current={step}
+          onSelect={(id) => goTo(id as UnitStep)}
+        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.skip}
+          onClick={() => goTo("exercises")}
+          disabled={step === "exercises"}
+        >
+          Go straight to exercises
+        </Button>
+      </div>
 
-      <button
-        type="button"
-        className={styles.skip}
-        onClick={() => goTo("exercises")}
-        disabled={step === "exercises"}
-      >
-        Go straight to exercises
-      </button>
-
-      <div className={styles.stepBody}>
+      <div className={styles.stepBody} key={step}>
         {step === "story" && unit.story ? (
           <StoryStep chapter={unit.story.chapter} storyTitle={unit.story.title} />
         ) : null}
@@ -181,9 +194,12 @@ function UnitFlow({ unit }: { unit: UnitDetail }) {
         ) : null}
         {step === "exercises" ? (
           <article className={styles.card} aria-labelledby="exercises-title">
-            <h2 id="exercises-title" className={styles.heading}>
-              Exercises
-            </h2>
+            <header className={styles.stepHeader}>
+              <Eyebrow muted>Step {pad(index + 1)} · Practice</Eyebrow>
+              <h2 id="exercises-title" className={styles.heading}>
+                Exercises
+              </h2>
+            </header>
             {unit.exercises.map((exercise) => (
               <ExerciseCard
                 key={exercise.id}
@@ -201,40 +217,38 @@ function UnitFlow({ unit }: { unit: UnitDetail }) {
       </div>
 
       <div className={styles.pager}>
-        <button
-          type="button"
-          className={styles.secondary}
+        <Button
+          variant="secondary"
           disabled={index <= 0}
           onClick={() => {
             const previous = steps[index - 1];
             if (previous) goTo(previous);
           }}
         >
+          <ArrowLeftIcon size={18} className={styles.backIcon} />
           Back
-        </button>
+        </Button>
         {index < steps.length - 1 ? (
-          <button
-            type="button"
-            className={styles.primary}
+          <Button
+            arrow
             onClick={() => {
               const next = steps[index + 1];
               if (next) goTo(next);
             }}
           >
             Next: {STEP_LABELS[steps[index + 1] ?? "exercises"]}
-          </button>
+          </Button>
         ) : null}
       </div>
 
-      <button
-        type="button"
+      <Button
         className={styles.fab}
         // Keep the item focused while pressing, so we know where to come back to.
         onMouseDown={(event) => event.preventDefault()}
         onClick={openExplain}
       >
         I don't get it
-      </button>
+      </Button>
 
       {explainOpen ? (
         <ExplainSheet

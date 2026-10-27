@@ -1,72 +1,110 @@
-/* Styles for the book's semantic classes inside the imported theory HTML. */
+/* The theory step: the book's sanitized HTML (its semantic classes) set as an editorial page. */
 
+.sections {
+  border-top: var(--hairline) solid var(--color-line);
+}
+
+/* One lettered section per row: a Gloock letter in the margin, the text on a reading measure. */
 .section {
-  position: relative;
-  padding-left: 2rem;
-  border-top: 1px solid var(--color-border);
-  padding-top: 0.75rem;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  column-gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: var(--hairline) solid var(--color-line-soft);
+}
+
+@media (min-width: 768px) {
+  .section {
+    grid-template-columns: 5rem minmax(0, 1fr);
+    column-gap: var(--space-4);
+    padding: var(--space-5) 0;
+  }
 }
 
 .letter {
-  position: absolute;
-  left: 0;
-  top: 0.75rem;
-  width: 1.5rem;
-  height: 1.5rem;
-  display: grid;
-  place-items: center;
-  border-radius: 0.25rem;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 700;
-  font-size: 0.875rem;
+  font-size: var(--text-h2);
+  color: var(--color-text);
+}
+
+@media (min-width: 768px) {
+  .letter {
+    font-size: var(--text-h1);
+  }
 }
 
 .html {
+  max-width: 44rem;
+  font-size: var(--text-body);
   overflow-wrap: anywhere;
 }
 
+.html > * + * {
+  margin-top: var(--space-3);
+}
+
 .html p {
-  margin: 0.5rem 0;
+  margin: 0;
 }
 
-.html img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.5rem;
+.html p + p {
+  margin-top: var(--space-2);
 }
 
-.html :global(.section-intro) {
-  color: var(--color-muted);
+.html em {
   font-style: italic;
 }
 
+.html img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  mix-blend-mode: multiply;
+}
+
+.html :global(.section-intro) {
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* The grammar being taught: plum on a lime marker band. */
 .html :global(.grammar-target) {
-  color: var(--color-primary);
-  background: var(--color-highlight);
-  padding: 0 0.15em;
-  border-radius: 0.2em;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  /* A thick underline pulled up behind the glyphs (underlines paint below the text). */
+  text-decoration-line: underline;
+  text-decoration-color: var(--color-highlight);
+  text-decoration-thickness: 0.5em;
+  text-underline-offset: -0.3em;
+  text-decoration-skip-ink: none;
 }
 
+/* The rule itself: a hairline frame, like a specimen label. */
 .html :global(.rule-highlight) {
-  display: inline-block;
-  padding: 0.1rem 0.4rem;
-  border: 1px solid var(--color-primary);
-  border-radius: 0.3rem;
+  display: inline;
+  padding: 0.05em 0.35em;
+  border: var(--hairline) solid var(--color-line);
+  font-weight: var(--weight-semibold);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
+/* "(not I try)": the wrong form, quiet and struck through. */
 .html :global(.grammar-contrast) {
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-color: var(--color-warn);
-  text-underline-offset: 0.2em;
+  color: var(--color-error-text);
+  font-size: var(--text-small);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
 .html :global(.example-box) {
   display: grid;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-line);
   background: var(--color-surface);
 }
 
@@ -75,50 +113,102 @@
     grid-template-columns: 2fr 1fr;
     align-items: center;
   }
+
+  .html :global(.example-box-visual:first-child) {
+    order: 1;
+  }
 }
 
 .html :global(.example-list) {
-  padding-left: 1.25rem;
-  margin: 0.5rem 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--hairline) solid var(--color-line-soft);
+}
+
+.html :global(.example-list) > li {
+  position: relative;
+  padding: var(--space-2) 0 var(--space-2) var(--space-4);
+  border-bottom: var(--hairline) solid var(--color-line-soft);
+}
+
+.html :global(.example-list) > li::before {
+  content: "";
+  position: absolute;
+  left: var(--space-1);
+  top: calc(var(--space-2) + 0.7em);
+  width: 6px;
+  height: 6px;
+  border: var(--hairline) solid currentColor;
+  border-radius: var(--radius-pill);
 }
 
 .html :global(.grammar-table) {
-  border-collapse: collapse;
-  margin: 0.5rem 0;
   display: block;
+  width: auto;
+  max-width: 100%;
   overflow-x: auto;
+  border-collapse: collapse;
+  border-top: var(--hairline) solid var(--color-line);
+  border-bottom: var(--hairline) solid var(--color-line);
 }
 
 .html :global(.grammar-table) td {
-  border: 1px solid var(--color-border);
-  padding: 0.25rem 0.5rem;
+  padding: var(--space-1) var(--space-3) var(--space-1) 0;
+  border-bottom: var(--hairline) solid var(--color-line-soft);
   vertical-align: top;
+}
+
+.html :global(.grammar-table) tr:last-child td,
+.html :global(.grammar-table) td[rowspan] {
+  border-bottom: 0;
+}
+
+.html :global(.grammar-table) td[rowspan] {
+  padding-left: var(--space-3);
+  border-left: var(--hairline) solid var(--color-line-soft);
+}
+
+.html :global(.grammar-table) strong {
+  background: var(--color-highlight);
 }
 
 .html :global(.comparison-grid) {
   display: grid;
-  gap: 0.75rem;
+  border: var(--hairline) solid var(--color-line);
 }
 
 @media (min-width: 36rem) {
   .html :global(.comparison-grid) {
     grid-template-columns: 1fr 1fr;
   }
+
+  .html :global(.comparison-col) + :global(.comparison-col) {
+    border-left: var(--hairline) solid var(--color-line);
+  }
 }
 
 .html :global(.comparison-col) {
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  background: var(--color-surface);
+  padding: var(--space-3);
+}
+
+@media (max-width: 35.99rem) {
+  .html :global(.comparison-col) + :global(.comparison-col) {
+    border-top: var(--hairline) solid var(--color-line);
+  }
 }
 
 .html :global(.comparison-title) {
-  font-weight: 700;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  letter-spacing: -0.015em;
 }
 
+/* A loose list of words in the book: square chips. */
 .html :global(.word-bank) {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline) solid var(--color-line);
+  font-weight: var(--weight-medium);
+  word-spacing: 0.6em;
 }

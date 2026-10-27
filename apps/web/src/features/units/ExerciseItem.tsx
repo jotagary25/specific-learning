@@ -11,6 +11,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { Badge, Button } from "../../shared/ui/index.ts";
 import styles from "./Exercises.module.css";
 import { requestHint, submitAttempt } from "./units.api.ts";
 import { type Verdict, verdictOf } from "./units.model.ts";
@@ -35,6 +36,13 @@ const MAX_HINTS = 3;
 export function blankCount(item: PublicExerciseItem): number {
   return item.lines.flat().filter((segment) => segment.type === "blank").length;
 }
+
+const VERDICT_BADGES: Record<Verdict, string> = {
+  correct: "Correct",
+  almost: "Almost",
+  incorrect: "Incorrect",
+  "needs-ai": "Checking",
+};
 
 const VERDICT_TEXT: Record<Verdict, string> = {
   correct: "Correct!",
@@ -61,16 +69,11 @@ function VerdictBox({
   const hintEs = response ? response.hintEs : saved?.hintEs;
   return (
     <div className={styles.verdict} data-verdict={verdict} role="status">
+      {/* The sentence below already says it; the badge is the visual label. */}
+      <Badge tone={verdict === "needs-ai" ? "neutral" : verdict} aria-hidden="true">
+        {VERDICT_BADGES[verdict]}
+      </Badge>
       <p className={styles.verdictText}>
-        <span aria-hidden="true">
-          {verdict === "correct"
-            ? "✓ "
-            : verdict === "almost"
-              ? "≈ "
-              : verdict === "incorrect"
-                ? "✗ "
-                : "… "}
-        </span>
         {unavailable
           ? "Answer saved, but the AI check is unavailable right now (add an Ollama API key in Settings)."
           : VERDICT_TEXT[verdict]}
@@ -188,7 +191,7 @@ export function ExerciseItem({
   if (item.isExample) {
     return (
       <li className={styles.item} data-example="true">
-        <span className={styles.num}>{number}</span>
+        <span className={`numeral ${styles.num}`}>{number}</span>
         <div className={styles.lines}>
           {item.lines.map((line, l) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static content
@@ -206,7 +209,7 @@ export function ExerciseItem({
 
   return (
     <li className={styles.item} data-item-id={item.id}>
-      <span className={styles.num}>{number}</span>
+      <span className={`numeral ${styles.num}`}>{number}</span>
       <form className={styles.lines} onSubmit={onSubmit}>
         {item.lines.map((line, l) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static content
@@ -227,17 +230,17 @@ export function ExerciseItem({
         ) : null}
 
         <div className={styles.itemActions}>
-          <button type="submit" className={styles.check} disabled={!complete || submit.isPending}>
+          <Button type="submit" size="sm" disabled={!complete || submit.isPending}>
             {submit.isPending ? "Checking…" : "Check"}
-          </button>
-          <button
-            type="button"
-            className={styles.hintButton}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => hint.mutate()}
             disabled={hints.length >= MAX_HINTS || hint.isPending}
           >
             {hint.isPending ? "Thinking…" : hints.length === 0 ? "Hint" : "Another hint"}
-          </button>
+          </Button>
           {item.isOpen ? <span className={styles.muted}>Checked by AI</span> : null}
         </div>
 

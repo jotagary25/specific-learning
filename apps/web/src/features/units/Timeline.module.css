@@ -1,42 +1,77 @@
+/* The timeline step: a hairline past–now–future axis, plum shapes and handles, a lime "now" band. */
+
 .sentence {
-  font-size: 1.125rem;
-  font-weight: 600;
   margin: 0;
+  max-width: 40ch;
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
+.legend {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Kinds of action: square tiles in a hairline grid. */
 .kinds {
-  border: 0;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-1);
 }
 
 .kind {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.35rem;
-  min-height: 2.75rem;
-  padding: 0.25rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  padding: var(--space-1) var(--space-2);
+  border: var(--hairline) solid var(--color-line-soft);
   cursor: pointer;
+  transition:
+    background-color var(--dur-ui) var(--ease-out),
+    border-color var(--dur-ui) var(--ease-out);
+}
+
+.kind:hover {
+  border-color: var(--color-line);
 }
 
 .kind:has(input:checked) {
-  border-color: var(--color-primary);
+  border-color: var(--color-line);
   background: var(--color-highlight);
 }
 
+.kind:has(input:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+.kinds:disabled .kind {
+  cursor: not-allowed;
+}
+
+.kinds:disabled .kind:not(:has(input:checked)) {
+  opacity: 0.55;
+}
+
+/* --- Axis --- */
+
 .axis {
-  padding: 1.5rem 0.75rem 0.5rem;
+  padding: var(--space-5) var(--space-3) var(--space-2);
+  border-top: var(--hairline) solid var(--color-line-soft);
+  border-bottom: var(--hairline) solid var(--color-line-soft);
   user-select: none;
 }
 
 .track {
   position: relative;
-  height: 3rem;
+  height: 4.5rem;
   touch-action: none;
 }
 
@@ -45,107 +80,171 @@
   left: 0;
   right: 0;
   top: 50%;
-  height: 2px;
-  background: var(--color-muted);
+  height: var(--hairline);
+  background: var(--color-line);
 }
 
+/* End caps: short ticks at both ends of the axis. */
+.line::before,
+.line::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  height: 11px;
+  border-left: var(--hairline) solid var(--color-line);
+}
+
+.line::before {
+  left: 0;
+}
+
+.line::after {
+  right: 0;
+}
+
+/* "Now": a lime band with a plum hairline through its middle. */
 .now {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--color-text);
+  width: 10%;
+  transform: translateX(-50%);
+  background: var(--color-highlight);
+}
+
+.now::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: var(--hairline) solid var(--color-line);
 }
 
 .bar {
   position: absolute;
-  top: calc(50% - 0.4rem);
-  height: 0.8rem;
-  border-radius: 0.4rem;
-  background: var(--color-primary);
-  opacity: 0.6;
+  top: calc(50% - 6px);
+  height: 12px;
+  background: var(--color-accent);
   pointer-events: none;
+  transition:
+    left var(--dur-ui) var(--ease-out),
+    width var(--dur-ui) var(--ease-out);
 }
 
 .bar[data-kind="state"] {
-  opacity: 0.35;
+  background: color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
 .bar[data-kind="habit"] {
-  background: transparent;
-  border: 2px dotted var(--color-primary);
+  height: 2px;
+  top: calc(50% - 1px);
 }
 
 .bar[data-kind="ongoing-now"]::after {
-  content: "→";
+  content: "";
   position: absolute;
-  right: -1rem;
-  top: -0.45rem;
-  color: var(--color-primary);
+  right: -10px;
+  top: -2px;
+  border-block: 8px solid transparent;
+  border-left: 10px solid var(--color-accent);
 }
 
 .point,
 .tick {
   position: absolute;
-  top: calc(50% - 0.5rem);
-  width: 0.25rem;
-  height: 1rem;
-  margin-left: -0.125rem;
-  background: var(--color-primary);
+  top: calc(50% - 10px);
+  width: 4px;
+  height: 20px;
+  margin-left: -2px;
+  background: var(--color-accent);
   pointer-events: none;
 }
 
+/* The interruption: a deep-rose rule crossing the bar, with a square cap. */
 .interrupt {
   position: absolute;
-  top: -0.25rem;
-  transform: translateX(-50%);
+  top: calc(50% - 22px);
+  width: 2px;
+  height: 44px;
+  margin-left: -1px;
+  background: var(--state-incorrect-line);
   pointer-events: none;
 }
 
+.interrupt::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  background: var(--state-incorrect-line);
+}
+
+/* The expected answer, drawn after checking: an olive dashed outline. */
 .bar[data-variant="expected"],
 .point[data-variant="expected"],
 .tick[data-variant="expected"] {
   background: transparent;
-  border: 2px dashed var(--color-ok);
-  opacity: 1;
+  border: 2px dashed var(--state-correct-line);
 }
 
-.interrupt[data-variant="expected"] {
-  border: 0;
-  top: 2.25rem;
+.bar[data-variant="expected"] {
+  top: calc(50% - 12px);
+  height: 24px;
 }
 
+.bar[data-variant="expected"]::after {
+  display: none;
+}
+
+.interrupt[data-variant="expected"],
+.interrupt[data-variant="expected"]::before {
+  background: var(--state-correct-line);
+}
+
+/* Handles: 44px targets with a plum ring marker. */
 .handle {
   position: absolute;
   top: 50%;
-  width: 2.75rem;
-  height: 2.75rem;
-  transform: translate(-50%, -50%);
+  width: var(--tap-target);
+  height: var(--tap-target);
+  padding: 0;
   border: 0;
+  border-radius: var(--radius-pill);
   background: transparent;
+  transform: translate(-50%, -50%);
   cursor: grab;
   touch-action: none;
-  padding: 0;
+}
+
+.handle:active {
+  cursor: grabbing;
 }
 
 .handle::before {
   content: "";
   position: absolute;
-  inset: 0.7rem;
-  border-radius: 50%;
+  inset: 11px;
+  border: 2px solid var(--color-accent);
+  border-radius: var(--radius-pill);
   background: var(--color-bg);
-  border: 3px solid var(--color-primary);
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+
+.handle:hover:not([aria-disabled="true"])::before,
+.handle:focus-visible::before {
+  transform: scale(1.15);
 }
 
 .handle[data-handle="interruptAt"]::before {
-  border-color: var(--color-warn);
+  border-color: var(--state-incorrect-line);
 }
 
 .handle:focus-visible {
-  outline: 3px solid var(--color-primary);
-  outline-offset: -0.35rem;
-  border-radius: 50%;
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: -4px;
 }
 
 .handle[aria-disabled="true"] {
@@ -155,6 +254,14 @@
 .labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.875rem;
-  color: var(--color-muted);
+  margin-top: var(--space-1);
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.nowLabel {
+  color: var(--color-text);
 }

@@ -5,6 +5,7 @@ import type {
 } from "@english-course/shared";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { Badge, Button, Eyebrow } from "../../shared/ui/index.ts";
 import timeline from "./Timeline.module.css";
 import { TimelineAxis } from "./TimelineAxis.tsx";
 import { initialPlacement, KIND_LABELS, type TimelineKind } from "./timeline-geometry.ts";
@@ -19,6 +20,10 @@ type Props = {
 };
 
 const KINDS = Object.keys(KIND_LABELS) as TimelineKind[];
+
+const VERDICT_BADGES = { correct: "Correct", almost: "Almost", incorrect: "Incorrect" } as const;
+
+const pad = (n: number) => String(n).padStart(2, "0");
 
 export function TimelineStep({ unitNumber, items, onCurrentItem }: Props) {
   const [index, setIndex] = useState(0);
@@ -42,19 +47,32 @@ export function TimelineStep({ unitNumber, items, onCurrentItem }: Props) {
     if (nextItem) onCurrentItem?.(nextItem.id);
   };
 
+  const verdict = result
+    ? result.correct
+      ? "correct"
+      : result.kindCorrect
+        ? "almost"
+        : "incorrect"
+    : null;
+
   return (
     <article className={styles.card} aria-labelledby="timeline-title">
-      <h2 id="timeline-title" className={styles.heading}>
-        Timeline
-      </h2>
-      <p className={styles.muted}>
-        Sentence {index + 1} of {items.length}. Pick the kind of action, then drag (or use the arrow
-        keys on) the handles to place it in time.
-      </p>
+      <header className={styles.stepHeader}>
+        <Eyebrow muted>
+          Place it · {pad(index + 1)} / {pad(items.length)}
+        </Eyebrow>
+        <h2 id="timeline-title" className={styles.heading}>
+          Timeline
+        </h2>
+        <p className={styles.muted}>
+          Sentence {index + 1} of {items.length}. Pick the kind of action, then drag (or use the
+          arrow keys on) the handles to place it in time.
+        </p>
+      </header>
       <p className={timeline.sentence}>{item.sentence}</p>
 
       <fieldset className={timeline.kinds} disabled={result !== null}>
-        <legend className={styles.label}>What kind of action is it?</legend>
+        <legend className={timeline.legend}>What kind of action is it?</legend>
         {KINDS.map((kind) => (
           <label key={kind} className={timeline.kind}>
             <input
@@ -78,12 +96,16 @@ export function TimelineStep({ unitNumber, items, onCurrentItem }: Props) {
         />
       ) : null}
 
-      {result ? (
+      {result && verdict ? (
         <section
           className={styles.feedback}
           data-verdict={result.correct ? "correct" : "incorrect"}
+          data-state={verdict}
           aria-live="polite"
         >
+          <Badge tone={verdict} aria-hidden="true">
+            {VERDICT_BADGES[verdict]}
+          </Badge>
           <p className={styles.verdict}>
             {result.correct
               ? "Correct!"
@@ -98,23 +120,21 @@ export function TimelineStep({ unitNumber, items, onCurrentItem }: Props) {
 
       <div className={styles.actions}>
         {result === null ? (
-          <button
-            type="button"
-            className={styles.primary}
+          <Button
             disabled={!placement || check.isPending}
             onClick={() => placement && check.mutate(placement)}
           >
             {check.isPending ? "Checking…" : "Check"}
-          </button>
+          </Button>
         ) : (
           <>
-            <button type="button" className={styles.secondary} onClick={() => goTo(index)}>
+            <Button variant="secondary" onClick={() => goTo(index)}>
               Try again
-            </button>
+            </Button>
             {index + 1 < items.length ? (
-              <button type="button" className={styles.primary} onClick={() => goTo(index + 1)}>
+              <Button arrow onClick={() => goTo(index + 1)}>
                 Next sentence
-              </button>
+              </Button>
             ) : (
               <p className={styles.muted}>That was the last sentence.</p>
             )}
