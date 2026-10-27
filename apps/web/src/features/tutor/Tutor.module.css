@@ -1,96 +1,116 @@
-.muted {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 0.9rem;
-}
+/*
+ * Tutor: floating plum block button, a right drawer on desktop that becomes a bottom sheet on
+ * phones (overlay pattern), and the chat — learner in plum blocks, tutor in cream with a hairline.
+ */
 
 .error {
   margin: 0;
-  color: var(--color-down);
+  font-size: var(--text-small);
+  color: var(--color-error-text);
 }
 
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+.context {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
 }
 
-.primary,
-.secondary {
-  font: inherit;
-  min-height: 2.75rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
+/* Icon + label inside a Button (the Button label is a single span). */
+.backLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
-.primary {
-  border: 0;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
-.secondary {
-  border: 1px solid var(--color-primary);
-  background: transparent;
-  color: var(--color-primary);
-}
-
-.primary:disabled,
-.secondary:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-/* --- Floating button and drawer --- */
+/* --- Floating button: a square plum block, icon-only on phones --- */
 
 .fab {
   position: fixed;
-  left: 1rem;
-  bottom: max(1rem, env(safe-area-inset-bottom));
-  z-index: 15;
-  font: inherit;
-  font-weight: 600;
-  min-height: 3rem;
-  padding: 0.5rem 1.1rem;
-  border: 0;
-  border-radius: 999px;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.2);
-  cursor: pointer;
+  right: max(var(--space-3), env(safe-area-inset-right));
+  bottom: calc(var(--shell-bottom) + var(--space-3));
+  z-index: var(--z-fab);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: var(--tap-target);
+  min-height: 52px;
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline) solid var(--plum-500);
+  border-radius: var(--radius);
+  background: var(--plum-500);
+  color: var(--cream-500);
+  font-weight: var(--weight-medium);
+  box-shadow: var(--shadow-overlay);
+  transition:
+    background-color var(--dur-ui) var(--ease-out),
+    transform var(--dur-ui) var(--ease-out);
+  animation: rise var(--dur-reveal) var(--ease-out);
 }
 
+.fab:hover {
+  background: var(--plum-400);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 767.98px) {
+  .fab {
+    justify-content: center;
+    width: 52px;
+    padding: 0;
+  }
+
+  .fabLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* --- Drawer (desktop) / bottom sheet (phones) --- */
+
 .drawer {
-  position: fixed;
-  inset: 0 0 0 auto;
-  z-index: 30;
-  width: min(28rem, 100vw);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  padding-top: max(1rem, env(safe-area-inset-top));
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  background: var(--color-bg);
-  color: var(--color-text);
-  border-left: 1px solid var(--color-border);
-  box-shadow: -8px 0 24px rgb(0 0 0 / 0.18);
+  composes: drawer from "../../shared/ui/Overlay.module.css";
+}
+
+/* Doubled class: the overrides win over the composed base whatever the stylesheet order. */
+@media (max-width: 767.98px) {
+  .drawer.drawer {
+    inset: auto 0 0;
+    width: 100%;
+    height: 88dvh;
+    padding-inline: var(--gutter);
+    border-left: 0;
+    border-top: var(--hairline) solid var(--color-line);
+    animation-name: sheet-up;
+  }
 }
 
 .drawerHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
+  composes: header from "../../shared/ui/Overlay.module.css";
+}
+
+.drawerHeader.drawerHeader {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.drawerHeading {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
 .drawerTitle {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--text-h2);
+  line-height: var(--leading-heading);
+}
+
+.back {
+  flex: none;
 }
 
 /* --- Chat --- */
@@ -100,68 +120,86 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
 .log {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
   margin: 0;
   padding: 0;
+  overflow-y: auto;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-2);
+}
+
+.note {
+  padding: var(--space-3) 0;
+  border-bottom: var(--hairline) solid var(--color-line-soft);
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
 }
 
 .userBubble,
 .tutorBubble {
-  max-width: 90%;
-  padding: 0.6rem 0.8rem;
-  border-radius: 0.75rem;
   display: grid;
-  gap: 0.4rem;
+  gap: var(--space-1);
+  max-width: 88%;
+  padding: var(--space-2) var(--space-3);
+  animation: rise var(--dur-ui) var(--ease-out);
 }
 
 .userBubble {
   align-self: flex-end;
-  background: var(--color-highlight);
 }
 
 .tutorBubble {
   align-self: flex-start;
-  background: var(--color-surface);
+  border: var(--hairline) solid var(--color-line-soft);
+  border-left: var(--rule) solid var(--color-line);
+}
+
+.speaker {
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .text {
   margin: 0;
   white-space: pre-wrap;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .thinking {
   margin: 0;
-  color: var(--color-muted);
   font-style: italic;
+  color: var(--color-text-muted);
 }
 
+/* Tool chips: tiny uppercase tracked tags. */
 .chips {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: var(--space-1);
 }
 
 .chip,
 .chipFailed {
-  font-size: 0.75rem;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
+  padding: 2px var(--space-1);
+  border: var(--hairline) solid var(--color-line-soft);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .chipFailed {
@@ -169,91 +207,159 @@
   text-decoration: line-through;
 }
 
+/* Quick prompts: square chips. */
 .quick {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: var(--hairline) solid var(--color-line-soft);
 }
 
 .quickButton {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
+  min-height: var(--tap-target);
+  padding: var(--space-1) var(--space-2);
+  border: var(--hairline) solid var(--color-line);
+  border-radius: var(--radius);
   background: transparent;
-  color: inherit;
-  cursor: pointer;
+  font-size: var(--text-small);
+  transition: background-color var(--dur-ui) var(--ease-out);
+}
+
+.quickButton:hover:not(:disabled) {
+  background: var(--color-highlight);
 }
 
 .quickButton:disabled {
   opacity: 0.5;
-  cursor: default;
 }
 
 .form {
   display: flex;
-  gap: 0.5rem;
-  align-items: flex-end;
+  align-items: stretch;
+  gap: 0;
 }
 
 .input {
   flex: 1;
-  font: inherit;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-muted);
-  border-radius: 0.5rem;
-  background: var(--color-bg);
-  color: inherit;
-  resize: vertical;
+  min-width: 0;
+  min-height: 3.5rem;
+  border-right: 0;
 }
 
-/* --- /tutor page --- */
+.send {
+  flex: none;
+}
+
+/* --- /tutor page: history column + chat --- */
 
 .page {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-5);
+  min-width: 0;
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 768px) {
   .page {
-    grid-template-columns: 14rem 1fr;
+    grid-template-columns: minmax(14rem, 18rem) 1fr;
+    gap: 0;
+    border-top: var(--hairline) solid var(--color-line);
   }
 }
 
 .history {
   display: grid;
-  gap: 0.5rem;
   align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .history {
+    padding: var(--space-5) var(--space-4) var(--space-5) 0;
+    border-right: var(--hairline) solid var(--color-line);
+  }
+}
+
+.historyHead {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.pageTitle {
+  margin: 0;
 }
 
 .historyList {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: grid;
-  gap: 0.25rem;
+  border-top: var(--hairline) solid var(--color-line-soft);
+}
+
+.historyList > li {
+  border-bottom: var(--hairline) solid var(--color-line-soft);
 }
 
 .historyLink {
   display: grid;
-  gap: 0.1rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border-left: var(--rule) solid transparent;
   color: inherit;
   text-decoration: none;
+  transition:
+    background-color var(--dur-ui) var(--ease-out),
+    border-color var(--dur-ui) var(--ease-out);
+}
+
+.historyLink:hover {
+  background: var(--color-surface);
 }
 
 .historyLink[aria-current="page"] {
+  border-left-color: var(--color-line);
   background: var(--color-surface);
+}
+
+.historyPreview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyMeta {
+  font-size: var(--text-eyebrow);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .pageChat {
   display: flex;
+  min-width: 0;
   min-height: 60dvh;
+}
+
+@media (min-width: 768px) {
+  .pageChat {
+    min-height: 70dvh;
+    padding: var(--space-5) 0 var(--space-5) var(--space-5);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
 }

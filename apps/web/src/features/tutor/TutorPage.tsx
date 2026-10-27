@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { Button, Eyebrow, PlusIcon } from "../../shared/ui/index.ts";
 import styles from "./Tutor.module.css";
 import { TutorChat } from "./TutorChat.tsx";
 import { fetchConversations, tutorKeys } from "./tutor.api.ts";
@@ -31,18 +32,25 @@ export function TutorPage() {
   return (
     <div className={styles.page}>
       <nav className={styles.history} aria-label="Conversations">
-        <h1 className={styles.drawerTitle}>Tutor</h1>
-        <button
-          type="button"
-          className={styles.secondary}
+        <div className={styles.historyHead}>
+          <Eyebrow rule>Conversations</Eyebrow>
+          <h1 className={styles.pageTitle}>Tutor</h1>
+          <p className={styles.context}>Short answers in Spanish, with the screen as context.</p>
+        </div>
+        <Button
+          variant="secondary"
+          fullWidth
           onClick={() => {
             created.current = undefined;
             setFresh((n) => n + 1);
             void navigate("/tutor");
           }}
         >
-          New chat
-        </button>
+          <span className={styles.backLabel}>
+            <PlusIcon size={18} />
+            New chat
+          </span>
+        </Button>
         {list.isError ? <p className={styles.error}>{list.error.message}</p> : null}
         <ul className={styles.historyList}>
           {list.data?.conversations.map((c) => (
@@ -52,8 +60,8 @@ export function TutorPage() {
                 className={styles.historyLink}
                 aria-current={c.id === id ? "page" : undefined}
               >
-                <span>{c.preview ?? "(no messages yet)"}</span>
-                <span className={styles.muted}>
+                <span className={styles.historyPreview}>{c.preview ?? "(no messages yet)"}</span>
+                <span className={styles.historyMeta}>
                   {contextLabel(c.context)} · {new Date(c.createdAt).toLocaleDateString()}
                 </span>
               </Link>

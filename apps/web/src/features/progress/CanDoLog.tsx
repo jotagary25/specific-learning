@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
+import { Button, CheckIcon } from "../../shared/ui/index.ts";
 import styles from "./Progress.module.css";
 import { addCanDo, fetchCanDo, progressKeys } from "./progress.api.ts";
 import { shortDate } from "./progress.model.ts";
@@ -26,7 +27,7 @@ export function CanDoLog() {
   return (
     <div className={styles.stack}>
       <form className={styles.inline} onSubmit={submit}>
-        <label htmlFor="can-do-input" className={styles.srOnly}>
+        <label htmlFor="can-do-input" className="visually-hidden">
           Now I can…
         </label>
         <input
@@ -37,9 +38,9 @@ export function CanDoLog() {
           placeholder="Now I can…"
           onChange={(e) => setText(e.target.value)}
         />
-        <button type="submit" className={styles.button} disabled={!text.trim() || add.isPending}>
+        <Button type="submit" disabled={!text.trim() || add.isPending}>
           Add
-        </button>
+        </Button>
       </form>
       {add.isError ? (
         <p role="alert" className={styles.error}>
@@ -60,6 +61,7 @@ export function CanDoLog() {
         <ul className={styles.list} aria-label="Can-do log">
           {list.data.entries.map((entry) => (
             <li key={entry.id} className={styles.canDo}>
+              <CheckIcon size={18} className={styles.canDoIcon} />
               <span>{entry.text}</span>
               <span className={styles.muted}>
                 {shortDate(entry.createdAt)}

@@ -1,74 +1,152 @@
+/*
+ * Login: a full-bleed split like the SONORUS hero. Lime brand panel (wordmark, tagline,
+ * "01 / Sign in") beside a plum panel that holds a cream form card. Stacks on phones.
+ */
+
 .page {
+  display: grid;
   min-height: 100dvh;
+}
+
+@media (min-width: 768px) {
+  .page {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+/* --- Brand panel (lime) --- */
+
+.brand {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-5);
+  padding: max(var(--space-5), env(safe-area-inset-top)) var(--gutter) var(--space-5);
+  border-bottom: var(--hairline) solid var(--color-line);
+}
+
+@media (min-width: 768px) {
+  .brand {
+    padding: var(--space-7) var(--space-6);
+    border-bottom: 0;
+    border-right: var(--hairline) solid var(--color-line);
+  }
+}
+
+.brandBody {
+  display: grid;
+  align-content: center;
+  gap: var(--space-3);
+}
+
+.wordmark {
+  margin: 0;
+  font-size: var(--text-display);
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
+  animation: reveal var(--dur-reveal) var(--ease-out);
+}
+
+.tagline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  line-height: var(--leading-heading);
+}
+
+.lead {
+  max-width: 26rem;
+  margin: 0;
+  font-size: var(--text-lead);
+  line-height: var(--leading-body);
+  color: var(--color-text-muted);
+}
+
+.brandFoot {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.brandNumber {
+  font-size: var(--text-h1);
+}
+
+/* Phones: keep the brand short so the form is reachable without scrolling far. */
+@media (max-width: 767.98px) {
+  .lead,
+  .brandFoot {
+    display: none;
+  }
+}
+
+/* --- Form panel (plum) holding a cream card --- */
+
+.formPanel {
   display: grid;
   place-items: center;
-  padding: 1rem;
+  padding: var(--space-5) var(--gutter) max(var(--space-5), env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .formPanel {
+    padding: var(--space-7) var(--space-6);
+  }
 }
 
 .card {
-  width: 100%;
-  max-width: 22rem;
   display: grid;
-  gap: 0.75rem;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 26rem;
+  padding: var(--space-5) var(--space-4);
+  border: var(--hairline) solid var(--color-line);
+  animation: reveal var(--dur-reveal) var(--ease-out);
 }
 
-.title {
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem;
+@media (min-width: 768px) {
+  .card {
+    padding: var(--space-6) var(--space-5);
+  }
 }
 
-.label {
-  font-weight: 600;
+.cardHead {
+  display: grid;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--hairline) solid var(--color-line-soft);
 }
 
-.input {
-  font: inherit;
-  padding: 0.75rem;
-  border: 1px solid var(--color-muted);
-  border-radius: 0.5rem;
-  background: transparent;
-  color: inherit;
-}
-
-.button {
-  font: inherit;
-  font-weight: 600;
-  min-height: 2.75rem;
-  border: 0;
-  border-radius: 0.5rem;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  cursor: pointer;
-}
-
-.button:disabled {
-  opacity: 0.6;
+.cardTitle {
+  margin: 0;
+  font-size: var(--text-h3);
 }
 
 .error {
-  margin: 0;
   min-height: 1.5em;
-  color: var(--color-down);
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--color-error-text);
 }
 
+/* "Server unavailable": an almost-state block with its retry action. */
 .notice {
   display: grid;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border: 1px solid var(--color-down);
-  border-radius: 0.5rem;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--state-almost-bg);
+  color: var(--state-almost-fg);
+  border-left: 3px solid var(--state-almost-line);
 }
 
 .noticeText {
   margin: 0;
+  font-size: var(--text-small);
 }
 
-.secondary {
-  font: inherit;
-  min-height: 2.75rem;
-  border: 1px solid var(--color-muted);
-  border-radius: 0.5rem;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
 }

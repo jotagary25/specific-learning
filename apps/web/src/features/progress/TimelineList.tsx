@@ -41,7 +41,7 @@ export function TimelineList({ timeline }: { timeline: TimelineResponse }) {
     <ol className={styles.weeks}>
       {[...timeline.weeks].reverse().map((week) => (
         <li key={week.weekStart} className={styles.week}>
-          <h3 className={styles.subheading}>
+          <h3 className={styles.weekHeading}>
             Week of {shortDate(week.weekStart)}
             {week.minutes > 0 ? (
               <span className={styles.muted}> · {minutesLabel(week.minutes)} studied</span>

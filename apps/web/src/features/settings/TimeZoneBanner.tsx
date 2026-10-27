@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "../../shared/ui/index.ts";
 import styles from "./SettingsPage.module.css";
 import { fetchPreferences, preferencesKey, savePreferences } from "./settings.api.ts";
 import { browserTimeZone, ZONED_QUERY_KEYS } from "./time-zones.ts";
@@ -25,34 +26,26 @@ export function TimeZoneBanner() {
   if (!zone || zone === "UTC") return null;
 
   return (
-    <aside aria-label="Time zone" className={styles.banner}>
-      <p>
-        Use <strong>{zone}</strong> as your time zone? Your days, study plan and daily article
-        follow it.
-      </p>
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.primary}
-          disabled={choose.isPending}
-          onClick={() => choose.mutate(zone)}
-        >
-          Accept
-        </button>
-        <button
-          type="button"
-          className={styles.secondary}
-          disabled={choose.isPending}
-          onClick={() => choose.mutate("UTC")}
-        >
-          Keep UTC
-        </button>
-      </div>
-      {choose.isError && (
-        <p role="alert" className={styles.message}>
-          {choose.error.message}
+    <aside aria-label="Time zone" data-tone="lime" className={styles.banner}>
+      <div className={styles.bannerInner}>
+        <p className={styles.bannerText}>
+          Use <strong>{zone}</strong> as your time zone? Your days, study plan and daily article
+          follow it.
         </p>
-      )}
+        <div className={styles.actions}>
+          <Button disabled={choose.isPending} onClick={() => choose.mutate(zone)}>
+            Accept
+          </Button>
+          <Button variant="ghost" disabled={choose.isPending} onClick={() => choose.mutate("UTC")}>
+            Keep UTC
+          </Button>
+        </div>
+        {choose.isError && (
+          <p role="alert" className={styles.message}>
+            {choose.error.message}
+          </p>
+        )}
+      </div>
     </aside>
   );
 }

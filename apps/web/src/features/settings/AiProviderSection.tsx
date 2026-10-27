@@ -1,13 +1,13 @@
 import type { AiProviderId, AiProviderResponse } from "@english-course/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useId, useState } from "react";
+import { useState } from "react";
 import styles from "./SettingsPage.module.css";
+import { SettingsSection } from "./SettingsSection.tsx";
 import { PROVIDER_LABEL, saveAiProvider, settingsKeys } from "./settings.api.ts";
 
 /** Active AI provider switch; each provider keeps its own key and per-function models. */
 export function AiProviderSection({ current }: { current: AiProviderResponse }) {
   const queryClient = useQueryClient();
-  const titleId = useId();
   const [message, setMessage] = useState("");
   const save = useMutation({
     mutationFn: saveAiProvider,
@@ -20,16 +20,14 @@ export function AiProviderSection({ current }: { current: AiProviderResponse }) 
   });
 
   return (
-    <section className={styles.section} aria-labelledby={titleId}>
-      <h2 id={titleId} className={styles.heading}>
-        AI provider
-      </h2>
+    <SettingsSection number="02" eyebrow="Where the AI runs" title="AI provider">
       <p className={styles.muted}>
         Every AI feature uses the active provider. Keys and model choices are kept per provider.
       </p>
-      <fieldset className={styles.actions} aria-labelledby={titleId}>
+      <fieldset className={styles.segmented}>
+        <legend className="visually-hidden">AI provider</legend>
         {current.available.map((provider: AiProviderId) => (
-          <label key={provider} className={styles.label}>
+          <label key={provider} className={styles.segment}>
             <input
               type="radio"
               name="ai-provider"
@@ -37,7 +35,7 @@ export function AiProviderSection({ current }: { current: AiProviderResponse }) 
               checked={current.provider === provider}
               disabled={save.isPending}
               onChange={() => save.mutate(provider)}
-            />{" "}
+            />
             {PROVIDER_LABEL[provider]}
           </label>
         ))}
@@ -45,6 +43,6 @@ export function AiProviderSection({ current }: { current: AiProviderResponse }) 
       <p role="status" className={styles.message}>
         {message}
       </p>
-    </section>
+    </SettingsSection>
   );
 }

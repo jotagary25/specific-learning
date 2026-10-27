@@ -1,5 +1,6 @@
 import type { TutorContextInput } from "@english-course/shared";
 import { useEffect, useId, useRef, useState } from "react";
+import { Button } from "../../shared/ui/index.ts";
 import styles from "./Tutor.module.css";
 import { type ChatEntry, QUICK_PROMPTS } from "./tutor.model.ts";
 import { useTutorChat } from "./useTutorChat.ts";
@@ -17,8 +18,12 @@ function Bubble({ entry }: { entry: ChatEntry }) {
   return (
     <li
       className={isTutor ? styles.tutorBubble : styles.userBubble}
+      data-tone={isTutor ? "cream" : "plum"}
       lang={isTutor ? "es" : undefined}
     >
+      <span className={styles.speaker} aria-hidden="true" lang="en">
+        {isTutor ? "Tutor" : "You"}
+      </span>
       {entry.tools.length > 0 ? (
         <ul className={styles.chips} aria-label="Tools used" lang="en">
           {entry.tools.map((tool) => (
@@ -80,9 +85,9 @@ export function TutorChat({
   return (
     <div className={styles.chat}>
       <ol className={styles.log} role="log" aria-live="polite" aria-label="Conversation">
-        {loading ? <li className={styles.muted}>Loading the conversation…</li> : null}
+        {loading ? <li className={styles.note}>Loading the conversation…</li> : null}
         {!loading && entries.length === 0 ? (
-          <li className={styles.muted}>
+          <li className={styles.note}>
             Ask about what confuses you. Answers are short and in Spanish.
           </li>
         ) : null}
@@ -93,7 +98,7 @@ export function TutorChat({
       <div ref={endRef} />
 
       <fieldset className={styles.quick}>
-        <legend className={styles.srOnly}>Quick prompts</legend>
+        <legend className="visually-hidden">Quick prompts</legend>
         {QUICK_PROMPTS.map((prompt) => (
           <button
             key={prompt}
@@ -114,7 +119,7 @@ export function TutorChat({
           submit(draft);
         }}
       >
-        <label htmlFor={inputId} className={styles.srOnly}>
+        <label htmlFor={inputId} className="visually-hidden">
           Your question
         </label>
         <textarea
@@ -134,13 +139,13 @@ export function TutorChat({
           }}
         />
         {busy ? (
-          <button type="button" className={styles.secondary} onClick={stop}>
+          <Button variant="secondary" onClick={stop} className={styles.send}>
             Stop
-          </button>
+          </Button>
         ) : (
-          <button type="submit" className={styles.primary} disabled={!draft.trim()}>
+          <Button type="submit" disabled={!draft.trim()} className={styles.send}>
             Send
-          </button>
+          </Button>
         )}
       </form>
     </div>

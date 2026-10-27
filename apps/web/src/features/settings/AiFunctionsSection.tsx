@@ -6,8 +6,10 @@ import type {
 } from "@english-course/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
+import { Badge, Button } from "../../shared/ui/index.ts";
 import { decodeThink, effortOptions, encodeThink, functionLabel } from "./effort.ts";
 import styles from "./SettingsPage.module.css";
+import { SettingsSection } from "./SettingsSection.tsx";
 import {
   fetchAiFunctions,
   fetchCapabilities,
@@ -55,8 +57,8 @@ function AiFunctionRow({ provider, config, models }: RowProps) {
   return (
     <tr className={styles.row}>
       <th scope="row" className={styles.fnCell}>
-        {label}
-        <span className={styles.tier}>{config.tier}</span>
+        <span className={styles.fnName}>{label}</span>
+        <Badge className={styles.tier}>{config.tier}</Badge>
       </th>
       <td className={styles.cell}>
         <label htmlFor={modelId} className={styles.cellLabel}>
@@ -98,16 +100,15 @@ function AiFunctionRow({ provider, config, models }: RowProps) {
           ))}
         </select>
       </td>
-      <td className={styles.cell}>
-        <button
-          className={styles.primary}
-          type="button"
+      <td className={`${styles.cell} ${styles.saveCell}`}>
+        <Button
+          variant={dirty ? "primary" : "secondary"}
           onClick={() => save.mutate()}
           disabled={!dirty || save.isPending}
           aria-label={`Save ${label}`}
         >
           Save
-        </button>
+        </Button>
         <span role="status" className={styles.message}>
           {message}
         </span>
@@ -117,7 +118,6 @@ function AiFunctionRow({ provider, config, models }: RowProps) {
 }
 
 export function AiFunctionsSection({ provider }: { provider: AiProviderId }) {
-  const titleId = useId();
   const functions = useQuery({
     queryKey: settingsKeys.aiFunctions(provider),
     queryFn: () => fetchAiFunctions(provider),
@@ -130,10 +130,7 @@ export function AiFunctionsSection({ provider }: { provider: AiProviderId }) {
   });
 
   return (
-    <section className={styles.section} aria-labelledby={titleId}>
-      <h2 id={titleId} className={styles.heading}>
-        AI functions
-      </h2>
+    <SettingsSection number="03" eyebrow="Per-feature models" title="AI functions">
       <p className={styles.muted}>
         Model and reasoning effort used by each AI feature on {PROVIDER_LABEL[provider]}.
         {provider === "openrouter" && " Prices are USD per 1M input / output tokens."}
@@ -153,7 +150,7 @@ export function AiFunctionsSection({ provider }: { provider: AiProviderId }) {
               <th scope="col">Model</th>
               <th scope="col">Effort</th>
               <th scope="col">
-                <span className={styles.visuallyHidden}>Save</span>
+                <span className="visually-hidden">Save</span>
               </th>
             </tr>
           </thead>
@@ -170,6 +167,6 @@ export function AiFunctionsSection({ provider }: { provider: AiProviderId }) {
           </tbody>
         </table>
       )}
-    </section>
+    </SettingsSection>
   );
 }

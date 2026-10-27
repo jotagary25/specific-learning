@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button } from "../ui/index.ts";
 import {
   type BeforeInstallPromptEvent,
   isIos,
@@ -48,23 +49,23 @@ export function InstallHint() {
 
   return (
     <aside aria-label="Install the app" className={styles.install}>
-      {prompt ? (
-        <p>Install English Course on this device for a full-screen app and a home-screen icon.</p>
-      ) : (
-        <p>
-          Install on iPhone or iPad: tap <strong>Share</strong>, then{" "}
-          <strong>Add to Home Screen</strong>.
-        </p>
-      )}
-      <div className={styles.actions}>
-        {prompt && (
-          <button type="button" className={styles.primary} onClick={() => void install()}>
-            Install
-          </button>
+      <div className={styles.installInner}>
+        {prompt ? (
+          <p className={styles.installText}>
+            Install English Course on this device for a full-screen app and a home-screen icon.
+          </p>
+        ) : (
+          <p className={styles.installText}>
+            Install on iPhone or iPad: tap <strong>Share</strong>, then{" "}
+            <strong>Add to Home Screen</strong>.
+          </p>
         )}
-        <button type="button" className={styles.secondary} onClick={dismiss}>
-          Not now
-        </button>
+        <div className={styles.actions}>
+          {prompt && <Button onClick={() => void install()}>Install</Button>}
+          <Button variant="ghost" onClick={dismiss}>
+            Not now
+          </Button>
+        </div>
       </div>
     </aside>
   );

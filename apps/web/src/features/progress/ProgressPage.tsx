@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { Eyebrow } from "../../shared/ui/index.ts";
 import { CanDoLog } from "./CanDoLog.tsx";
 import { ErrorsPanel } from "./ErrorsPanel.tsx";
 import styles from "./Progress.module.css";
@@ -15,12 +16,27 @@ import { monthName, monthOf } from "./progress.model.ts";
 import { ScoreTrends, SummaryCards } from "./SummaryCards.tsx";
 import { TimelineList } from "./TimelineList.tsx";
 
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+function Section({
+  id,
+  number,
+  title,
+  children,
+}: {
+  id: string;
+  number: string;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section aria-labelledby={id} className={styles.section}>
-      <h2 id={id} className={styles.heading}>
-        {title}
-      </h2>
+      <div className={styles.sectionHead}>
+        <span className={`numeral ${styles.sectionNumber}`} aria-hidden="true">
+          {number}
+        </span>
+        <h2 id={id} className={styles.heading}>
+          {title}
+        </h2>
+      </div>
       {children}
     </section>
   );
@@ -53,36 +69,44 @@ export function ProgressPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.stack}>
-        <h1 className={styles.title}>Progress</h1>
-        <p className={styles.muted}>
-          What you can do now, from your own work. No streaks, no points.
-        </p>
-        <p className={due.data?.due ? styles.mirrorDue : styles.mirrorLink}>
+      <header className={styles.pageHead}>
+        <div className={styles.pageIntro}>
+          <Eyebrow rule>From your own work</Eyebrow>
+          <h1 className={styles.title}>Progress</h1>
+          <p className={styles.lead}>
+            What you can do now, from your own work. No streaks, no points.
+          </p>
+        </div>
+        <p
+          className={due.data?.due ? styles.mirrorDue : styles.mirrorLink}
+          data-tone={due.data?.due ? "lime" : undefined}
+        >
           {due.data?.due ? "Your monthly mirror is ready: " : null}
-          <Link to={`/progress/mirror/${month}`}>Monthly mirror: {monthName(month)}</Link>
+          <Link to={`/progress/mirror/${month}`} className={styles.mirrorAnchor}>
+            Monthly mirror: {monthName(month)}
+          </Link>
         </p>
       </header>
 
-      <Section id="glance-heading" title="At a glance">
+      <Section id="glance-heading" number="01" title="At a glance">
         <Status query={summary} what="your summary" />
         {summary.data ? <SummaryCards summary={summary.data} /> : null}
       </Section>
 
-      <Section id="scores-heading" title="Writing scores">
+      <Section id="scores-heading" number="02" title="Writing scores">
         {summary.data ? <ScoreTrends writing={summary.data.writing} /> : null}
       </Section>
 
-      <Section id="errors-heading" title="Your errors over time">
+      <Section id="errors-heading" number="03" title="Your errors over time">
         <Status query={errors} what="your errors" />
         {errors.data ? <ErrorsPanel errors={errors.data} /> : null}
       </Section>
 
-      <Section id="cando-heading" title="Can-do log">
+      <Section id="cando-heading" number="04" title="Can-do log">
         <CanDoLog />
       </Section>
 
-      <Section id="timeline-heading" title="Timeline">
+      <Section id="timeline-heading" number="05" title="Timeline">
         <Status query={timeline} what="your timeline" />
         {timeline.data ? <TimelineList timeline={timeline.data} /> : null}
       </Section>

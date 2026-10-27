@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId } from "react";
 import { Link, useLocation } from "react-router";
+import { ArrowLeftIcon, Button, Eyebrow, TutorIcon } from "../../shared/ui/index.ts";
 import styles from "./Tutor.module.css";
 import { TutorChat } from "./TutorChat.tsx";
 import { useTutor } from "./TutorProvider.tsx";
@@ -20,7 +21,8 @@ export function TutorButton() {
       onMouseDown={(event) => event.preventDefault()}
       onClick={() => openTutor()}
     >
-      Ask the tutor
+      <TutorIcon size={22} />
+      <span className={styles.fabLabel}>Ask the tutor</span>
     </button>
   );
 }
@@ -44,20 +46,24 @@ export function TutorDrawer() {
   return (
     <aside className={styles.drawer} role="dialog" aria-modal="false" aria-labelledby={titleId}>
       <header className={styles.drawerHeader}>
-        <div>
+        <div className={styles.drawerHeading}>
+          <Eyebrow rule>Stuck? Ask</Eyebrow>
           <h2 id={titleId} className={styles.drawerTitle}>
             Tutor
           </h2>
-          <p className={styles.muted}>
+          <p className={styles.context}>
             {contextLabel(context)} ·{" "}
             <Link to="/tutor" onClick={closeTutor}>
               History
             </Link>
           </p>
         </div>
-        <button type="button" className={styles.primary} onClick={closeTutor}>
-          Back to my task
-        </button>
+        <Button variant="secondary" onClick={closeTutor} className={styles.back}>
+          <span className={styles.backLabel}>
+            <ArrowLeftIcon size={18} />
+            Back to my task
+          </span>
+        </Button>
       </header>
       <TutorChat
         key={session}

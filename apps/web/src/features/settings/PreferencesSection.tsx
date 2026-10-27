@@ -1,7 +1,9 @@
 import type { PreferencesView } from "@english-course/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useId, useMemo, useState } from "react";
+import { Button } from "../../shared/ui/index.ts";
 import styles from "./SettingsPage.module.css";
+import { SettingsSection } from "./SettingsSection.tsx";
 import { fetchPreferences, preferencesKey, savePreferences } from "./settings.api.ts";
 import { hourLabel, timeZoneOptions, ZONED_QUERY_KEYS } from "./time-zones.ts";
 
@@ -130,13 +132,9 @@ function PreferencesForm({ initial }: { initial: PreferencesView }) {
         ))}
       </select>
       <div className={styles.actions}>
-        <button
-          className={styles.primary}
-          type="submit"
-          disabled={!newValid || !zoneValid || save.isPending}
-        >
+        <Button type="submit" arrow disabled={!newValid || !zoneValid || save.isPending}>
           Save preferences
-        </button>
+        </Button>
       </div>
       <p role="status" className={styles.message}>
         {message}
@@ -147,14 +145,10 @@ function PreferencesForm({ initial }: { initial: PreferencesView }) {
 
 /** Writing day, SRS new-card allowance, time zone and the daily article hour. */
 export function PreferencesSection() {
-  const titleId = useId();
   const preferences = useQuery({ queryKey: preferencesKey, queryFn: fetchPreferences });
 
   return (
-    <section className={styles.section} aria-labelledby={titleId}>
-      <h2 id={titleId} className={styles.heading}>
-        Study preferences
-      </h2>
+    <SettingsSection number="04" eyebrow="Your rhythm" title="Study preferences">
       {preferences.isPending ? (
         <p className={styles.muted}>Loading…</p>
       ) : preferences.isError ? (
@@ -162,6 +156,6 @@ export function PreferencesSection() {
       ) : (
         <PreferencesForm initial={preferences.data} />
       )}
-    </section>
+    </SettingsSection>
   );
 }

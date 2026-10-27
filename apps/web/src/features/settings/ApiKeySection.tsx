@@ -1,7 +1,9 @@
 import type { AiKeyStatus, AiProviderId } from "@english-course/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useId, useState } from "react";
+import { Button } from "../../shared/ui/index.ts";
 import styles from "./SettingsPage.module.css";
+import { SettingsSection } from "./SettingsSection.tsx";
 import {
   deleteAiKey,
   fetchAiKey,
@@ -75,11 +77,13 @@ export function ApiKeySection({ provider }: { provider: AiProviderId }) {
   };
 
   return (
-    <section className={styles.section} aria-labelledby={`${inputId}-title`}>
-      <h2 id={`${inputId}-title`} className={styles.heading}>
-        {PROVIDER_LABEL[provider]} API key
-      </h2>
-      <p id={statusId} className={styles.muted}>
+    <SettingsSection eyebrow="Credentials" title={`${PROVIDER_LABEL[provider]} API key`}>
+      <p
+        id={statusId}
+        className={
+          status.data?.configured && !status.data.error ? styles.keyStatusOk : styles.keyStatus
+        }
+      >
         {status.isPending
           ? "Loading…"
           : status.isError
@@ -101,36 +105,26 @@ export function ApiKeySection({ provider }: { provider: AiProviderId }) {
           aria-describedby={statusId}
         />
         <div className={styles.actions}>
-          <button
-            className={styles.primary}
-            type="submit"
-            disabled={!apiKey.trim() || save.isPending}
-          >
+          <Button type="submit" disabled={!apiKey.trim() || save.isPending}>
             Save key
-          </button>
-          <button
-            className={styles.secondary}
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => test.mutate()}
             disabled={!status.data?.configured || test.isPending}
           >
             {test.isPending ? "Testing…" : "Test connection"}
-          </button>
+          </Button>
           {status.data?.source === "db" && (
-            <button
-              className={styles.secondary}
-              type="button"
-              onClick={() => remove.mutate()}
-              disabled={remove.isPending}
-            >
+            <Button variant="ghost" onClick={() => remove.mutate()} disabled={remove.isPending}>
               Remove stored key
-            </button>
+            </Button>
           )}
         </div>
       </form>
       <p role="status" className={styles.message}>
         {message}
       </p>
-    </section>
+    </SettingsSection>
   );
 }

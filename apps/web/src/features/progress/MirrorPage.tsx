@@ -7,6 +7,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
+import { ArrowLeftIcon, Button, Eyebrow } from "../../shared/ui/index.ts";
 import styles from "./Progress.module.css";
 import { fetchMirror, markMirrorSeen, progressKeys, saveReflection } from "./progress.api.ts";
 import {
@@ -58,7 +59,7 @@ function ArticleThenNow({ article, label }: { article: MirrorArticle | null; lab
         </ul>
       ) : null}
       {article.text ? (
-        <details className={styles.card}>
+        <details className={styles.details}>
           <summary>Re-read the article</summary>
           <p className={styles.articleText}>
             {highlightSegments(article.text, article.words).map((s, i) =>
@@ -78,10 +79,21 @@ function ArticleThenNow({ article, label }: { article: MirrorArticle | null; lab
   );
 }
 
-function PostColumn({ title, post }: { title: string; post: MirrorPost }) {
+function PostColumn({
+  title,
+  post,
+  tone,
+  eyebrow,
+}: {
+  title: string;
+  post: MirrorPost;
+  tone: "lime" | "plum";
+  eyebrow: string;
+}) {
   return (
-    <article className={styles.card} aria-label={title}>
-      <h3 className={styles.subheading}>{title}</h3>
+    <article className={styles.spreadPanel} data-tone={tone} aria-label={title}>
+      <Eyebrow rule>{eyebrow}</Eyebrow>
+      <h3 className={styles.spreadTitle}>{title}</h3>
       <p className={styles.muted}>
         {post.title} · {shortDate(post.writtenOn)} · overall {post.overall}
       </p>
@@ -117,13 +129,16 @@ function WritingSideBySide({ writing }: { writing: MirrorWriting | null }) {
         </ul>
       ) : null}
       <div className={styles.sideBySide}>
-        <PostColumn title="Your first post" post={writing.first} />
+        <PostColumn title="Your first post" post={writing.first} tone="lime" eyebrow="Then" />
         {writing.latest ? (
-          <PostColumn title="Your latest post" post={writing.latest} />
+          <PostColumn title="Your latest post" post={writing.latest} tone="plum" eyebrow="Now" />
         ) : (
-          <p className={styles.muted}>
-            Only one reviewed post so far. The comparison appears after the next one.
-          </p>
+          <div className={styles.spreadPanel} data-tone="plum">
+            <Eyebrow rule>Now</Eyebrow>
+            <p className={styles.muted}>
+              Only one reviewed post so far. The comparison appears after the next one.
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -159,9 +174,9 @@ function Reflection({ mirror }: { mirror: MirrorResponse }) {
         onChange={(e) => setText(e.target.value)}
       />
       <div className={styles.inline}>
-        <button type="submit" className={styles.button} disabled={!text.trim() || save.isPending}>
+        <Button type="submit" arrow disabled={!text.trim() || save.isPending}>
           Save reflection
-        </button>
+        </Button>
         <span role="status" className={styles.muted}>
           {save.isSuccess ? "Saved." : ""}
         </span>
@@ -200,10 +215,16 @@ export function MirrorPage() {
   const label = monthName(month);
   return (
     <div className={styles.page}>
-      <header className={styles.stack}>
-        <Link to="/progress">← Progress</Link>
-        <h1 className={styles.title}>Monthly mirror: {label}</h1>
-        <nav aria-label="Other months" className={styles.inline}>
+      <header className={styles.pageHead}>
+        <div className={styles.pageIntro}>
+          <Link to="/progress" className={styles.back}>
+            <ArrowLeftIcon size={18} />
+            Progress
+          </Link>
+          <Eyebrow rule>Then and now</Eyebrow>
+          <h1 className={styles.title}>Monthly mirror: {label}</h1>
+        </div>
+        <nav aria-label="Other months" className={styles.months}>
           <Link to={`/progress/mirror/${shiftMonth(month, -1)}`}>
             {monthName(shiftMonth(month, -1))}
           </Link>
@@ -224,27 +245,42 @@ export function MirrorPage() {
       {mirror.data ? (
         <>
           <section aria-labelledby="words-heading" className={styles.section}>
-            <h2 id="words-heading" className={styles.heading}>
-              Words then and now
-            </h2>
+            <div className={styles.sectionHead}>
+              <span className={`numeral ${styles.sectionNumber}`} aria-hidden="true">
+                01
+              </span>
+              <h2 id="words-heading" className={styles.heading}>
+                Words then and now
+              </h2>
+            </div>
             <ArticleThenNow article={mirror.data.article} label={label} />
           </section>
           <section aria-labelledby="writing-heading" className={styles.section}>
-            <h2 id="writing-heading" className={styles.heading}>
-              Your first post and your latest
-            </h2>
+            <div className={styles.sectionHead}>
+              <span className={`numeral ${styles.sectionNumber}`} aria-hidden="true">
+                02
+              </span>
+              <h2 id="writing-heading" className={styles.heading}>
+                Your first post and your latest
+              </h2>
+            </div>
             <WritingSideBySide writing={mirror.data.writing} />
           </section>
           <section aria-labelledby="units-heading" className={styles.section}>
-            <h2 id="units-heading" className={styles.heading}>
-              Units completed in {label}
-            </h2>
+            <div className={styles.sectionHead}>
+              <span className={`numeral ${styles.sectionNumber}`} aria-hidden="true">
+                03
+              </span>
+              <h2 id="units-heading" className={styles.heading}>
+                Units completed in {label}
+              </h2>
+            </div>
             {mirror.data.units.length === 0 ? (
               <p className={styles.muted}>No units completed this month yet.</p>
             ) : (
               <ul className={styles.list}>
                 {mirror.data.units.map((u) => (
-                  <li key={u.unit} className={styles.card}>
+                  <li key={u.unit} className={styles.row}>
                     <Link to={`/units/${u.unit}`}>
                       Unit {u.unit}: {u.title}
                     </Link>
@@ -262,9 +298,14 @@ export function MirrorPage() {
             )}
           </section>
           <section aria-labelledby="reflection-heading" className={styles.section}>
-            <h2 id="reflection-heading" className={styles.heading}>
-              Reflection
-            </h2>
+            <div className={styles.sectionHead}>
+              <span className={`numeral ${styles.sectionNumber}`} aria-hidden="true">
+                04
+              </span>
+              <h2 id="reflection-heading" className={styles.heading}>
+                Reflection
+              </h2>
+            </div>
             <Reflection key={mirror.data.month} mirror={mirror.data} />
           </section>
         </>

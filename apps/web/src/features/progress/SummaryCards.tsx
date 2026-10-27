@@ -8,7 +8,7 @@ export function SummaryCards({ summary }: { summary: ProgressSummary }) {
   const { units, words, minutes, articlesRead } = summary;
   return (
     <ul className={styles.cards} aria-label="At a glance">
-      <li className={styles.card}>
+      <li className={styles.cell} data-tone="plum">
         <p className={styles.figure}>
           <strong className={styles.number}>{units.completed}</strong> of {units.total} units
           completed
@@ -17,7 +17,7 @@ export function SummaryCards({ summary }: { summary: ProgressSummary }) {
           {units.inProgress} in progress · {units.needsReview} to review
         </p>
       </li>
-      <li className={styles.card}>
+      <li className={styles.cell}>
         <p className={styles.figure}>
           <strong className={styles.number}>{words.mature}</strong>{" "}
           {words.mature === 1 ? "word" : "words"} you know well
@@ -27,14 +27,14 @@ export function SummaryCards({ summary }: { summary: ProgressSummary }) {
           reviewed yet
         </p>
       </li>
-      <li className={styles.card}>
+      <li className={styles.cell}>
         <p className={styles.figure}>
           <strong className={styles.number}>{minutesLabel(minutes.last7Days)}</strong> studied in
           the last 7 days
         </p>
         <p className={styles.muted}>{minutesLabel(minutes.last30Days)} in the last 30 days</p>
       </li>
-      <li className={styles.card}>
+      <li className={styles.cell}>
         <p className={styles.figure}>
           <strong className={styles.number}>{articlesRead}</strong>{" "}
           {articlesRead === 1 ? "article" : "articles"} read in English
@@ -54,7 +54,7 @@ export function ScoreTrends({ writing }: { writing: ProgressSummary["writing"] }
         const label = DIMENSION_LABELS[d.dimension];
         const latest = d.values.at(-1);
         return (
-          <li key={d.dimension} className={styles.card}>
+          <li key={d.dimension} className={styles.cell}>
             <p className={styles.figure}>
               {label}: <strong className={styles.number}>{latest ?? "–"}</strong>
               {d.change !== null ? (
@@ -66,6 +66,7 @@ export function ScoreTrends({ writing }: { writing: ProgressSummary["writing"] }
             </p>
             {d.values.length > 1 ? (
               <Sparkline
+                className={styles.spark}
                 values={d.values}
                 label={`${label} scores of your last ${d.values.length} reviewed texts, oldest to newest: ${d.values.join(", ")}`}
               />

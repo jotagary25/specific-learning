@@ -1,5 +1,6 @@
 import type { ErrorsResponse, ErrorTypeTrend } from "@english-course/shared";
 import { Link } from "react-router";
+import { Badge } from "../../shared/ui/index.ts";
 import styles from "./Progress.module.css";
 import { errorTypeLabel, monthName, plural } from "./progress.model.ts";
 
@@ -16,8 +17,8 @@ function TrendList({ items, empty }: { items: ErrorTypeTrend[]; empty: string })
   return (
     <ul className={styles.list}>
       {items.map((t) => (
-        <li key={t.type} className={styles.card}>
-          <strong>{errorTypeLabel(t.type)}</strong>
+        <li key={t.type} className={styles.row}>
+          <strong className={styles.rowTitle}>{errorTypeLabel(t.type)}</strong>
           <p className={styles.muted}>{windowLine(t)}</p>
           {t.units.length > 0 ? (
             <p className={styles.links}>
@@ -40,19 +41,25 @@ export function ErrorsPanel({ errors }: { errors: ErrorsResponse }) {
   }
   return (
     <div className={styles.columns}>
-      <section aria-labelledby="beating-heading">
-        <h3 id="beating-heading" className={styles.subheading}>
-          Errors you are beating
-        </h3>
+      <section aria-labelledby="beating-heading" className={styles.beating}>
+        <div className={styles.columnHead}>
+          <h3 id="beating-heading" className={styles.subheading}>
+            Errors you are beating
+          </h3>
+          <Badge tone="correct">Going down</Badge>
+        </div>
         <TrendList
           items={errors.beating}
           empty="Not yet: an error counts as beaten when it shows up half as often in your recent texts."
         />
       </section>
-      <section aria-labelledby="recurring-heading">
-        <h3 id="recurring-heading" className={styles.subheading}>
-          Still recurring
-        </h3>
+      <section aria-labelledby="recurring-heading" className={styles.recurring}>
+        <div className={styles.columnHead}>
+          <h3 id="recurring-heading" className={styles.subheading}>
+            Still recurring
+          </h3>
+          <Badge tone="incorrect">Keep an eye</Badge>
+        </div>
         <TrendList items={errors.recurring} empty="No error type keeps coming back right now." />
       </section>
       {errors.units.length > 0 ? <UnitTable errors={errors} /> : null}

@@ -1,19 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useId } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import { Badge, Button, Eyebrow } from "../../shared/ui/index.ts";
 import { authKeys, fetchMe, logout } from "../auth/auth.api.ts";
 import { AiFunctionsSection } from "./AiFunctionsSection.tsx";
 import { AiProviderSection } from "./AiProviderSection.tsx";
 import { ApiKeySection } from "./ApiKeySection.tsx";
 import { PreferencesSection } from "./PreferencesSection.tsx";
 import styles from "./SettingsPage.module.css";
+import { SettingsSection } from "./SettingsSection.tsx";
 import { fetchAiProvider, settingsKeys } from "./settings.api.ts";
 
 export function SettingsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const evalTitle = useId();
-  const accountTitle = useId();
   const me = useQuery({ queryKey: authKeys.me, queryFn: fetchMe });
   const user = me.data?.user;
   const provider = useQuery({ queryKey: settingsKeys.provider, queryFn: fetchAiProvider });
@@ -27,20 +26,25 @@ export function SettingsPage() {
 
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>Settings</h1>
-      <section className={styles.section} aria-labelledby={accountTitle}>
-        <h2 id={accountTitle} className={styles.heading}>
-          Account
-        </h2>
+      <header className={styles.pageHead}>
+        <Eyebrow rule>Your course, your models</Eyebrow>
+        <h1 className={styles.title}>Settings</h1>
+        <p className={styles.lead}>
+          Account, AI provider and keys, the model behind each feature, and your study rhythm.
+        </p>
+      </header>
+      <SettingsSection number="01" eyebrow="Who is studying" title="Account">
         {user ? (
           <p className={styles.account}>
-            <span>Signed in as</span> <strong>{user.email}</strong>{" "}
-            <span className={styles.role}>{user.role === "admin" ? "Admin" : "Learner"}</span>
+            <span className={styles.muted}>Signed in as</span> <strong>{user.email}</strong>{" "}
+            <Badge tone={user.role === "admin" ? "accent" : "neutral"}>
+              {user.role === "admin" ? "Admin" : "Learner"}
+            </Badge>
           </p>
         ) : (
           <p className={styles.muted}>{me.isError ? "Account unavailable." : "Loading…"}</p>
         )}
-      </section>
+      </SettingsSection>
       {provider.isError && <p className={styles.warning}>Could not load the AI provider.</p>}
       {provider.isSuccess && (
         <>
@@ -52,21 +56,22 @@ export function SettingsPage() {
         </>
       )}
       <PreferencesSection />
-      <section className={styles.section} aria-labelledby={evalTitle}>
-        <h2 id={evalTitle} className={styles.heading}>
-          Model evaluation
-        </h2>
+      <SettingsSection number="05" eyebrow="Benchmarks" title="Model evaluation">
         <p className={styles.muted}>
           Compare models on fixed learner texts before choosing one: errors found, hint leaks, JSON
           validity, latency, tokens and cost.
         </p>
-        <Link to="/settings/eval">Open model evaluation</Link>
-      </section>
-      <section className={styles.section}>
-        <button className={styles.secondary} type="button" onClick={() => signOut.mutate()}>
+        <div className={styles.actions}>
+          <Button to="/settings/eval" variant="secondary" arrow>
+            Open model evaluation
+          </Button>
+        </div>
+      </SettingsSection>
+      <div className={styles.signOut}>
+        <Button variant="ghost" onClick={() => signOut.mutate()}>
           Log out
-        </button>
-      </section>
+        </Button>
+      </div>
     </div>
   );
 }

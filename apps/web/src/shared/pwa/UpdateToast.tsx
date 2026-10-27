@@ -1,3 +1,4 @@
+import { Button, StatusDot } from "../ui/index.ts";
 import styles from "./Pwa.module.css";
 import { useRegisterSW } from "./sw-register.ts";
 
@@ -18,19 +19,16 @@ export function UpdateToast() {
 
   if (needRefresh) {
     return (
-      <div role="alert" className={styles.toast}>
-        <span>New version available</span>
+      <div role="alert" data-tone="cream" className={styles.toast}>
+        <span className={styles.toastText}>
+          <StatusDot pulse />
+          New version available
+        </span>
         <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.primary}
-            onClick={() => void updateServiceWorker(true)}
-          >
-            Reload
-          </button>
-          <button type="button" className={styles.secondary} onClick={() => setNeedRefresh(false)}>
+          <Button onClick={() => void updateServiceWorker(true)}>Reload</Button>
+          <Button variant="ghost" onClick={() => setNeedRefresh(false)}>
             Later
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -38,12 +36,15 @@ export function UpdateToast() {
 
   if (offlineReady) {
     return (
-      <div role="status" className={styles.toast}>
-        <span>Ready to open offline</span>
+      <div role="status" data-tone="cream" className={styles.toast}>
+        <span className={styles.toastText}>
+          <StatusDot tone="correct" />
+          Ready to open offline
+        </span>
         <div className={styles.actions}>
-          <button type="button" className={styles.secondary} onClick={() => setOfflineReady(false)}>
+          <Button variant="secondary" onClick={() => setOfflineReady(false)}>
             OK
-          </button>
+          </Button>
         </div>
       </div>
     );

@@ -7,8 +7,11 @@ export function OfflineBanner() {
   if (online) return null;
   return (
     <div role="status" className={styles.offline}>
-      <strong>You're offline.</strong> Units and articles you already opened stay readable. Answers,
-      reviews, writing and AI help need a connection — nothing is saved or queued while offline.
+      <p className={styles.stripInner}>
+        <strong className={styles.stripLabel}>You're offline.</strong> Units and articles you
+        already opened stay readable. Answers, reviews, writing and AI help need a connection —
+        nothing is saved or queued while offline.
+      </p>
     </div>
   );
 }

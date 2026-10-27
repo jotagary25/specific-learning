@@ -1,69 +1,98 @@
-.offline {
-  padding: 0.6rem 1rem;
-  background: var(--color-warn);
-  color: #111827;
-  font-size: 0.9rem;
-}
+/*
+ * PWA notices. Banners are full-width strips under the top bar (content aligned with the
+ * shell column); the update toast is a floating cream overlay, above the tab bar on phones.
+ */
 
+/* --- Strips (offline, install) --- */
+
+.offline,
 .install {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  padding: 0.6rem 1rem;
-  background: var(--color-highlight);
-  font-size: 0.9rem;
+  border-bottom: var(--hairline) solid var(--color-line);
+  font-size: var(--text-small);
+  line-height: 1.45;
 }
 
-.install p {
-  margin: 0;
-  flex: 1 1 16rem;
+.stripInner,
+.installInner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-2) var(--gutter);
 }
 
-.toast {
-  position: fixed;
-  top: max(0.75rem, env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 40;
-  width: min(26rem, calc(100vw - 2rem));
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
+/* Offline: an "almost" state strip — attention without alarm. */
+.offline {
+  background: var(--state-almost-bg);
+  color: var(--state-almost-fg);
+  box-shadow: inset 0 3px 0 var(--state-almost-line);
+}
+
+.stripLabel {
+  font-size: var(--text-eyebrow);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+
+/* Install: a quiet cream strip with its two actions at the right. */
+.install {
   background: var(--color-surface);
   color: var(--color-text);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
+}
+
+.installInner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  padding-block: var(--space-1);
+}
+
+.installText {
+  flex: 1 1 16rem;
+  margin: 0;
+  padding-block: var(--space-1);
+}
+
+/* --- Update toast: overlay pattern, cream with a hairline --- */
+
+.toast {
+  composes: toast from "../ui/Overlay.module.css";
+}
+
+/* Doubled class: the overrides win over the composed base whatever the stylesheet order. */
+.toast.toast {
+  border: var(--hairline) solid var(--color-line);
+  background: var(--color-tone-bg);
+  color: var(--color-text);
+  box-shadow: var(--shadow-overlay);
+}
+
+/* Phones: rise from the bottom, above the tab bar, instead of covering the top bar. */
+@media (max-width: 767.98px) {
+  .toast.toast {
+    top: auto;
+    bottom: calc(var(--shell-bottom) + var(--space-3));
+    animation-name: rise-in;
+  }
+}
+
+.toastText {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--weight-medium);
 }
 
 .actions {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: var(--space-1);
 }
 
-.primary,
-.secondary {
-  font: inherit;
-  min-height: 2.5rem;
-  padding: 0.4rem 0.9rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-.primary {
-  border: 0;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 600;
-}
-
-.secondary {
-  border: 1px solid var(--color-border);
-  background: transparent;
-  color: inherit;
+@keyframes rise-in {
+  from {
+    transform: translate(-50%, 12px);
+    opacity: 0;
+  }
 }

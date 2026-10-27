@@ -1,6 +1,7 @@
 import type { EvalRunSummary } from "@english-course/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
+import { Button } from "../../shared/ui/index.ts";
 import { encodeThink } from "../settings/effort.ts";
 import styles from "./EvalPage.module.css";
 import {
@@ -92,26 +93,23 @@ function RunActions({ run }: { run: EvalRunSummary }) {
   return (
     <span className={styles.rowActions}>
       {active && (
-        <button
-          className={styles.secondary}
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => cancel.mutate()}
           disabled={cancel.isPending}
           aria-label={`Cancel ${run.model}`}
         >
           Cancel
-        </button>
+        </Button>
       )}
       {canApply && (
-        <button
-          className={styles.primary}
-          type="button"
+        <Button
           onClick={() => apply.mutate()}
           disabled={apply.isPending}
           aria-label={`Use ${run.model} for review_writing`}
         >
           Use for review_writing
-        </button>
+        </Button>
       )}
       <span role="status" className={styles.message}>
         {message}
@@ -165,14 +163,14 @@ export function RunsTable({ runs }: { runs: EvalRunSummary[] }) {
               </th>
             ))}
             <th scope="col">
-              <span className={styles.visuallyHidden}>Actions</span>
+              <span className="visually-hidden">Actions</span>
             </th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((run) => (
             <Fragment key={run.id}>
-              <tr data-testid="eval-run-row">
+              <tr data-testid="eval-run-row" className={styles.runRow}>
                 <th scope="row" className={styles.modelCell}>
                   <button
                     className={styles.linkButton}
@@ -184,16 +182,25 @@ export function RunsTable({ runs }: { runs: EvalRunSummary[] }) {
                   </button>
                   <span className={styles.muted}> {effortLabel(run)}</span>
                 </th>
-                <td>{statusLabel(run)}</td>
+                <td>
+                  <span className={styles.status} data-status={run.status}>
+                    {statusLabel(run)}
+                  </span>
+                </td>
                 {COLUMNS.map((column) => (
-                  <td key={column.key}>{column.format(run)}</td>
+                  <td
+                    key={column.key}
+                    className={column.key === "overall" ? styles.score : styles.metric}
+                  >
+                    {column.format(run)}
+                  </td>
                 ))}
                 <td>
                   <RunActions run={run} />
                 </td>
               </tr>
               {expanded === run.id && (
-                <tr>
+                <tr className={styles.detailsRow}>
                   <td colSpan={COLUMNS.length + 3}>
                     <RunDetails id={run.id} />
                   </td>
