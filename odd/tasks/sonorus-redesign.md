@@ -23,7 +23,7 @@ Branch: `feat/sonorus-redesign` (from `feat/multi-user-providers` @ `247713d`) �
 
 | ID | Specs | Route | Status | Commit |
 |----|-------|-------|--------|--------|
-| T1 | S1, S2, S3 | delegated writer (context backstop): tokens, fonts, global styles, app shell (desktop top bar + mobile bottom tab bar), shared UI primitives, `docs/design-system.md` | [ ] | |
+| T1 | S1, S2, S3 | delegated writer (context backstop): tokens, fonts, global styles, app shell (desktop top bar + mobile bottom tab bar), shared UI primitives, `docs/design-system.md` | [x] | 014f5ac |
 | T2 | S1–S3 | parallel writer A: `features/today`, `features/units` | [ ] | |
 | T3 | S1–S3 | parallel writer B: `features/reading`, `features/vocabulary`, `features/writing` | [ ] | |
 | T4 | S1–S3 | parallel writer C: `features/progress`, `features/tutor`, `features/settings`, `features/auth`, `features/eval`, `features/home`, `shared/pwa` | [ ] | |
@@ -38,6 +38,8 @@ Risk: none of the high-risk items (UI only). Writer reason for T2–T4: parallel
 - L3 (analysis): the page is a full-bleed grid of color blocks (lime panel with plum text, plum panel with cream/rose text, cream header/footer bands) separated by 1px hairlines; primary CTA = plum rectangle + circled arrow; secondary = cream; icon buttons = outlined circles; numbered bottom tabs "01 Gather / The familiar shape" with dot + active top rule; eyebrows uppercase tracked with leading rule; Gloock numerals ("01"); flat editorial surfaces; the "18px radius" and "elevated" samples belong to the extraction tool UI, not the page; MD spacing values are noisy (normalize to 6px multiples); MD background/text contradiction resolved by the color-block layout.
 - L4: user's own edit to `.env.example` is uncommitted and not read by the agent (`.env*` access is blocked); left untouched.
 
+- L5 (T1 evidence): tokens.css (10-step ramps, roles, `data-tone` lime/plum/cream remapping, state colors, 6px spacing, clamp type scale, motion, focus), self-hosted Gloock 400 + Commissioner 400/500/600 precached (woff2 globPatterns), global.css, 9 primitives in shared/ui (Button, IconButton, Eyebrow, Panel, Stepper, StatusDot, Stat, ProgressLine, Badge, Field + overlay styles + icons), shell with desktop top bar + mobile bottom tab bar + More menu, recolored PWA icons, docs/design-system.md. Web tests 132, typecheck/lint/build green. Notes for T2–T4: fixed-bottom elements add `var(--shell-bottom)`; overlays compose `shared/ui/Overlay.module.css`; old variable aliases removed after T4; light-only.
+
 ## Next step
 
-T1.
+T2–T4 in parallel.
