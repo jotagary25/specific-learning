@@ -1,0 +1,17 @@
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+}
+
+.rule::before {
+  content: "";
+  flex: none;
+  width: var(--space-5);
+  border-top: var(--hairline) solid currentColor;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}

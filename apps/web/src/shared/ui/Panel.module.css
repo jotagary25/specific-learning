@@ -1,0 +1,39 @@
+.panel {
+  position: relative;
+  min-width: 0;
+}
+
+.pad-none {
+  padding: 0;
+}
+
+.pad-md {
+  padding: var(--space-4);
+}
+
+.pad-lg {
+  padding: var(--space-6) var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .pad-lg {
+    padding: var(--space-7) var(--space-6);
+  }
+}
+
+.bordered {
+  border: var(--hairline) solid var(--color-line);
+}
+
+/*
+ * Full bleed inside the shell's centered column: the block reaches the viewport edges while
+ * its content keeps the column's left/right edges. The shell clips horizontal overflow.
+ */
+.bleed {
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(var(--gutter), calc(50vw - 50%));
+}
+
+.bleed.bordered {
+  border-inline: 0;
+}

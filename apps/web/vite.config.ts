@@ -20,8 +20,9 @@ function requireApiUrl(): string {
   return apiUrl;
 }
 
-const THEME_COLOR = "#1d4ed8";
-const BACKGROUND_COLOR = "#ffffff";
+// Design tokens (src/app/tokens.css): cream page and top bar; the splash shows the cream page.
+const THEME_COLOR = "#f3efe5";
+const BACKGROUND_COLOR = "#f3efe5";
 const SHORTCUT_ICONS = [{ src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" }];
 
 export default defineConfig(({ command, mode }) => ({
@@ -62,7 +63,9 @@ export default defineConfig(({ command, mode }) => ({
         ],
       },
       workbox: {
-        // App shell: built js/css/html (default glob) plus includeAssets and manifest icons.
+        // App shell: built js/css/html plus the self-hosted fonts (woff2; the woff fallbacks are
+        // only for browsers without woff2 support), includeAssets and manifest icons.
+        globPatterns: ["**/*.{js,wasm,css,html,woff2}"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api(\/|$)/, /^\/content(\/|$)/],
         cleanupOutdatedCaches: true,

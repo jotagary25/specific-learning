@@ -2,5 +2,10 @@
   width: 100%;
   max-width: 24rem;
   height: 4rem;
-  color: var(--color-primary);
+  color: var(--color-text);
+  overflow: visible;
+}
+
+.sparkline polyline {
+  vector-effect: non-scaling-stroke;
 }

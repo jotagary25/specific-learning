@@ -1,0 +1,51 @@
+.iconButton {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  padding: 0;
+  border: var(--hairline) solid currentColor;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-ui) var(--ease-out),
+    color var(--dur-ui) var(--ease-out);
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.iconButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sm {
+  width: 36px;
+  height: 36px;
+}
+
+/* Invisible extension keeps the 44px target around the smaller circle. */
+.sm::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+.filled {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.filled:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 85%, var(--color-on-accent));
+  color: var(--color-on-accent);
+}

@@ -1,0 +1,125 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-4);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-ui) var(--ease-out),
+    color var(--dur-ui) var(--ease-out),
+    border-color var(--dur-ui) var(--ease-out);
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.label {
+  min-width: 0;
+}
+
+/* Plum block, cream text (in a plum panel: lime block, plum text). */
+.primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+
+.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 88%, var(--color-on-accent));
+}
+
+/* Surface block, text color, 1px line. */
+.secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-line);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--color-highlight);
+}
+
+/* Text-only action, underlined on hover. */
+.ghost {
+  background: transparent;
+  color: var(--color-text);
+  padding-inline: var(--space-1);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.25em;
+}
+
+.ghost:hover:not(:disabled) {
+  text-decoration-color: currentColor;
+}
+
+.sm {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-small);
+  gap: var(--space-2);
+}
+
+/* Keep the 44px touch target where small buttons are tapped. */
+@media (pointer: coarse) {
+  .sm {
+    min-height: var(--tap-target);
+  }
+}
+
+.lg {
+  min-height: 56px;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-lead);
+}
+
+.full {
+  display: flex;
+  width: 100%;
+}
+
+@media (max-width: 767.98px) {
+  .fullMobile {
+    display: flex;
+    width: 100%;
+  }
+}
+
+/* Label left, circled arrow pushed to the right edge. */
+.withArrow {
+  justify-content: space-between;
+  padding-inline-end: var(--space-2);
+}
+
+.arrow {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: var(--hairline) solid currentColor;
+  border-radius: var(--radius-pill);
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+
+.sm .arrow {
+  width: 26px;
+  height: 26px;
+}
+
+.button:hover:not(:disabled) .arrow {
+  transform: translateX(3px);
+}

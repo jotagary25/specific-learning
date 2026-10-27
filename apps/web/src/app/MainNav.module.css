@@ -1,0 +1,193 @@
+/* ---------- Shared ---------- */
+
+.list,
+.secondaryList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link,
+.moreButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--dur-ui) var(--ease-out);
+}
+
+.link:hover,
+.moreButton:hover {
+  color: var(--color-text);
+}
+
+.link:global(.active),
+.moreButton[data-active] {
+  color: var(--color-text);
+}
+
+/* The active rule: under the link on desktop, on top of the tab on mobile. */
+.link::after,
+.moreButton::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--rule);
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+
+.link:global(.active)::after,
+.moreButton[data-active]::after {
+  transform: scaleX(1);
+}
+
+.icon {
+  flex: none;
+}
+
+/* ---------- Desktop: a row of links in the top bar ---------- */
+
+@media (min-width: 768px) {
+  .nav {
+    align-self: stretch;
+  }
+
+  .list {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+    gap: var(--space-4);
+  }
+
+  .item,
+  .secondary {
+    display: flex;
+  }
+
+  .secondaryList {
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .link {
+    height: 100%;
+    min-height: var(--tap-target);
+    font-size: var(--text-small);
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.01em;
+  }
+
+  .link::after {
+    bottom: calc(-1 * var(--hairline));
+  }
+
+  .icon,
+  .moreItem {
+    display: none;
+  }
+}
+
+/* ---------- Mobile: fixed bottom tab bar + "More" menu ---------- */
+
+@media (max-width: 767.98px) {
+  .nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: var(--z-tabbar);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--color-bg);
+    border-top: var(--hairline) solid var(--color-line);
+  }
+
+  .list {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    height: var(--tabbar-height);
+  }
+
+  .link,
+  .moreButton {
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+    height: 100%;
+    min-height: var(--tap-target);
+    padding: var(--space-1) 2px;
+    border: 0;
+    background: transparent;
+    font-size: 0.6875rem;
+    line-height: 1.1;
+    font-weight: var(--weight-medium);
+  }
+
+  .link::after,
+  .moreButton::after {
+    top: calc(-1 * var(--hairline));
+    left: 22%;
+    right: 22%;
+  }
+
+  .label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .link:focus-visible,
+  .moreButton:focus-visible {
+    outline-offset: -3px;
+  }
+
+  /* The More menu: a square card above the bar, right-aligned. */
+  .secondary {
+    display: none;
+    position: absolute;
+    right: var(--space-2);
+    bottom: calc(100% + var(--space-2));
+    min-width: 13rem;
+    background: var(--color-bg);
+    border: var(--hairline) solid var(--color-line);
+    box-shadow: var(--shadow-overlay);
+    animation: menu-in var(--dur-ui) var(--ease-out);
+  }
+
+  .secondary[data-open] {
+    display: block;
+  }
+
+  .secondaryList .item + .item {
+    border-top: var(--hairline) solid var(--color-line-soft);
+  }
+
+  .secondaryList .link {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-2);
+    min-height: 52px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-body);
+  }
+
+  .secondaryList .link::after {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: var(--rule);
+    height: auto;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

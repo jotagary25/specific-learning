@@ -1,0 +1,30 @@
+.field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.field > :is(input, select, textarea) {
+  width: 100%;
+}
+
+.label {
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.hint,
+.error {
+  margin: 0;
+  font-size: var(--text-small);
+  line-height: 1.45;
+}
+
+.hint {
+  color: var(--color-text-muted);
+}
+
+.error {
+  color: var(--color-error-text);
+}

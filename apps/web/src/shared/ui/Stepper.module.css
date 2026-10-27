@@ -1,0 +1,122 @@
+.stepper {
+  min-width: 0;
+}
+
+.list {
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(10.5rem, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+.item {
+  position: relative;
+  scroll-snap-align: start;
+  min-width: 0;
+  /* Hairline on top of every item (drawn inside: the scroller clips overflow). */
+  box-shadow: inset 0 var(--hairline) 0 var(--color-line-soft);
+}
+
+/* The active item carries a rule on top of the hairline. */
+.item::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--rule);
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-reveal) var(--ease-out);
+}
+
+.item[data-active]::before {
+  transform: scaleX(1);
+}
+
+.control {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  column-gap: var(--space-2);
+  width: 100%;
+  min-height: var(--tap-target);
+  padding: var(--space-3) var(--space-3) var(--space-3) 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.item + .item .control {
+  padding-left: var(--space-3);
+}
+
+.control:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.control:focus-visible {
+  outline-offset: -2px;
+}
+
+.index {
+  font-size: var(--text-eyebrow);
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-lead);
+  line-height: 1.25;
+}
+
+.subtitle {
+  font-size: var(--text-small);
+  color: var(--color-text-muted);
+  line-height: 1.35;
+}
+
+.dot {
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  border: var(--hairline) solid currentColor;
+  border-radius: var(--radius-pill);
+  transition: background-color var(--dur-ui) var(--ease-out);
+}
+
+.item[data-active] .dot {
+  background: currentColor;
+}
+
+.item[data-done]:not([data-active]) .dot {
+  background: var(--color-text-muted);
+  border-color: var(--color-text-muted);
+}
+
+.control:hover:not(:disabled) .title {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}

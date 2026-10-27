@@ -11,7 +11,7 @@ type SparklineProps = {
   className?: string;
 };
 
-/** Minimal score line (0–100), drawn in `currentColor`. */
+/** Minimal score line (0–100): a 1.5px hairline in `currentColor` (the tone text color). */
 export function Sparkline({ values, label, width = 240, height = 60, className }: SparklineProps) {
   return (
     <svg
@@ -24,7 +24,7 @@ export function Sparkline({ values, label, width = 240, height = 60, className }
         points={sparklinePoints(values, width, height)}
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.5"
         strokeLinejoin="round"
       />
     </svg>

@@ -1,0 +1,118 @@
+/*
+ * Base styles of the shared overlay pattern (drawers, bottom sheets, toasts, backdrops).
+ * Use from a feature CSS module: `.drawer { composes: drawer from "../../shared/ui/Overlay.module.css"; }`
+ * or in TSX: `import { overlayStyles } from "../../shared/ui"` → `className={overlayStyles.sheet}`.
+ * The only place with shadows: overlays float above the flat page.
+ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sheet);
+  background: var(--backdrop);
+  animation: fade var(--dur-ui) var(--ease-out);
+}
+
+/* Side panel from the right edge (full width on phones). */
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: var(--z-drawer);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(28rem, 100vw);
+  padding: var(--space-4);
+  padding-top: max(var(--space-4), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-left: var(--hairline) solid var(--color-line);
+  box-shadow: var(--shadow-overlay);
+  overflow-y: auto;
+  animation: slide-in-right var(--dur-reveal) var(--ease-out);
+}
+
+/* Panel rising from the bottom, above the mobile tab bar. */
+.sheet {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: var(--z-sheet);
+  display: grid;
+  gap: var(--space-3);
+  width: min(100%, 44rem);
+  max-height: 85dvh;
+  margin-inline: auto;
+  padding: var(--space-4) var(--gutter) max(var(--space-4), env(safe-area-inset-bottom));
+  overflow-y: auto;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-top: var(--hairline) solid var(--color-line);
+  box-shadow: var(--shadow-overlay);
+  animation: slide-in-up var(--dur-reveal) var(--ease-out);
+}
+
+/* Header row of a drawer/sheet: Gloock title + circular close button. */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--hairline) solid var(--color-line-soft);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+/* Short message at the top center: a plum block. Put data-tone="plum" on it so buttons adapt. */
+.toast {
+  position: fixed;
+  top: max(var(--space-2), env(safe-area-inset-top));
+  left: 50%;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  width: min(28rem, calc(100vw - 2 * var(--space-3)));
+  padding: var(--space-3) var(--space-4);
+  transform: translateX(-50%);
+  background: var(--panel-plum-bg);
+  color: var(--panel-plum-fg);
+  box-shadow: var(--shadow-overlay), var(--shadow-glow);
+  animation: drop-in var(--dur-reveal) var(--ease-out);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes drop-in {
+  from {
+    transform: translate(-50%, -12px);
+    opacity: 0;
+  }
+}

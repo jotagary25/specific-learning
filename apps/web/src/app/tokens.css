@@ -1,0 +1,266 @@
+/*
+ * Design tokens — SONORUS / Matter & Frequency, adapted to the English Course.
+ * The single source of every color, size and timing. See docs/design-system.md.
+ * Feature CSS reads the semantic roles (--color-*, --state-*, --space-*, --text-*),
+ * never the raw ramps, unless a rule in the design system says otherwise.
+ */
+
+:root {
+  /* --- Palette: base colors (500) with tonal ramps (50–400 tints, 600–900 shades) --- */
+  --plum-50: #ebe8ea;
+  --plum-100: #cdc7ca;
+  --plum-200: #a599a0;
+  --plum-300: #7e6c75;
+  --plum-400: #563f4b;
+  --plum-500: #381d2b;
+  --plum-600: #311925;
+  --plum-700: #29151f;
+  --plum-800: #22111a;
+  --plum-900: #1a0d14;
+
+  --lime-50: #fdfdf7;
+  --lime-100: #fafbeb;
+  --lime-200: #f5f7db;
+  --lime-300: #f1f3cc;
+  --lime-400: #ecf0bc;
+  --lime-500: #e9edb0;
+  --lime-600: #c3c691;
+  --lime-700: #9da072;
+  --lime-800: #767952;
+  --lime-900: #505333;
+
+  --rose-50: #f9f4f4;
+  --rose-100: #efe4e3;
+  --rose-200: #e2cecc;
+  --rose-300: #d5b9b5;
+  --rose-400: #c9a39e;
+  --rose-500: #bf938d;
+  --rose-600: #a17976;
+  --rose-700: #835e60;
+  --rose-800: #664449;
+  --rose-900: #482933;
+
+  --taupe-50: #f0efee;
+  --taupe-100: #d9d6d5;
+  --taupe-200: #bbb5b3;
+  --taupe-300: #9d9492;
+  --taupe-400: #7f7370;
+  --taupe-500: #685a57;
+  --taupe-600: #574a48;
+  --taupe-700: #463a3a;
+  --taupe-800: #35292b;
+  --taupe-900: #24191d;
+
+  --cream-50: #fefdfc;
+  --cream-100: #fcfbf9;
+  --cream-200: #faf8f3;
+  --cream-300: #f7f5ee;
+  --cream-400: #f5f1e9;
+  --cream-500: #f3efe5;
+  --cream-600: #d7d1c9;
+  --cream-700: #bbb3ac;
+  --cream-800: #a09690;
+  --cream-900: #847873;
+
+  /* --- Semantic roles (default tone: cream page, plum text) --- */
+  --color-bg: var(--cream-500);
+  --color-surface: var(--cream-200);
+  --color-surface-sunken: var(--cream-400);
+  --color-text: var(--plum-500);
+  --color-text-muted: var(--taupe-500);
+  --color-line: var(--plum-500);
+  --color-line-soft: rgb(56 29 43 / 0.18);
+  --color-accent: var(--plum-500);
+  --color-on-accent: var(--cream-500);
+  --color-highlight: var(--lime-500);
+  --color-tone-bg: transparent;
+  --focus-ring-color: var(--plum-500);
+
+  /* Panel variants: each tone defines its own text, muted text, lines and accent. */
+  --panel-lime-bg: var(--lime-500);
+  --panel-lime-fg: var(--plum-500);
+  --panel-lime-muted: var(--plum-400);
+  --panel-lime-line: var(--plum-500);
+  --panel-lime-line-soft: rgb(56 29 43 / 0.2);
+  --panel-lime-accent: var(--plum-500);
+  --panel-lime-on-accent: var(--lime-500);
+
+  --panel-plum-bg: var(--plum-500);
+  --panel-plum-fg: var(--cream-500);
+  --panel-plum-muted: var(--rose-500);
+  --panel-plum-line: var(--cream-500);
+  --panel-plum-line-soft: rgb(243 239 229 / 0.2);
+  --panel-plum-accent: var(--lime-500);
+  --panel-plum-on-accent: var(--plum-500);
+
+  --panel-cream-bg: var(--cream-200);
+  --panel-cream-fg: var(--plum-500);
+  --panel-cream-muted: var(--taupe-500);
+  --panel-cream-line: var(--plum-500);
+  --panel-cream-line-soft: rgb(56 29 43 / 0.18);
+  --panel-cream-accent: var(--plum-500);
+  --panel-cream-on-accent: var(--cream-500);
+
+  /* --- States: derived from the ramps only. Every fg passes AA on its bg. --- */
+  --state-correct-bg: var(--lime-500);
+  --state-correct-fg: var(--lime-900);
+  --state-correct-line: var(--lime-800);
+  --state-almost-bg: var(--rose-100);
+  --state-almost-fg: var(--rose-800);
+  --state-almost-line: var(--rose-500);
+  --state-incorrect-bg: var(--rose-200);
+  --state-incorrect-fg: var(--rose-900);
+  --state-incorrect-line: var(--rose-800);
+  /* Error/success copy set directly on the page background (no state block). */
+  --color-success-text: var(--lime-900);
+  --color-error-text: var(--rose-800);
+
+  /* --- Legacy aliases: only for feature CSS not yet restyled. Do not use in new code. --- */
+  --color-primary: var(--plum-500);
+  --color-on-primary: var(--cream-500);
+  --color-muted: var(--taupe-500);
+  --color-border: var(--color-line-soft);
+  --color-ok: var(--lime-900);
+  --color-down: var(--rose-800);
+  --color-warn: var(--rose-700);
+  --color-focus: var(--plum-500);
+
+  /* --- Typography --- */
+  --font-display: "Gloock", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-body: "Commissioner", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* clamp(mobile, fluid, desktop) */
+  --text-display: clamp(3rem, 1.9rem + 4.6vw, 5.5rem); /* 48 → 88 */
+  --text-h1: clamp(2.25rem, 1.75rem + 2.1vw, 3.5rem); /* 36 → 56 */
+  --text-h2: clamp(1.75rem, 1.5rem + 1.05vw, 2.5rem); /* 28 → 40 */
+  --text-h3: clamp(1.25rem, 1.15rem + 0.42vw, 1.5rem); /* 20 → 24 */
+  --text-lead: 1.125rem; /* 18: intros, reading body */
+  --text-body: 1rem; /* 16 */
+  --text-small: 0.875rem; /* 14 */
+  --text-eyebrow: 0.75rem; /* 12, uppercase */
+
+  --leading-display: 1;
+  --leading-heading: 1.1;
+  --leading-body: 1.6;
+  --tracking-display: -0.055em;
+  --tracking-heading: -0.03em;
+  --tracking-eyebrow: 0.16em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* --- Spacing: 6px rhythm --- */
+  --space-1: 6px;
+  --space-2: 12px;
+  --space-3: 18px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+
+  /* --- Layout --- */
+  --gutter: clamp(18px, 4vw, 48px);
+  --content-max: 75rem; /* 1200px: the shell's content column */
+  --measure: 40rem; /* reading line length */
+  --header-height: 64px;
+  --tabbar-height: 60px;
+  /* Space the shell reserves at the bottom (the mobile tab bar). Fixed/sticky bottom UI adds it. */
+  --shell-bottom: 0px;
+
+  /* --- Shape --- */
+  --radius: 0;
+  --radius-pill: 999px; /* only circular icon buttons and dots */
+  --hairline: 1px;
+  --rule: 2px; /* active-state rules (stepper, nav) */
+  --tap-target: 44px;
+
+  /* --- Elevation: overlays only (drawers, sheets, toasts) --- */
+  --shadow-overlay: rgb(19 9 14 / 0.333) 0 25px 100px 0;
+  --shadow-glow: rgb(233 237 176 / 0.25) 0 0 9px 0;
+  --backdrop: rgb(19 9 14 / 0.45);
+
+  /* --- Layers --- */
+  --z-sticky: 10;
+  --z-fab: 15;
+  --z-tabbar: 18;
+  --z-sheet: 20;
+  --z-drawer: 30;
+  --z-toast: 40;
+  --z-overlay: 50;
+
+  /* --- Motion --- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-ui: 300ms;
+  --dur-reveal: 500ms;
+
+  /* --- Focus --- */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+}
+
+/* Mobile: the bottom tab bar takes the bottom of the viewport. */
+@media (max-width: 767.98px) {
+  :root {
+    --header-height: 56px;
+    --shell-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-ui: 0ms;
+    --dur-reveal: 0ms;
+  }
+}
+
+/*
+ * Tones: any element with data-tone re-maps the semantic roles for its subtree,
+ * so text, lines, buttons and focus rings inside a color block stay legible.
+ * <Panel tone="…"> sets it; plain markup may set data-tone directly.
+ */
+[data-tone="lime"],
+[data-tone="plum"],
+[data-tone="cream"] {
+  background-color: var(--color-tone-bg);
+  color: var(--color-text);
+}
+
+[data-tone="lime"] {
+  --color-tone-bg: var(--panel-lime-bg);
+  --color-text: var(--panel-lime-fg);
+  --color-text-muted: var(--panel-lime-muted);
+  --color-line: var(--panel-lime-line);
+  --color-line-soft: var(--panel-lime-line-soft);
+  --color-accent: var(--panel-lime-accent);
+  --color-on-accent: var(--panel-lime-on-accent);
+  --color-surface: var(--lime-300);
+  --focus-ring-color: var(--plum-500);
+}
+
+[data-tone="plum"] {
+  --color-tone-bg: var(--panel-plum-bg);
+  --color-text: var(--panel-plum-fg);
+  --color-text-muted: var(--panel-plum-muted);
+  --color-line: var(--panel-plum-line);
+  --color-line-soft: var(--panel-plum-line-soft);
+  --color-accent: var(--panel-plum-accent);
+  --color-on-accent: var(--panel-plum-on-accent);
+  --color-surface: var(--plum-400);
+  --color-highlight: var(--plum-400);
+  --color-success-text: var(--lime-500);
+  --color-error-text: var(--rose-300);
+  --focus-ring-color: var(--lime-500);
+}
+
+[data-tone="cream"] {
+  --color-tone-bg: var(--panel-cream-bg);
+  --color-text: var(--panel-cream-fg);
+  --color-text-muted: var(--panel-cream-muted);
+  --color-line: var(--panel-cream-line);
+  --color-line-soft: var(--panel-cream-line-soft);
+  --color-accent: var(--panel-cream-accent);
+  --color-on-accent: var(--panel-cream-on-accent);
+  --color-surface: var(--cream-50);
+  --focus-ring-color: var(--plum-500);
+}

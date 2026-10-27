@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router";
+import { Outlet } from "react-router";
 import { HealthIndicator } from "../features/home/HealthIndicator.tsx";
 import { TimeZoneBanner } from "../features/settings/TimeZoneBanner.tsx";
 import { SessionBar } from "../features/today/SessionBar.tsx";
@@ -10,6 +10,7 @@ import { InstallHint } from "../shared/pwa/InstallHint.tsx";
 import { OfflineBanner } from "../shared/pwa/OfflineBanner.tsx";
 import { UpdateToast } from "../shared/pwa/UpdateToast.tsx";
 import styles from "./Layout.module.css";
+import { MainNav } from "./MainNav.tsx";
 
 export function Layout() {
   return (
@@ -17,33 +18,10 @@ export function Layout() {
       <TutorProvider>
         <div className={styles.shell}>
           <header className={styles.header}>
-            <span className={styles.brand}>English Course</span>
-            <nav aria-label="Main" className={styles.nav}>
-              <NavLink to="/" end className={styles.link}>
-                Today
-              </NavLink>
-              <NavLink to="/units" className={styles.link}>
-                Units
-              </NavLink>
-              <NavLink to="/reading" className={styles.link}>
-                Reading
-              </NavLink>
-              <NavLink to="/vocabulary" className={styles.link}>
-                Vocabulary
-              </NavLink>
-              <NavLink to="/writing" className={styles.link}>
-                Writing
-              </NavLink>
-              <NavLink to="/progress" className={styles.link}>
-                Progress
-              </NavLink>
-              <NavLink to="/tutor" className={styles.link}>
-                Tutor
-              </NavLink>
-              <NavLink to="/settings" className={styles.link}>
-                Settings
-              </NavLink>
-            </nav>
+            <div className={styles.headerInner}>
+              <span className={styles.brand}>English Course</span>
+              <MainNav />
+            </div>
           </header>
           <OfflineBanner />
           <InstallHint />
@@ -53,7 +31,12 @@ export function Layout() {
           </main>
           <SessionBar />
           <footer className={styles.footer}>
-            <HealthIndicator />
+            <div className={styles.footerInner}>
+              <p className={`eyebrow ${styles.tagline}`}>
+                An English course · Learn by reading the world
+              </p>
+              <HealthIndicator />
+            </div>
           </footer>
           <SessionComplete />
           <TutorButton />
